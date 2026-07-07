@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fullstack-forge-postgres
+    environment:
+      POSTGRES_DB: fullstack_forge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fullstack_forge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+    container_name: fullstack-forge-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: fullstack-forge-backend
+      APP_ENV: development
+      APP_DEBUG: "true"
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_API_V1_PREFIX: /api/v1
+      APP_ALLOWED_ORIGINS: '["*"]'
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/fullstack_forge
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "uv run alembic upgrade head &&
+      uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:

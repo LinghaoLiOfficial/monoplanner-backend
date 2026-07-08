@@ -1,16 +1,6 @@
-# fullstack-forge-backend
+# Fullstack Context Orchestrator API
 
-`fullstack-forge-backend` 项目，技术栈为 `Python 3.12+ + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL`，包管理使用 `uv`。
-
-## 推荐启动命令
-
-完成 `.env` 配置后，优先使用：
-
-```bash
-make dev
-```
-
-这个命令会先执行数据库迁移，再启动开发服务，并限制热重载监听范围，减少控制台噪音。
+FastAPI 后端基础骨架，用于把自然语言业务需求编排为结构化 Project Blueprint。当前批次只实现数据库、API、schema、service 和 deterministic mock blueprint generator，不接入任何真实 LLM。
 
 ## 技术栈
 
@@ -22,125 +12,112 @@ make dev
 - PostgreSQL
 - uv
 
-说明：
-当前项目实现使用了 SQLAlchemy 2.x 异步会话与 `asyncpg` 驱动；Alembic 迁移会自动切换为同步驱动执行。
+## `.env` 配置
 
-## 快速开始
-
-1. 安装依赖
-
-```bash
-uv sync
-```
-
-2. 复制环境变量模板
+复制示例文件：
 
 ```bash
 cp .env.dev.example .env
 ```
 
-3. 准备数据库
-
-确保 `.env` 中的 `DATABASE_URL` 可连接到可用 PostgreSQL 数据库。
-
-默认开发连接串为：
+开发默认配置：
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fullstack_forge
+APP_NAME=Fullstack Context Orchestrator API
+APP_ENV=development
+BACKEND_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator
 ```
 
-4. 一键启动
+## 启动数据库
 
 ```bash
-make dev
 ```
 
-5. 或手动执行
+使用本机 PostgreSQL（Homebrew `postgresql@14`）并保证 `DATABASE_URL` 可连接。
+
+## 安装依赖
 
 ```bash
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --reload-dir app
+uv sync
+```
+
+若需要运行测试和 lint：
+
+```bash
+uv sync --group dev
+```
+
+## 运行 Migration
+
+```bash
+uv run python -m alembic upgrade head
+```
+
+当前迁移会创建：
+
+- `template_items`
+- `projects`
+- `requirements`
+- `project_blueprints`
+- `generation_runs`
+
+## 启动后端
+
+```bash
+uv run python -m uvicorn app.main:app --reload
 ```
 
 服务默认地址为 [http://127.0.0.1:8000](http://127.0.0.1:8000)，OpenAPI 文档为 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)。
 
-## API 版本约定
+## 核心 API
 
-- 当前统一前缀为 `/api/v1`
-- 新增接口默认放入 `app/api/v1/endpoints/`
-- 后续破坏性变更建议通过 `/api/v2` 另开版本，而不是直接覆盖 `v1`
+统一前缀：`/api/v1`
 
-## 统一响应约定
-
-成功响应：
-
-```json
-{
-  "status": "success",
-  "data": {},
-  "message": null
-}
-```
-
-错误响应：
-
-```json
-{
-  "status": "error",
-  "code": "ERROR_CODE",
-  "message": "Human readable message"
-}
-```
-
-## 基础错误码约定
-
-- `INTERNAL_ERROR`
-- `VALIDATION_ERROR`
-- `RESOURCE_NOT_FOUND`
-- `CONFLICT`
-- `AUTH_NOT_IMPLEMENTED`
-- `UNAUTHORIZED`
-
-## 分页约定
-
-列表接口使用：
-
-- `page`
-- `page_size`
-
-分页响应结构：
-
-```json
-{
-  "status": "success",
-  "data": {
-    "items": [],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total": 0,
-      "total_pages": 0
-    }
-  },
-  "message": null
-}
-```
-
-## 当前接口
-
-- `GET /`
 - `GET /api/v1/health`
-- `GET /api/v1/template-items/`
-- `POST /api/v1/template-items/`
-- `POST /api/v1/auth/login`
+- `POST /api/v1/projects`
+- `GET /api/v1/projects`
+- `GET /api/v1/projects/{project_id}`
+- `PATCH /api/v1/projects/{project_id}`
+- `DELETE /api/v1/projects/{project_id}`
+- `POST /api/v1/projects/{project_id}/requirements`
+- `GET /api/v1/projects/{project_id}/requirements`
+- `GET /api/v1/projects/{project_id}/blueprints`
+- `GET /api/v1/blueprints/{blueprint_id}`
+- `POST /api/v1/projects/{project_id}/generate/blueprint`
 
-## Docker 启动
+## 手动验证
 
 ```bash
-docker compose up --build
+curl http://127.0.0.1:8000/api/v1/health
+
+PROJECT_ID=$(curl -s -X POST http://127.0.0.1:8000/api/v1/projects \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Demo Project","description":"Context orchestrator demo"}' | jq -r .id)
+
+curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/requirements" \
+  -H 'Content-Type: application/json' \
+  -d '{"raw_text":"做一个可以把业务需求转成结构化上下文包的工具"}'
+
+curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/blueprint"
+curl "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/blueprints"
 ```
 
-启动后会自动等待 PostgreSQL 就绪并执行 `alembic upgrade head`。
+
+## 测试和检查
+
+```bash
+uv run python -m ruff check .
+uv run python -m pytest
+```
+
+## 当前未实现
+
+- 真实 OpenAI、Claude、LangChain、LlamaIndex 或其他 AI 服务接入
+- 登录注册和复杂用户权限
+- 前端代码
+- 多用户协作
+- 生产级监控、审计和限流
 
 ## 常用命令
 
@@ -151,44 +128,4 @@ make run
 make dev
 make lint
 make test
-docker compose up --build
 ```
-
-## 项目结构
-
-```text
-.
-├── alembic/
-├── app/
-│   ├── api/
-│   ├── core/
-│   ├── crud/
-│   ├── db/
-│   ├── models/
-│   ├── schemas/
-│   ├── services/
-│   └── main.py
-├── tests/
-├── .env.dev.example
-├── .env.test.example
-├── .env.prod.example
-├── alembic.ini
-├── pyproject.toml
-└── Makefile
-```
-
-## 已包含内容
-
-- FastAPI + Uvicorn 基础服务
-- SQLAlchemy 2.x 数据访问层
-- Alembic 数据库迁移
-- PostgreSQL 连接配置
-- `uv` 依赖与环境管理
-- 统一异常处理
-- 统一响应包装
-- 分页协议
-- 认证模块占位
-- 多环境 `.env` 模板
-- Docker / docker-compose
-- GitHub Actions CI
-- 独立测试数据库

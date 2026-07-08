@@ -4,7 +4,7 @@ from app.core.config import settings
 
 
 def setup_logging() -> None:
-    log_level = "DEBUG" if settings.debug else "INFO"
+    log_level = "DEBUG" if settings.app_env == "development" else "INFO"
 
     dictConfig(
         {
@@ -22,10 +22,7 @@ def setup_logging() -> None:
                     "level": log_level,
                 }
             },
-            "root": {
-                "handlers": ["console"],
-                "level": log_level,
-            },
+            "root": {"handlers": ["console"], "level": log_level},
             "loggers": {
                 "watchfiles.main": {
                     "level": "WARNING",

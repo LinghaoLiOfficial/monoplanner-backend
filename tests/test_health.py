@@ -6,7 +6,6 @@ def test_health_check(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == {
-        "status": "success",
-        "data": {"message": "ok"},
-        "message": None,
+        "status": "ok",
+        "service": "Fullstack Context Orchestrator API",
     }

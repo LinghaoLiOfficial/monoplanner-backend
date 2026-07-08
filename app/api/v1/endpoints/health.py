@@ -1,17 +1,11 @@
-from typing import Annotated
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.api.deps import get_db
-from app.schemas.common import ApiResponse, MessageResponse
+from app.core.config import settings
+from app.schemas.health import HealthResponse
 
 router = APIRouter()
-DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-@router.get("/health")
-async def health_check(db: DbSession) -> ApiResponse[MessageResponse]:
-    await db.execute(text("SELECT 1"))
-    return ApiResponse(data=MessageResponse(message="ok"))
+@router.get("/health", response_model=HealthResponse)
+def health_check() -> HealthResponse:
+    return HealthResponse(status="ok", service=settings.app_name)

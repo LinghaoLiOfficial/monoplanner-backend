@@ -6,17 +6,17 @@ install:
 	uv sync
 
 migrate:
-	uv run alembic upgrade head
+	uv run python -m alembic upgrade head
 
 run:
-	uv run uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
+	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
 
 dev:
-	uv run alembic upgrade head
-	uv run uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
+	uv run python -m alembic upgrade head
+	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
 
 lint:
-	uv run ruff check .
+	uv run python -m ruff check .
 
 test:
-	uv run pytest
+	uv run python -m pytest

@@ -11,7 +11,11 @@ from sqlalchemy.types import Uuid
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
+    from app.models.api_contract import ApiContractDraft
     from app.models.blueprint import ProjectBlueprint
+    from app.models.business_requirement_story import BusinessRequirementStory
+    from app.models.context_pack import ContextPack
+    from app.models.db_model_draft import DbModelDraft
     from app.models.generation_run import GenerationRun
     from app.models.requirement import Requirement
 
@@ -25,7 +29,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
     target_frontend_stack: Mapped[str] = mapped_column(
         Text(), nullable=False, default=DEFAULT_FRONTEND_STACK
@@ -55,5 +59,17 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )
     generation_runs: Mapped[list[GenerationRun]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    api_contract_drafts: Mapped[list[ApiContractDraft]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    db_model_drafts: Mapped[list[DbModelDraft]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    context_packs: Mapped[list[ContextPack]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )

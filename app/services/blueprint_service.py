@@ -39,3 +39,11 @@ class BlueprintService:
             .limit(1)
         )
         return 1 if latest is None else latest.version + 1
+
+    def get_latest_blueprint(self, project_id: UUID) -> ProjectBlueprint | None:
+        return self.db.scalar(
+            select(ProjectBlueprint)
+            .where(ProjectBlueprint.project_id == project_id)
+            .order_by(ProjectBlueprint.created_at.desc())
+            .limit(1)
+        )

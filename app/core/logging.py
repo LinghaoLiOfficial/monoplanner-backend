@@ -1,10 +1,8 @@
 from logging.config import dictConfig
 
-from app.core.config import settings
-
 
 def setup_logging() -> None:
-    log_level = "DEBUG" if settings.app_env == "development" else "INFO"
+    log_level = "INFO"
 
     dictConfig(
         {

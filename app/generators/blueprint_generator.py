@@ -1,9 +1,19 @@
-from app.models.project import Project
+from app.models.project import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, Project
 from app.models.requirement import Requirement
 
 
 def build_mock_blueprint_content(project: Project, requirement: Requirement) -> dict[str, object]:
-    one_liner = requirement.raw_text.strip().replace("\n", " ")[:120]
+    return build_deterministic_blueprint_content(project, requirement)
+
+
+def build_deterministic_blueprint_content(
+    project: Project, requirement: Requirement
+) -> dict[str, object]:
+    raw_requirement = getattr(requirement, "raw_text", "") or ""
+    frontend_stack = getattr(project, "target_frontend_stack", None) or DEFAULT_FRONTEND_STACK
+    backend_stack = getattr(project, "target_backend_stack", None) or DEFAULT_BACKEND_STACK
+
+    one_liner = raw_requirement.strip().replace("\n", " ")[:120]
     if not one_liner:
         one_liner = "基于用户需求生成的项目蓝图草案。"
 
@@ -12,6 +22,10 @@ def build_mock_blueprint_content(project: Project, requirement: Requirement) -> 
             "name": project.name,
             "one_liner": one_liner,
             "business_goal": "将自然语言业务需求转化为适合 vibe coding 工具使用的结构化上下文包。",
+        },
+        "tech_stack": {
+            "frontend": frontend_stack,
+            "backend": backend_stack,
         },
         "product_goals": [{"goal": "输入业务需求并生成结构化项目蓝图", "priority": "must_have"}],
         "user_roles": [

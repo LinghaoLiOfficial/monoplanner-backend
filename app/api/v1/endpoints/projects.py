@@ -18,8 +18,8 @@ def create_project(db: DbSession, payload: ProjectCreate) -> ProjectRead:
 
 
 @router.get("", response_model=list[ProjectRead])
-def list_projects(db: DbSession) -> list[ProjectRead]:
-    return ProjectService(db).list_projects()
+def list_projects(db: DbSession, q: str | None = None) -> list[ProjectRead]:
+    return ProjectService(db).list_projects(q=q)
 
 
 @router.get("/{project_id}", response_model=ProjectRead)

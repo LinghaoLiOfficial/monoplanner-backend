@@ -11,6 +11,7 @@ from sqlalchemy.types import Uuid
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
+    from app.models.business_requirement_story import BusinessRequirementStory
     from app.models.project import Project
 
 
@@ -42,3 +43,6 @@ class Requirement(Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="requirements")
+    business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
+        back_populates="requirement"
+    )

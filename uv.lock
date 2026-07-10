@@ -183,6 +183,7 @@ dependencies = [
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "greenlet" },
+    { name = "httpx" },
     { name = "monobase" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
@@ -193,7 +194,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "aiosqlite" },
-    { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -206,6 +206,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.2.0,<3.0.0" },
     { name = "fastapi", specifier = ">=0.115.0,<1.0.0" },
     { name = "greenlet", specifier = ">=3.2.0,<4.0.0" },
+    { name = "httpx", specifier = ">=0.28.0,<1.0.0" },
     { name = "monobase", path = "monobase-0.1.0-py3-none-any.whl" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0,<4.0.0" },
     { name = "pydantic-settings", specifier = ">=2.10.0,<3.0.0" },
@@ -216,7 +217,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0,<1.0.0" },
-    { name = "httpx", specifier = ">=0.28.0,<1.0.0" },
     { name = "pytest", specifier = ">=8.4.0,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.0.0,<2.0.0" },
     { name = "ruff", specifier = ">=0.11.0,<1.0.0" },

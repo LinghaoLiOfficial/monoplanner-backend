@@ -2,9 +2,11 @@ import os
 from collections.abc import Generator
 
 os.environ["APP_NAME"] = "Fullstack Context Orchestrator API"
-os.environ["APP_ENV"] = "test"
 os.environ["DATABASE_URL"] = "sqlite://"
 os.environ["BACKEND_CORS_ORIGINS"] = "http://localhost:3000,http://127.0.0.1:3000"
+os.environ["LLM_BASE_URL"] = ""
+os.environ["LLM_API_KEY"] = ""
+os.environ["LLM_MODEL"] = ""
 
 import pytest
 from fastapi.testclient import TestClient

@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.schemas.generation_run import BusinessStoryGenerationStatus
 from app.schemas.requirement import RequirementCreate, RequirementRead
 from app.services.requirement_service import RequirementService
 
 router = APIRouter(prefix="/projects/{project_id}/requirements")
+status_router = APIRouter(prefix="/requirements")
 DbSession = Annotated[Session, Depends(get_db)]
 
 
@@ -24,3 +26,14 @@ def create_requirement(
 @router.get("", response_model=list[RequirementRead])
 def list_requirements(db: DbSession, project_id: UUID) -> list[RequirementRead]:
     return RequirementService(db).list_project_requirements(project_id)
+
+
+@status_router.get(
+    "/{requirement_id}/business-story-generation",
+    response_model=BusinessStoryGenerationStatus | None,
+)
+def get_business_story_generation_status(
+    db: DbSession,
+    requirement_id: UUID,
+) -> BusinessStoryGenerationStatus | None:
+    return RequirementService(db).get_business_story_generation_status(requirement_id)

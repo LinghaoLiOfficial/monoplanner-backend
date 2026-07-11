@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -67,12 +68,31 @@ class BusinessRequirementStoryService:
     ) -> BusinessRequirementStory:
         story = self.get_story(story_id)
         updates = payload.model_dump(exclude_unset=True)
+        if "user_story" in updates:
+            updates["user_story"] = _normalize_user_story(updates["user_story"])
+        if "business_scope" in updates:
+            updates["business_scope"] = _normalize_business_scope(updates["business_scope"])
+        if "data_rules" in updates:
+            updates["data_rules"] = _normalize_data_rules(updates["data_rules"])
+        if "acceptance_criteria" in updates:
+            updates["acceptance_criteria"] = _normalize_acceptance_criteria(
+                updates["acceptance_criteria"]
+            )
         for field, value in updates.items():
             setattr(story, field, value)
         self.db.add(story)
         self.db.commit()
         self.db.refresh(story)
         return story
+
+    def delete_story(self, story_id: UUID) -> None:
+        story = self.get_story(story_id)
+        try:
+            self.db.delete(story)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
 
     def delete_existing_for_requirement(
         self, project_id: UUID, requirement_id: UUID | None
@@ -86,3 +106,74 @@ class BusinessRequirementStoryService:
 
     def list_for_blueprint_context(self, project_id: UUID) -> list[BusinessRequirementStory]:
         return self.list_project_stories(project_id)
+
+
+def _bad_request(detail: str) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+def _normalize_user_story(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise _bad_request("用户故事不能为空。")
+    return value.strip()
+
+
+def _normalize_business_scope(value: Any) -> dict[str, list[str]]:
+    if not isinstance(value, dict):
+        raise _bad_request("业务范围格式不正确。")
+    try:
+        return {
+            "included": _normalize_string_list(value.get("included", [])),
+            "excluded": _normalize_string_list(value.get("excluded", [])),
+        }
+    except ValueError as exc:
+        raise _bad_request("业务范围格式不正确。") from exc
+
+
+def _normalize_data_rules(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        raise _bad_request("数据规则格式不正确。")
+
+    normalized_rules: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            raise _bad_request("数据规则格式不正确。")
+
+        rule = item.get("rule")
+        if not isinstance(rule, str):
+            raise _bad_request("数据规则格式不正确。")
+        rule_text = rule.strip()
+        if not rule_text:
+            continue
+
+        normalized_item = {"rule": rule_text}
+        if "field" in item and item["field"] is not None:
+            field = item["field"]
+            if not isinstance(field, str):
+                raise _bad_request("数据规则格式不正确。")
+            field_text = field.strip()
+            if field_text:
+                normalized_item["field"] = field_text
+        normalized_rules.append(normalized_item)
+
+    return normalized_rules
+
+
+def _normalize_acceptance_criteria(value: Any) -> list[str]:
+    try:
+        return _normalize_string_list(value)
+    except ValueError as exc:
+        raise _bad_request("验收标准格式不正确。") from exc
+
+
+def _normalize_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        raise ValueError("value must be a list")
+    normalized: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise ValueError("items must be strings")
+        text = item.strip()
+        if text:
+            normalized.append(text)
+    return normalized

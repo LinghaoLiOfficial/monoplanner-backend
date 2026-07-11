@@ -14,6 +14,7 @@ from app.db.base_class import Base
 if TYPE_CHECKING:
     from app.models.business_requirement_story import BusinessRequirementStory
     from app.models.project import Project
+    from app.models.requirement import Requirement
 
 json_type = JSON().with_variant(JSONB, "postgresql")
 
@@ -28,8 +29,16 @@ class GenerationRun(Base):
         nullable=False,
         index=True,
     )
+    requirement_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("requirements.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     run_type: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
+    progress: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
+    message: Mapped[str | None] = mapped_column(Text(), nullable=True)
     input_snapshot: Mapped[dict[str, Any] | None] = mapped_column(json_type, nullable=True)
     output_snapshot: Mapped[dict[str, Any] | None] = mapped_column(json_type, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text(), nullable=True)
@@ -49,6 +58,7 @@ class GenerationRun(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     project: Mapped[Project] = relationship(back_populates="generation_runs")
+    requirement: Mapped[Requirement | None] = relationship(back_populates="generation_runs")
     business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
         back_populates="generation_run"
     )

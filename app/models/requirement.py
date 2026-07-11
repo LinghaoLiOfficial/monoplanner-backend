@@ -12,6 +12,7 @@ from app.db.base_class import Base
 
 if TYPE_CHECKING:
     from app.models.business_requirement_story import BusinessRequirementStory
+    from app.models.generation_run import GenerationRun
     from app.models.project import Project
 
 
@@ -46,3 +47,4 @@ class Requirement(Base):
     business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
         back_populates="requirement"
     )
+    generation_runs: Mapped[list[GenerationRun]] = relationship(back_populates="requirement")

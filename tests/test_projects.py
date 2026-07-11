@@ -8,6 +8,83 @@ from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from app.models.project import Project
 from app.models.requirement import Requirement
+from tests.llm_stream_helpers import patch_llm_stream_sequence
+
+
+def _patch_generation_json(monkeypatch) -> None:
+    patch_llm_stream_sequence(
+        monkeypatch,
+        {
+            "project": {
+                "name": "Cascade All",
+                "one_liner": "Context workflow",
+                "target_users": ["Builder"],
+                "business_goal": "Generate context artifacts",
+                "tech_stack": {"frontend": "Next.js", "backend": "FastAPI"},
+            },
+            "product_goals": [{"goal": "Generate artifacts", "priority": "must_have"}],
+            "user_roles": [{"name": "Builder", "description": "", "permissions": []}],
+            "core_modules": [{"name": "Projects", "description": "", "features": []}],
+            "domain_entities": [
+                {
+                    "name": "Project",
+                    "description": "Project entity",
+                    "fields": [{"name": "id", "type": "uuid", "required": True}],
+                    "relationships": [],
+                }
+            ],
+            "pages": [
+                {
+                    "path": "/projects",
+                    "name": "Projects",
+                    "purpose": "List projects",
+                    "components": [],
+                    "data_dependencies": [],
+                }
+            ],
+            "api_needs": [{"resource": "projects", "operations": ["list"], "consumers": []}],
+            "business_requirement_stories": [],
+            "non_functional_requirements": {},
+            "assumptions": [],
+            "open_questions": [],
+        },
+        {
+            "base_path": "/api/v1",
+            "resources": [
+                {
+                    "name": "projects",
+                    "description": "Manage projects",
+                    "endpoints": [
+                        {
+                            "method": "GET",
+                            "path": "/projects",
+                            "purpose": "List projects",
+                        }
+                    ],
+                }
+            ],
+            "schemas": [{"name": "ProjectResponse", "fields": []}],
+            "error_model": {"name": "ApiError", "fields": []},
+            "notes": [],
+        },
+        {
+            "database": {
+                "engine": "PostgreSQL",
+                "orm": "SQLAlchemy 2.x",
+                "migration_tool": "Alembic",
+            },
+            "entities": [
+                {
+                    "name": "Project",
+                    "table_name": "projects",
+                    "fields": [{"name": "name", "type": "string"}],
+                }
+            ],
+            "relationships": [],
+            "indexes": [],
+            "migration_notes": [],
+        },
+    )
 
 
 def test_project_crud_flow(client: TestClient) -> None:
@@ -146,7 +223,12 @@ def test_project_list_searches_name_case_insensitively(client: TestClient) -> No
     ]
 
 
-def test_delete_project_removes_all_related_content(client: TestClient, db_session) -> None:
+def test_delete_project_removes_all_related_content(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    _patch_generation_json(monkeypatch)
     project = client.post("/api/v1/projects", json={"name": "Cascade All"}).json()
     client.post(
         f"/api/v1/projects/{project['id']}/requirements",

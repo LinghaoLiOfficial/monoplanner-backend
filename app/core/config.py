@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     llm_timeout: float = Field(default=60.0, alias="LLM_TIMEOUT")
     llm_timeout_seconds: float = Field(default=60.0, alias="LLM_TIMEOUT_SECONDS")
     llm_thinking: bool = Field(default=False, alias="LLM_THINKING")
+    llm_use_response_format: bool = Field(default=True, alias="LLM_USE_RESPONSE_FORMAT")
 
     @property
     def cors_origins(self) -> list[str]:
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
     def model_post_init(self, __context: object) -> None:
         if self.llm_timeout_seconds == 60.0 and self.llm_timeout != 60.0:
             self.llm_timeout_seconds = self.llm_timeout
+        self.llm_timeout = self.llm_timeout_seconds
 
     model_config = SettingsConfigDict(
         env_file=".env",

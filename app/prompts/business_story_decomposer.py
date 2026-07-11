@@ -4,6 +4,8 @@ from app.models.requirement import Requirement
 SYSTEM_PROMPT = (
     "你是一个资深产品经理、敏捷需求分析师和全栈架构师。你的任务是将用户输入的自然语言业务需求拆解为"
     "可独立开发、测试、验收的业务需求故事。每个故事必须是垂直切片，能够贯穿前端、后端、数据和验收标准。"
+    "你必须只输出严格合法的 JSON object：使用双引号，禁止尾随逗号，禁止注释，禁止 Markdown，"
+    "字符串内部如需换行必须转义为 \\n。"
 )
 
 
@@ -51,6 +53,7 @@ def build_business_story_decomposition_payload(
             "不要返回 Markdown",
             "不要返回解释文本",
             "不要输出 JSON 之外的任何字符",
+            "不要使用单引号、中文引号、尾随逗号或未转义换行",
             "不要把技术分层任务当作业务故事",
         ],
     }

@@ -2,6 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -13,11 +14,8 @@ from app.schemas.business_requirement_story import (
 )
 from app.schemas.context_pack import ContextPackResponse
 from app.schemas.db_model_draft import DbModelDraftResponse
-from app.services.api_contract_service import ApiContractService
-from app.services.business_story_generation_service import BusinessStoryGenerationService
 from app.services.context_pack_service import ContextPackService
-from app.services.db_model_service import DbModelService
-from app.services.generation_service import GenerationService
+from app.services.streaming_generation_service import SSE_HEADERS, StreamingGenerationService
 
 router = APIRouter(prefix="/projects/{project_id}/generate")
 DbSession = Annotated[Session, Depends(get_db)]
@@ -29,7 +27,19 @@ DbSession = Annotated[Session, Depends(get_db)]
     status_code=status.HTTP_201_CREATED,
 )
 def generate_blueprint(db: DbSession, project_id: UUID) -> ProjectBlueprintRead:
-    return GenerationService(db).generate_project_blueprint(project_id)
+    service = StreamingGenerationService(db)
+    return service.generate(service.build_blueprint_spec(project_id))
+
+
+@router.post("/blueprint/stream")
+def generate_blueprint_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
+    service = StreamingGenerationService(db)
+    spec = service.build_blueprint_spec(project_id)
+    return StreamingResponse(
+        service.stream(spec),
+        media_type="text/event-stream",
+        headers=SSE_HEADERS,
+    )
 
 
 @router.post(
@@ -38,7 +48,19 @@ def generate_blueprint(db: DbSession, project_id: UUID) -> ProjectBlueprintRead:
     status_code=status.HTTP_201_CREATED,
 )
 def generate_api_contract(db: DbSession, project_id: UUID) -> ApiContractDraftResponse:
-    return ApiContractService(db).generate_api_contract(project_id)
+    service = StreamingGenerationService(db)
+    return service.generate(service.build_api_contract_spec(project_id))
+
+
+@router.post("/api-contract/stream")
+def generate_api_contract_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
+    service = StreamingGenerationService(db)
+    spec = service.build_api_contract_spec(project_id)
+    return StreamingResponse(
+        service.stream(spec),
+        media_type="text/event-stream",
+        headers=SSE_HEADERS,
+    )
 
 
 @router.post(
@@ -47,7 +69,19 @@ def generate_api_contract(db: DbSession, project_id: UUID) -> ApiContractDraftRe
     status_code=status.HTTP_201_CREATED,
 )
 def generate_db_model(db: DbSession, project_id: UUID) -> DbModelDraftResponse:
-    return DbModelService(db).generate_db_model(project_id)
+    service = StreamingGenerationService(db)
+    return service.generate(service.build_db_model_spec(project_id))
+
+
+@router.post("/db-model/stream")
+def generate_db_model_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
+    service = StreamingGenerationService(db)
+    spec = service.build_db_model_spec(project_id)
+    return StreamingResponse(
+        service.stream(spec),
+        media_type="text/event-stream",
+        headers=SSE_HEADERS,
+    )
 
 
 @router.post(
@@ -69,5 +103,21 @@ def generate_business_stories(
     project_id: UUID,
     payload: GenerateBusinessRequirementStoriesRequest,
 ) -> GenerateBusinessRequirementStoriesResponse:
-    stories = BusinessStoryGenerationService(db).generate_business_stories(project_id, payload)
+    service = StreamingGenerationService(db)
+    stories = service.generate(service.build_business_stories_spec(project_id, payload))
     return GenerateBusinessRequirementStoriesResponse(items=stories)
+
+
+@router.post("/business-stories/stream")
+def generate_business_stories_stream(
+    db: DbSession,
+    project_id: UUID,
+    payload: GenerateBusinessRequirementStoriesRequest,
+) -> StreamingResponse:
+    service = StreamingGenerationService(db)
+    spec = service.build_business_stories_spec(project_id, payload)
+    return StreamingResponse(
+        service.stream(spec),
+        media_type="text/event-stream",
+        headers=SSE_HEADERS,
+    )

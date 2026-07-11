@@ -42,7 +42,7 @@ LLM 配置说明：
 - `LLM_API_KEY`: 模型服务 API Key，请只放在本机 `.env` 或部署环境变量中，不要提交真实密钥。
 - `LLM_MODEL`: 文本模型名，例如 `qwen-plus`。
 - `LLM_TIMEOUT`: 单次请求超时时间，单位秒，默认 `60`。
-- `LLM_TIMEOUT_SECONDS`: OpenAI-compatible 业务需求故事生成接口的请求超时时间，单位秒，默认 `60`。
+- `LLM_TIMEOUT_SECONDS`: 兼容旧配置名；未单独设置时沿用 `LLM_TIMEOUT`，单位秒，默认 `60`。
 - `LLM_THINKING`: 是否启用支持思考模式的模型参数，默认 `false`。
 
 ## 启动数据库
@@ -109,6 +109,7 @@ uv run python -m uvicorn app.main:app --reload
 - `GET /api/v1/projects/{project_id}/business-stories`
 - `GET /api/v1/business-stories/{story_id}`
 - `PATCH /api/v1/business-stories/{story_id}`
+- `DELETE /api/v1/business-stories/{story_id}`
 - `POST /api/v1/projects/{project_id}/generate/api-contract`
 - `GET /api/v1/projects/{project_id}/api-contracts`
 - `GET /api/v1/api-contracts/{api_contract_id}`

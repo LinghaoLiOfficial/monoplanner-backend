@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.generation_run import BusinessStoryGenerationStatus
+
 
 class RequirementCreate(BaseModel):
     raw_text: str = Field(min_length=1)
@@ -18,5 +20,6 @@ class RequirementRead(BaseModel):
     source_type: str
     created_at: datetime
     updated_at: datetime
+    business_story_generation: BusinessStoryGenerationStatus | None = None
 
     model_config = ConfigDict(from_attributes=True)

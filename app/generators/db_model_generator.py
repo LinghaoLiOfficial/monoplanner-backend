@@ -1,6 +1,11 @@
 from typing import Any
 
-from app.llm.json_client import generate_json, should_use_real_llm
+from app.llm.json_client import generate_json
+from app.prompts.db_model_generator import SYSTEM_PROMPT, build_db_model_generation_payload
+
+
+class DbModelValidationError(ValueError):
+    """Raised when LLM DB model output does not match the expected shape."""
 
 
 def _to_table_name(entity_name: str) -> str:
@@ -65,64 +70,132 @@ def _normalize_fields(raw_fields: Any) -> list[dict[str, Any]]:
     return fields
 
 
-def build_db_model_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
-    if should_use_real_llm():
-        return build_llm_db_model_content(blueprint_content)
-    return _build_rule_based_db_model_content(blueprint_content)
+def build_db_model_content(
+    project: Any,
+    blueprint_content: dict[str, Any],
+    api_contract_content: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return build_llm_db_model_content(project, blueprint_content, api_contract_content)
 
 
-def build_llm_db_model_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
-    return generate_json(
-        system_prompt=(
-            "You are a senior database architect. Generate a PostgreSQL data model draft as "
-            "strict JSON from the project blueprint. Return only one JSON object, no markdown. "
-            "The object must contain database, entities, relationships, indexes, and "
-            "migration_notes."
+def build_llm_db_model_content(
+    project: Any,
+    blueprint_content: dict[str, Any],
+    api_contract_content: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    content = generate_json(
+        system_prompt=SYSTEM_PROMPT,
+        user_payload=build_db_model_generation_payload(
+            project,
+            blueprint_content,
+            api_contract_content,
         ),
-        user_payload={
-            "blueprint": blueprint_content,
-            "output_contract": {
-                "database": {
-                    "engine": "PostgreSQL",
-                    "orm": "SQLAlchemy 2.x",
-                    "migration_tool": "Alembic",
-                },
-                "entities": [
-                    {
-                        "name": "PascalCase",
-                        "table_name": "snake_case_plural",
-                        "description": "string",
-                        "fields": [
-                            {
-                                "name": "snake_case",
-                                "type": "uuid|string|text|integer|number|boolean|datetime|json",
-                                "primary_key": False,
-                                "nullable": False,
-                            }
-                        ],
-                        "relationships": [
-                            {
-                                "from": "EntityName",
-                                "to": "EntityName",
-                                "type": "one_to_many|many_to_one|many_to_many|one_to_one",
-                                "description": "string",
-                            }
-                        ],
-                    }
-                ],
-                "relationships": [
-                    {
-                        "from": "EntityName",
-                        "to": "EntityName",
-                        "type": "many_to_one",
-                        "description": "string",
-                    }
-                ],
-                "indexes": [{"table": "table_name", "fields": ["field_name"], "reason": "string"}],
-                "migration_notes": ["string"],
-            },
-        },
     )
+    return validate_db_model_content(content)
+
+
+def validate_db_model_content(content: dict[str, Any]) -> dict[str, Any]:
+    database = content.get("database")
+    if not isinstance(database, dict):
+        raise DbModelValidationError("DB model database is required.")
+    entities = content.get("entities")
+    if not isinstance(entities, list):
+        raise DbModelValidationError("DB model entities must be a list.")
+
+    normalized_entities = []
+    for entity in entities:
+        if not isinstance(entity, dict):
+            raise DbModelValidationError("DB model entity must be an object.")
+        fields = entity.get("fields")
+        if not isinstance(fields, list):
+            raise DbModelValidationError("DB model entity fields must be a list.")
+        normalized_entities.append(
+            {
+                "name": _require_string(entity.get("name"), "entities.name"),
+                "table_name": _string_or_default(
+                    entity.get("table_name"),
+                    _to_table_name(_require_string(entity.get("name"), "entities.name")),
+                ),
+                "description": _string_or_default(entity.get("description"), ""),
+                "fields": _normalize_model_fields(fields),
+                "relationships": entity.get("relationships")
+                if isinstance(entity.get("relationships"), list)
+                else [],
+            }
+        )
+
+    return {
+        "database": {
+            "engine": _string_or_default(database.get("engine"), "PostgreSQL"),
+            "orm": _string_or_default(database.get("orm"), "SQLAlchemy 2.x"),
+            "migration_tool": _string_or_default(database.get("migration_tool"), "Alembic"),
+        },
+        "entities": normalized_entities,
+        "relationships": content.get("relationships")
+        if isinstance(content.get("relationships"), list)
+        else [],
+        "indexes": _normalize_indexes(content.get("indexes")),
+        "migration_notes": _string_list(content.get("migration_notes")),
+    }
+
+
+def _normalize_model_fields(fields: list[Any]) -> list[dict[str, Any]]:
+    normalized = []
+    seen: set[str] = set()
+    for field in fields:
+        if not isinstance(field, dict):
+            raise DbModelValidationError("DB model field must be an object.")
+        name = _require_string(field.get("name"), "entities.fields.name")
+        seen.add(name)
+        normalized.append(
+            {
+                "name": name,
+                "type": _require_string(field.get("type"), "entities.fields.type"),
+                "primary_key": bool(field.get("primary_key", name == "id")),
+                "nullable": bool(field.get("nullable", name != "id")),
+                "description": _string_or_default(field.get("description"), ""),
+            }
+        )
+    if "id" not in seen:
+        normalized.insert(
+            0,
+            {
+                "name": "id",
+                "type": "uuid",
+                "primary_key": True,
+                "nullable": False,
+                "description": "Primary key",
+            },
+        )
+    for audit_field in ("created_at", "updated_at"):
+        if audit_field not in seen:
+            normalized.append(
+                {
+                    "name": audit_field,
+                    "type": "datetime",
+                    "primary_key": False,
+                    "nullable": False,
+                    "description": f"{audit_field} audit timestamp",
+                }
+            )
+    return normalized
+
+
+def _normalize_indexes(indexes: Any) -> list[dict[str, Any]]:
+    if not isinstance(indexes, list):
+        return []
+    normalized = []
+    for index in indexes:
+        if not isinstance(index, dict):
+            raise DbModelValidationError("DB model index must be an object.")
+        normalized.append(
+            {
+                "table": _require_string(index.get("table"), "indexes.table"),
+                "fields": _string_list(index.get("fields")),
+                "reason": _require_string(index.get("reason"), "indexes.reason"),
+            }
+        )
+    return normalized
 
 
 def _build_rule_based_db_model_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
@@ -193,3 +266,21 @@ def _build_rule_based_db_model_content(blueprint_content: dict[str, Any]) -> dic
             "Keep service-layer business logic out of FastAPI routes.",
         ],
     }
+
+
+def _require_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise DbModelValidationError(f"DB model {field_name} is required.")
+    return value.strip()
+
+
+def _string_or_default(value: Any, default: str) -> str:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return default
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]

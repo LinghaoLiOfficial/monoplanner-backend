@@ -1,6 +1,13 @@
 from typing import Any
 
-from app.llm.json_client import generate_json, should_use_real_llm
+from app.llm.json_client import generate_json
+from app.prompts.api_contract_generator import SYSTEM_PROMPT, build_api_contract_generation_payload
+
+VALID_METHODS = {"GET", "POST", "PATCH", "PUT", "DELETE"}
+
+
+class ApiContractValidationError(ValueError):
+    """Raised when LLM API contract output does not match the expected shape."""
 
 _OPERATION_MAP = {
     "list": ("GET", "/{resource}", "list_{resource}", "List {resource}"),
@@ -57,67 +64,113 @@ def _normalize_fields(raw_fields: Any) -> list[dict[str, Any]]:
     return fields
 
 
-def build_api_contract_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
-    if should_use_real_llm():
-        return build_llm_api_contract_content(blueprint_content)
-    return _build_rule_based_api_contract_content(blueprint_content)
+def build_api_contract_content(project: Any, blueprint_content: dict[str, Any]) -> dict[str, Any]:
+    return build_llm_api_contract_content(project, blueprint_content)
 
 
-def build_llm_api_contract_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
+def build_llm_api_contract_content(
+    project: Any,
+    blueprint_content: dict[str, Any],
+) -> dict[str, Any]:
     content = generate_json(
-        system_prompt=(
-            "You are a senior backend API architect. Generate a REST API contract as strict "
-            "JSON from the project blueprint. Return only one JSON object, no markdown. The "
-            "object must contain base_path, resources, schemas, error_model, and notes."
-        ),
-        user_payload={
-            "blueprint": blueprint_content,
-            "output_contract": {
-                "base_path": "/api/v1",
-                "resources": [
-                    {
-                        "name": "plural resource name",
-                        "description": "string",
-                        "endpoints": [
-                            {
-                                "method": "GET|POST|PATCH|DELETE",
-                                "path": "/resource/{id}",
-                                "operation_id": "snake_case",
-                                "purpose": "string",
-                                "request_body": "SchemaName|null",
-                                "response_body": "SchemaName",
-                                "auth_required": False,
-                                "errors": ["400", "404", "500"],
-                            }
-                        ],
-                    }
-                ],
-                "schemas": [
-                    {
-                        "name": "SchemaName",
-                        "fields": [
-                            {
-                                "name": "snake_case",
-                                "type": "string|uuid|integer|number|boolean|datetime|object|array",
-                                "required": True,
-                                "description": "string",
-                            }
-                        ],
-                    }
-                ],
-                "error_model": {
-                    "name": "ApiError",
-                    "fields": [
-                        {"name": "code", "type": "string", "required": True},
-                        {"name": "message", "type": "string", "required": True},
-                    ],
-                },
-                "notes": ["string"],
-            },
-        },
+        system_prompt=SYSTEM_PROMPT,
+        user_payload=build_api_contract_generation_payload(project, blueprint_content),
     )
-    content.setdefault("base_path", "/api/v1")
-    return content
+    return validate_api_contract_content(content)
+
+
+def validate_api_contract_content(content: dict[str, Any]) -> dict[str, Any]:
+    base_path = content.get("base_path")
+    if not isinstance(base_path, str) or not base_path.startswith("/"):
+        raise ApiContractValidationError("API contract base_path is required.")
+    resources = content.get("resources")
+    if not isinstance(resources, list):
+        raise ApiContractValidationError("API contract resources must be a list.")
+    schemas = content.get("schemas")
+    if not isinstance(schemas, list):
+        raise ApiContractValidationError("API contract schemas must be a list.")
+
+    normalized_resources = []
+    for resource in resources:
+        if not isinstance(resource, dict):
+            raise ApiContractValidationError("API contract resource must be an object.")
+        endpoints = resource.get("endpoints")
+        if not isinstance(endpoints, list):
+            raise ApiContractValidationError("API contract resource endpoints must be a list.")
+        normalized_endpoints = [_normalize_endpoint(endpoint) for endpoint in endpoints]
+        normalized_resources.append(
+            {
+                "name": _require_string(resource.get("name"), "resources.name"),
+                "description": _string_or_default(resource.get("description"), ""),
+                "endpoints": normalized_endpoints,
+            }
+        )
+
+    normalized_schemas = []
+    for schema in schemas:
+        if not isinstance(schema, dict):
+            raise ApiContractValidationError("API contract schema must be an object.")
+        normalized_schemas.append(
+            {
+                "name": _require_string(schema.get("name"), "schemas.name"),
+                "fields": _normalize_schema_fields(schema.get("fields")),
+            }
+        )
+
+    error_model = content.get("error_model")
+    if not isinstance(error_model, dict):
+        error_model = {
+            "name": "ApiError",
+            "fields": [
+                {"name": "code", "type": "string", "required": True},
+                {"name": "message", "type": "string", "required": True},
+                {"name": "details", "type": "object", "required": False},
+            ],
+        }
+
+    return {
+        "base_path": base_path.rstrip("/") if base_path != "/" else base_path,
+        "resources": normalized_resources,
+        "schemas": normalized_schemas,
+        "error_model": error_model,
+        "notes": _string_list(content.get("notes")),
+    }
+
+
+def _normalize_endpoint(endpoint: Any) -> dict[str, Any]:
+    if not isinstance(endpoint, dict):
+        raise ApiContractValidationError("API contract endpoint must be an object.")
+    method = _require_string(endpoint.get("method"), "endpoints.method").upper()
+    if method not in VALID_METHODS:
+        raise ApiContractValidationError("API contract endpoint method is invalid.")
+    return {
+        "method": method,
+        "path": _require_string(endpoint.get("path"), "endpoints.path"),
+        "operation_id": _string_or_default(endpoint.get("operation_id"), ""),
+        "purpose": _require_string(endpoint.get("purpose"), "endpoints.purpose"),
+        "request_body": endpoint.get("request_body"),
+        "response_body": endpoint.get("response_body"),
+        "auth_required": bool(endpoint.get("auth_required", True)),
+        "errors": _string_list(endpoint.get("errors")),
+    }
+
+
+def _normalize_schema_fields(fields: Any) -> list[dict[str, Any]]:
+    if not isinstance(fields, list):
+        return []
+    normalized = []
+    for field in fields:
+        if not isinstance(field, dict):
+            raise ApiContractValidationError("API contract schema field must be an object.")
+        normalized.append(
+            {
+                "name": _require_string(field.get("name"), "schemas.fields.name"),
+                "type": _string_or_default(field.get("type"), "string"),
+                "required": bool(field.get("required", False)),
+                "description": _string_or_default(field.get("description"), ""),
+            }
+        )
+    return normalized
 
 
 def _build_rule_based_api_contract_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
@@ -206,3 +259,21 @@ def _build_rule_based_api_contract_content(blueprint_content: dict[str, Any]) ->
         },
         "notes": ["This is a draft API contract generated from the project blueprint."],
     }
+
+
+def _require_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ApiContractValidationError(f"API contract {field_name} is required.")
+    return value.strip()
+
+
+def _string_or_default(value: Any, default: str) -> str:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return default
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]

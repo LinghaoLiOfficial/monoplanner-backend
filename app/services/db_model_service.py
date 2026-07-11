@@ -1,15 +1,32 @@
+import logging
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.generators.db_model_generator import build_db_model_content
+from app.generators.db_model_generator import DbModelValidationError, build_db_model_content
+from app.llm.client import (
+    CONFIGURATION_ERROR_DETAIL,
+    EMPTY_RESPONSE_DETAIL,
+    REQUEST_ERROR_DETAIL,
+    RESPONSE_FORMAT_ERROR_DETAIL,
+    LLMConfigurationError,
+    LLMEmptyResponseError,
+    LLMRequestError,
+    LLMResponseFormatError,
+)
 from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
+from app.services.api_contract_service import ApiContractService
 from app.services.blueprint_service import BlueprintService
 from app.services.project_service import ProjectService
+
+logger = logging.getLogger(__name__)
+RUN_TYPE = "generate_db_model"
+NO_BLUEPRINT_MESSAGE = "请先生成项目蓝图。"
 
 
 class DbModelService:
@@ -17,19 +34,45 @@ class DbModelService:
         self.db = db
 
     def generate_db_model(self, project_id: UUID) -> DbModelDraft:
-        ProjectService(self.db).get_project(project_id)
+        project = ProjectService(self.db).get_project(project_id)
         blueprint = BlueprintService(self.db).get_latest_blueprint(project_id)
         if blueprint is None:
-            self._record_failed_run(
-                project_id, "Project has no blueprint to generate a DB model from."
-            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Project has no blueprint to generate a DB model from.",
+                detail=NO_BLUEPRINT_MESSAGE,
             )
+        if not isinstance(blueprint.content, dict) or not blueprint.content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="项目蓝图内容为空，无法生成数据库模型。",
+            )
+        api_contract = ApiContractService(self.db).get_latest_api_contract(project_id)
+        api_contract_content = api_contract.content if api_contract is not None else None
 
+        run = GenerationRun(
+            project_id=project_id,
+            run_type=RUN_TYPE,
+            status="running",
+            input_snapshot={
+                "project_id": str(project_id),
+                "source": "project + latest_blueprint + optional_latest_api_contract",
+                "blueprint_id": str(blueprint.id),
+                "blueprint_version": blueprint.version,
+                "api_contract_id": str(api_contract.id) if api_contract is not None else None,
+                "api_contract_version": api_contract.version if api_contract is not None else None,
+            },
+        )
+        self.db.add(run)
+        self.db.commit()
+        self.db.refresh(run)
+        logger.info(
+            "db_model.generate.start project_id=%s blueprint_id=%s run_id=%s",
+            project_id,
+            blueprint.id,
+            run.id,
+        )
         try:
-            content = build_db_model_content(blueprint.content)
+            content = build_db_model_content(project, blueprint.content, api_contract_content)
             draft = DbModelDraft(
                 project_id=project_id,
                 blueprint_id=blueprint.id,
@@ -40,28 +83,80 @@ class DbModelService:
             )
             self.db.add(draft)
             self.db.flush()
-            self.db.add(
-                GenerationRun(
-                    project_id=project_id,
-                    run_type="generate_db_model",
-                    status="completed",
-                    input_snapshot={
-                        "blueprint_id": str(blueprint.id),
-                        "version": blueprint.version,
-                    },
-                    output_snapshot={"db_model_id": str(draft.id), "version": draft.version},
-                    completed_at=datetime.now(UTC),
-                )
-            )
+            run.status = "completed"
+            run.output_snapshot = {
+                "db_model_id": str(draft.id),
+                "version": draft.version,
+                "summary": draft.summary,
+                "counts": _count_db_model_content(content),
+            }
+            run.completed_at = datetime.now(UTC)
+            self.db.add(run)
             self.db.commit()
             self.db.refresh(draft)
+            logger.info(
+                "db_model.generate.success project_id=%s db_model_id=%s",
+                project_id,
+                draft.id,
+            )
             return draft
+        except LLMConfigurationError as exc:
+            self._mark_run_failed(run, exc)
+            logger.warning(
+                "db_model.generate.failed project_id=%s error_type=%s message=%s",
+                project_id,
+                type(exc).__name__,
+                _excerpt(str(exc), 500),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=CONFIGURATION_ERROR_DETAIL,
+            ) from exc
+        except LLMRequestError as exc:
+            self._mark_run_failed(run, exc)
+            logger.warning(
+                "db_model.generate.failed project_id=%s error_type=%s message=%s",
+                project_id,
+                type(exc).__name__,
+                _excerpt(str(exc), 500),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=REQUEST_ERROR_DETAIL,
+            ) from exc
+        except LLMEmptyResponseError as exc:
+            self._mark_run_failed(run, exc)
+            logger.warning(
+                "db_model.generate.failed project_id=%s error_type=%s message=%s",
+                project_id,
+                type(exc).__name__,
+                _excerpt(str(exc), 500),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=EMPTY_RESPONSE_DETAIL,
+            ) from exc
+        except (LLMResponseFormatError, DbModelValidationError, ValueError) as exc:
+            self._mark_run_failed(run, exc)
+            logger.warning(
+                "db_model.generate.failed project_id=%s error_type=%s message=%s",
+                project_id,
+                type(exc).__name__,
+                _excerpt(str(exc), 500),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=RESPONSE_FORMAT_ERROR_DETAIL,
+            ) from exc
         except HTTPException:
             raise
         except Exception as exc:
-            self.db.rollback()
-            self._record_failed_run(project_id, str(exc))
-            raise
+            logger.exception("Failed to generate DB model for project %s", project_id)
+            self._mark_run_failed(run, exc)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="生成数据库模型草案失败，请检查项目数据或稍后重试。",
+            ) from exc
 
     def list_project_db_models(self, project_id: UUID) -> list[DbModelDraft]:
         ProjectService(self.db).get_project(project_id)
@@ -99,17 +194,26 @@ class DbModelService:
         )
         return 1 if latest is None else latest.version + 1
 
-    def _record_failed_run(self, project_id: UUID, error_message: str) -> None:
+    def _mark_run_failed(self, run: GenerationRun, exc: Exception) -> None:
         self.db.rollback()
-        self.db.add(
-            GenerationRun(
-                project_id=project_id,
-                run_type="generate_db_model",
-                status="failed",
-                input_snapshot={"project_id": str(project_id)},
-                output_snapshot=None,
-                error_message=error_message,
-                completed_at=datetime.now(UTC),
-            )
-        )
+        run.status = "failed"
+        run.output_snapshot = None
+        run.error_message = _excerpt(str(exc), 1000)
+        run.completed_at = datetime.now(UTC)
+        self.db.add(run)
         self.db.commit()
+
+
+def _count_db_model_content(content: dict[str, Any]) -> dict[str, int]:
+    return {
+        "entities": len(content.get("entities", [])),
+        "relationships": len(content.get("relationships", [])),
+        "indexes": len(content.get("indexes", [])),
+    }
+
+
+def _excerpt(value: str, limit: int) -> str:
+    compact = " ".join(value.split())
+    if len(compact) <= limit:
+        return compact
+    return f"{compact[:limit]}..."

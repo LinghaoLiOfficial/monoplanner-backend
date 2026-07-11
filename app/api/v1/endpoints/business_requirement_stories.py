@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -54,3 +54,13 @@ def update_business_story(
     payload: BusinessRequirementStoryUpdate,
 ) -> BusinessRequirementStoryResponse:
     return BusinessRequirementStoryService(db).update_story(story_id, payload)
+
+
+@router.delete(
+    "/business-stories/{story_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Business requirement story not found."}},
+)
+def delete_business_story(db: DbSession, story_id: UUID) -> Response:
+    BusinessRequirementStoryService(db).delete_story(story_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

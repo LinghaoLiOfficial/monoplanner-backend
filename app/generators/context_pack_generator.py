@@ -3,7 +3,7 @@ from typing import Any
 from app.llm.json_client import LLMJsonGenerationError, generate_json, should_use_real_llm
 
 FRONTEND_STACK = "Next.js + React + TypeScript + Tailwind CSS 4 + Shadcn/ui + pnpm"
-BACKEND_STACK = "Python 3.12+ + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL + uv"
+BACKEND_STACK = "Python 3.12 + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL + uv"
 
 
 def _project_summary(blueprint_content: dict[str, Any]) -> dict[str, Any]:

@@ -1,39 +1,51 @@
+import importlib
 import os
 from collections.abc import Generator
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session, sessionmaker
+
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql+psycopg://llh@localhost:5432/context_orchestrator_test",
+)
+
+
+def _ensure_safe_test_database_url(database_url: str) -> None:
+    url = make_url(database_url)
+    if not url.get_backend_name().startswith("postgresql"):
+        msg = "TEST_DATABASE_URL must use PostgreSQL."
+        raise RuntimeError(msg)
+    if not (url.database or "").endswith("_test"):
+        msg = "TEST_DATABASE_URL database name must end with '_test'."
+        raise RuntimeError(msg)
+
+
+_ensure_safe_test_database_url(TEST_DATABASE_URL)
+
 os.environ["APP_NAME"] = "Fullstack Context Orchestrator API"
-os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["BACKEND_CORS_ORIGINS"] = "http://localhost:3000,http://127.0.0.1:3000"
 os.environ["LLM_BASE_URL"] = ""
 os.environ["LLM_API_KEY"] = ""
 os.environ["LLM_MODEL"] = ""
+os.environ["AUTH_SECRET_KEY"] = "test-auth-secret"
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+security = importlib.import_module("app.core.security")
+User = importlib.import_module("app.models.user").User
+Base = importlib.import_module("app.db.base_class").Base
+app = importlib.import_module("app.main").app
+db_session_module = importlib.import_module("app.db.session")
 
-from app.api.deps import get_db
-from app.db.base_class import Base
-from app.main import app
-
-engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
 TestingSessionLocal = sessionmaker(
     bind=engine, autoflush=False, autocommit=False, expire_on_commit=False
 )
-
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+db_session_module.engine = engine
+db_session_module.SessionLocal = TestingSessionLocal
 
 
 @pytest.fixture(autouse=True)
@@ -53,11 +65,34 @@ def db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client(db_session: Session) -> Generator[TestClient, None, None]:
-    def override_get_db() -> Generator[Session, None, None]:
-        yield db_session
+def test_user(db_session: Session) -> User:
+    username = "testuser"
+    user = User(
+        email="test@example.com",
+        username=username,
+        password_hash=security.hash_password("StrongPass1!"),
+        role="user",
+        is_active=True,
+        is_email_verified=True,
+        avatar_seed=security.make_avatar_seed(username),
+        avatar_bg_color=security.make_avatar_color(username),
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
 
-    app.dependency_overrides[get_db] = override_get_db
+
+@pytest.fixture
+def client(db_session: Session, test_user: User) -> Generator[TestClient, None, None]:
+    from app.services.generation_queue_service import GenerationQueueService
+
+    GenerationQueueService(db_session).heartbeat_worker("test-worker")
+
     with TestClient(app) as test_client:
+        response = test_client.post(
+            "/api/v1/auth/login",
+            json={"username": test_user.username, "password": "StrongPass1!"},
+        )
+        assert response.status_code == 200
         yield test_client
-    app.dependency_overrides.clear()

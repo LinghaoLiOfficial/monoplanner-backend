@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON, Uuid
@@ -39,9 +39,26 @@ class GenerationRun(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     progress: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
     message: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    queue_payload: Mapped[dict[str, Any] | None] = mapped_column(json_type, nullable=True)
     input_snapshot: Mapped[dict[str, Any] | None] = mapped_column(json_type, nullable=True)
     output_snapshot: Mapped[dict[str, Any] | None] = mapped_column(json_type, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    locked_by: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    attempt_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    max_attempts: Mapped[int] = mapped_column(
+        Integer, default=3, server_default="3", nullable=False
+    )
+    queued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    locked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    next_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

@@ -1,10 +1,14 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
 from app.llm.client import LLMConfigurationError, LLMResponseFormatError
 from app.models.generation_run import GenerationRun
+from app.models.project import Project
 from app.models.requirement import Requirement
+from app.prompts.blueprint_generator import build_blueprint_generation_payload
 from tests.llm_stream_helpers import patch_llm_stream
+from tests.queue_helpers import run_generation_job_in_new_session, run_next_generation_job
 
 
 def _mock_blueprint_content() -> dict:
@@ -105,9 +109,10 @@ def test_generate_and_read_blueprint(client: TestClient, monkeypatch) -> None:
     )
 
     generate_response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
+    assert generate_response.status_code == 202
+    run_generation_job_in_new_session(generate_response.json()["id"])
 
-    assert generate_response.status_code == 201
-    blueprint = generate_response.json()
+    blueprint = client.get(f"/api/v1/projects/{project['id']}/blueprints").json()[0]
     assert blueprint["project_id"] == project["id"]
     assert blueprint["version"] == 1
     assert blueprint["title"] == "项目蓝图"
@@ -123,6 +128,58 @@ def test_generate_and_read_blueprint(client: TestClient, monkeypatch) -> None:
     detail_response = client.get(f"/api/v1/blueprints/{blueprint['id']}")
     assert detail_response.status_code == 200
     assert detail_response.json()["id"] == blueprint["id"]
+
+
+def test_generate_blueprint_uses_latest_project_target_stacks(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    patch_llm_stream(monkeypatch, _mock_blueprint_content())
+    project = client.post("/api/v1/projects", json={"name": "Latest Stacks"}).json()
+    client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={
+            "target_frontend_stack": "Astro + React",
+            "target_backend_stack": "FastAPI + SQLModel",
+        },
+    )
+    client.post(
+        f"/api/v1/projects/{project['id']}/requirements",
+        json={"raw_text": "use the configured stacks"},
+    )
+
+    generate_response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
+    assert generate_response.status_code == 202
+    run_generation_job_in_new_session(generate_response.json()["id"])
+
+    run = db_session.scalar(
+        select(GenerationRun).where(GenerationRun.run_type == "generate_blueprint")
+    )
+    assert run is not None
+    assert run.input_snapshot["target_frontend_stack"] == "Astro + React"
+    assert run.input_snapshot["target_backend_stack"] == "FastAPI + SQLModel"
+    blueprint = client.get(f"/api/v1/projects/{project['id']}/blueprints").json()[0]
+    assert blueprint["content"]["project"]["tech_stack"]["frontend"] == "Astro + React"
+    assert blueprint["content"]["project"]["tech_stack"]["backend"] == "FastAPI + SQLModel"
+
+
+def test_blueprint_payload_defaults_blank_project_target_stacks(db_session, test_user) -> None:
+    project = Project(
+        owner_user_id=test_user.id,
+        name="Blank Blueprint Stacks",
+        target_frontend_stack="",
+        target_backend_stack=" ",
+    )
+    requirement = Requirement(project=project, raw_text="blank stacks", language="zh-CN")
+    db_session.add(project)
+    db_session.add(requirement)
+    db_session.commit()
+
+    payload = build_blueprint_generation_payload(project, requirement, [])
+
+    assert payload["目标前端技术栈"] == DEFAULT_FRONTEND_STACK
+    assert payload["目标后端技术栈"] == DEFAULT_BACKEND_STACK
 
 
 def test_generate_blueprint_converts_generator_error_to_readable_500(
@@ -144,8 +201,8 @@ def test_generate_blueprint_converts_generator_error_to_readable_500(
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
 
-    assert response.status_code == 500
-    assert response.json()["detail"] == "生成失败，请检查项目数据或稍后重试。"
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(select(GenerationRun).where(GenerationRun.status == "failed"))
     assert run is not None
     assert run.run_type == "generate_blueprint"
@@ -169,10 +226,8 @@ def test_generate_blueprint_returns_503_when_llm_unconfigured(
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
 
-    assert response.status_code == 503
-    assert response.json()["detail"] == (
-        "LLM 服务未配置，请检查 LLM_API_KEY、LLM_BASE_URL 和 LLM_MODEL。"
-    )
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(GenerationRun.run_type == "generate_blueprint")
     )
@@ -197,8 +252,8 @@ def test_generate_blueprint_returns_502_when_llm_format_invalid(
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
 
-    assert response.status_code == 502
-    assert response.json()["detail"] == "LLM 返回的结构化结果格式不正确，请重试或调整模型配置。"
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(GenerationRun.run_type == "generate_blueprint")
     )
@@ -218,6 +273,7 @@ def test_delete_project_cascades_related_records(
         json={"raw_text": "cascade requirement"},
     )
     client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
+    run_next_generation_job(db_session)
 
     delete_response = client.delete(f"/api/v1/projects/{project['id']}")
 

@@ -23,6 +23,7 @@ from app.llm.client import (
 )
 from app.models.api_contract import ApiContractDraft
 from app.models.generation_run import GenerationRun
+from app.models.user import User
 from app.services.blueprint_service import BlueprintService
 from app.services.project_service import ProjectService
 
@@ -32,12 +33,13 @@ NO_BLUEPRINT_MESSAGE = "请先生成项目蓝图。"
 
 
 class ApiContractService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User | None = None) -> None:
         self.db = db
+        self.current_user = current_user
 
     def generate_api_contract(self, project_id: UUID) -> ApiContractDraft:
-        project = ProjectService(self.db).get_project(project_id)
-        blueprint = BlueprintService(self.db).get_latest_blueprint(project_id)
+        project = ProjectService(self.db, self.current_user).get_project(project_id)
+        blueprint = BlueprintService(self.db, self.current_user).get_latest_blueprint(project_id)
         if blueprint is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -158,7 +160,7 @@ class ApiContractService:
             ) from exc
 
     def list_project_api_contracts(self, project_id: UUID) -> list[ApiContractDraft]:
-        ProjectService(self.db).get_project(project_id)
+        ProjectService(self.db, self.current_user).get_project(project_id)
         return list(
             self.db.scalars(
                 select(ApiContractDraft)
@@ -174,6 +176,7 @@ class ApiContractService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="API contract draft not found.",
             )
+        ProjectService(self.db, self.current_user).get_project(draft.project_id)
         return draft
 
     def get_latest_api_contract(self, project_id: UUID) -> ApiContractDraft | None:

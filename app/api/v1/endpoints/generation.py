@@ -1,123 +1,117 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
-from app.schemas.api_contract import ApiContractDraftResponse
-from app.schemas.blueprint import ProjectBlueprintRead
+from app.api.deps import get_active_user, get_db
+from app.models.user import User
 from app.schemas.business_requirement_story import (
     GenerateBusinessRequirementStoriesRequest,
-    GenerateBusinessRequirementStoriesResponse,
 )
-from app.schemas.context_pack import ContextPackResponse
-from app.schemas.db_model_draft import DbModelDraftResponse
-from app.services.context_pack_service import ContextPackService
-from app.services.streaming_generation_service import SSE_HEADERS, StreamingGenerationService
+from app.schemas.generation_run import GenerationRunRead
+from app.services.generation_queue_service import GenerationQueueService
 
 router = APIRouter(prefix="/projects/{project_id}/generate")
+run_router = APIRouter(prefix="/generation-runs")
 DbSession = Annotated[Session, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_active_user)]
 
 
 @router.post(
     "/blueprint",
-    response_model=ProjectBlueprintRead,
-    status_code=status.HTTP_201_CREATED,
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
-def generate_blueprint(db: DbSession, project_id: UUID) -> ProjectBlueprintRead:
-    service = StreamingGenerationService(db)
-    return service.generate(service.build_blueprint_spec(project_id))
+def generate_blueprint(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_blueprint(project_id)
 
 
 @router.post("/blueprint/stream")
-def generate_blueprint_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
-    service = StreamingGenerationService(db)
-    spec = service.build_blueprint_spec(project_id)
-    return StreamingResponse(
-        service.stream(spec),
-        media_type="text/event-stream",
-        headers=SSE_HEADERS,
-    )
+def generate_blueprint_stream() -> None:
+    raise _stream_deprecated()
 
 
 @router.post(
     "/api-contract",
-    response_model=ApiContractDraftResponse,
-    status_code=status.HTTP_201_CREATED,
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
-def generate_api_contract(db: DbSession, project_id: UUID) -> ApiContractDraftResponse:
-    service = StreamingGenerationService(db)
-    return service.generate(service.build_api_contract_spec(project_id))
+def generate_api_contract(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_api_contract(project_id)
 
 
 @router.post("/api-contract/stream")
-def generate_api_contract_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
-    service = StreamingGenerationService(db)
-    spec = service.build_api_contract_spec(project_id)
-    return StreamingResponse(
-        service.stream(spec),
-        media_type="text/event-stream",
-        headers=SSE_HEADERS,
-    )
+def generate_api_contract_stream() -> None:
+    raise _stream_deprecated()
 
 
 @router.post(
     "/db-model",
-    response_model=DbModelDraftResponse,
-    status_code=status.HTTP_201_CREATED,
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
-def generate_db_model(db: DbSession, project_id: UUID) -> DbModelDraftResponse:
-    service = StreamingGenerationService(db)
-    return service.generate(service.build_db_model_spec(project_id))
+def generate_db_model(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_db_model(project_id)
 
 
 @router.post("/db-model/stream")
-def generate_db_model_stream(db: DbSession, project_id: UUID) -> StreamingResponse:
-    service = StreamingGenerationService(db)
-    spec = service.build_db_model_spec(project_id)
-    return StreamingResponse(
-        service.stream(spec),
-        media_type="text/event-stream",
-        headers=SSE_HEADERS,
-    )
+def generate_db_model_stream() -> None:
+    raise _stream_deprecated()
 
 
 @router.post(
     "/context-packs",
-    response_model=list[ContextPackResponse],
-    status_code=status.HTTP_201_CREATED,
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
-def generate_context_packs(db: DbSession, project_id: UUID) -> list[ContextPackResponse]:
-    return ContextPackService(db).generate_context_packs(project_id)
+def generate_context_packs(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_context_packs(project_id)
 
 
 @router.post(
     "/business-stories",
-    response_model=GenerateBusinessRequirementStoriesResponse,
-    status_code=status.HTTP_201_CREATED,
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 def generate_business_stories(
     db: DbSession,
+    current_user: CurrentUser,
     project_id: UUID,
     payload: GenerateBusinessRequirementStoriesRequest,
-) -> GenerateBusinessRequirementStoriesResponse:
-    service = StreamingGenerationService(db)
-    stories = service.generate(service.build_business_stories_spec(project_id, payload))
-    return GenerateBusinessRequirementStoriesResponse(items=stories)
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_business_stories(project_id, payload)
 
 
 @router.post("/business-stories/stream")
 def generate_business_stories_stream(
-    db: DbSession,
-    project_id: UUID,
-    payload: GenerateBusinessRequirementStoriesRequest,
-) -> StreamingResponse:
-    service = StreamingGenerationService(db)
-    spec = service.build_business_stories_spec(project_id, payload)
-    return StreamingResponse(
-        service.stream(spec),
-        media_type="text/event-stream",
-        headers=SSE_HEADERS,
+    _: GenerateBusinessRequirementStoriesRequest,
+) -> None:
+    raise _stream_deprecated()
+
+
+@run_router.get("/{run_id}", response_model=GenerationRunRead)
+def get_generation_run(db: DbSession, current_user: CurrentUser, run_id: UUID) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).get_run(run_id)
+
+
+@run_router.post("/{run_id}/cancel", response_model=GenerationRunRead)
+def cancel_generation_run(
+    db: DbSession, current_user: CurrentUser, run_id: UUID
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).cancel_queued(run_id)
+
+
+def _stream_deprecated() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="流式生成接口已弃用，请调用普通生成接口获取 run_id 后轮询任务状态。",
     )

@@ -5,15 +5,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.blueprint import ProjectBlueprint
+from app.models.user import User
 from app.services.project_service import ProjectService
 
 
 class BlueprintService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User | None = None) -> None:
         self.db = db
+        self.current_user = current_user
 
     def list_project_blueprints(self, project_id: UUID) -> list[ProjectBlueprint]:
-        ProjectService(self.db).get_project(project_id)
+        ProjectService(self.db, self.current_user).get_project(project_id)
         return list(
             self.db.scalars(
                 select(ProjectBlueprint)
@@ -29,6 +31,7 @@ class BlueprintService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Project blueprint not found.",
             )
+        ProjectService(self.db, self.current_user).get_project(blueprint.project_id)
         return blueprint
 
     def get_next_version(self, project_id: UUID) -> int:

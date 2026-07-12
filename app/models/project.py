@@ -4,10 +4,11 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
@@ -18,18 +19,20 @@ if TYPE_CHECKING:
     from app.models.db_model_draft import DbModelDraft
     from app.models.generation_run import GenerationRun
     from app.models.requirement import Requirement
-
-DEFAULT_FRONTEND_STACK = "Next.js + React + TypeScript + Tailwind CSS 4 + Shadcn/ui + pnpm"
-DEFAULT_BACKEND_STACK = (
-    "Python 3.12+ + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL + uv"
-)
-
+    from app.models.user import User
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_projects_owner_name"),)
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    owner_user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text(), nullable=True)
     target_frontend_stack: Mapped[str] = mapped_column(
         Text(), nullable=False, default=DEFAULT_FRONTEND_STACK
@@ -52,6 +55,7 @@ class Project(Base):
         nullable=False,
     )
 
+    owner: Mapped[User] = relationship(back_populates="projects")
     requirements: Mapped[list[Requirement]] = relationship(
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )

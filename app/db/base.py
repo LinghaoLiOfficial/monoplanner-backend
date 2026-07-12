@@ -4,11 +4,14 @@ from app.models import (
     BusinessRequirementStory,
     ContextPack,
     DbModelDraft,
+    EmailVerificationCode,
     GenerationRun,
+    GenerationWorker,
     Project,
     ProjectBlueprint,
     Requirement,
     TemplateItem,
+    User,
 )
 
 __all__ = [
@@ -17,9 +20,12 @@ __all__ = [
     "BusinessRequirementStory",
     "ContextPack",
     "DbModelDraft",
+    "EmailVerificationCode",
     "GenerationRun",
+    "GenerationWorker",
     "Project",
     "ProjectBlueprint",
     "Requirement",
     "TemplateItem",
+    "User",
 ]

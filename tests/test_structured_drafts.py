@@ -7,6 +7,7 @@ from app.models.context_pack import ContextPack
 from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from tests.llm_stream_helpers import patch_llm_stream, patch_llm_stream_sequence
+from tests.queue_helpers import run_generation_job_in_new_session
 
 
 def _mock_blueprint_content() -> dict:
@@ -153,7 +154,8 @@ def _create_project_with_blueprint(
         json={"raw_text": "做一个可以把业务需求转成结构化上下文包的工具"},
     )
     blueprint_response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
-    assert blueprint_response.status_code == 201
+    assert blueprint_response.status_code == 202
+    run_generation_job_in_new_session(blueprint_response.json()["id"])
     return project
 
 
@@ -163,8 +165,9 @@ def test_generate_list_and_read_api_contract(client: TestClient, monkeypatch) ->
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/api-contract")
 
-    assert response.status_code == 201
-    draft = response.json()
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    draft = client.get(f"/api/v1/projects/{project['id']}/api-contracts").json()[0]
     assert draft["project_id"] == project["id"]
     assert draft["version"] == 1
     assert draft["base_path"] == "/api/v1"
@@ -186,8 +189,9 @@ def test_generate_list_and_read_db_model(client: TestClient, monkeypatch) -> Non
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/db-model")
 
-    assert response.status_code == 201
-    draft = response.json()
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    draft = client.get(f"/api/v1/projects/{project['id']}/db-models").json()[0]
     assert draft["project_id"] == project["id"]
     assert draft["version"] == 1
     assert draft["content"]["database"]["engine"] == "PostgreSQL"
@@ -206,13 +210,16 @@ def test_generate_list_and_read_db_model(client: TestClient, monkeypatch) -> Non
 def test_generate_context_packs_filter_and_export(client: TestClient, monkeypatch) -> None:
     _patch_structured_generators(monkeypatch)
     project = _create_project_with_blueprint(client, monkeypatch, patch_blueprint=False)
-    client.post(f"/api/v1/projects/{project['id']}/generate/api-contract")
-    client.post(f"/api/v1/projects/{project['id']}/generate/db-model")
+    api_run = client.post(f"/api/v1/projects/{project['id']}/generate/api-contract").json()
+    run_generation_job_in_new_session(api_run["id"])
+    db_run = client.post(f"/api/v1/projects/{project['id']}/generate/db-model").json()
+    run_generation_job_in_new_session(db_run["id"])
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/context-packs")
 
-    assert response.status_code == 201
-    packs = response.json()
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    packs = client.get(f"/api/v1/projects/{project['id']}/context-packs").json()
     roles = {pack["role"] for pack in packs}
     assert roles == {"frontend_engineer", "backend_engineer"}
     assert "API Contract Subset" in next(
@@ -249,8 +256,10 @@ def test_context_packs_can_generate_with_missing_drafts(client: TestClient, monk
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/context-packs")
 
-    assert response.status_code == 201
-    backend_pack = next(pack for pack in response.json() if pack["role"] == "backend_engineer")
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    packs = client.get(f"/api/v1/projects/{project['id']}/context-packs").json()
+    backend_pack = next(pack for pack in packs if pack["role"] == "backend_engineer")
     assert "DbModelDraft has not been generated yet" in backend_pack["prompt_text"]
 
 
@@ -262,9 +271,12 @@ def test_consistency_check_warning_then_passed(client: TestClient, monkeypatch) 
     assert warning_response.status_code == 200
     assert warning_response.json()["status"] == "warning"
 
-    client.post(f"/api/v1/projects/{project['id']}/generate/api-contract")
-    client.post(f"/api/v1/projects/{project['id']}/generate/db-model")
-    client.post(f"/api/v1/projects/{project['id']}/generate/context-packs")
+    api_run = client.post(f"/api/v1/projects/{project['id']}/generate/api-contract").json()
+    run_generation_job_in_new_session(api_run["id"])
+    db_run = client.post(f"/api/v1/projects/{project['id']}/generate/db-model").json()
+    run_generation_job_in_new_session(db_run["id"])
+    pack_run = client.post(f"/api/v1/projects/{project['id']}/generate/context-packs").json()
+    run_generation_job_in_new_session(pack_run["id"])
 
     passed_response = client.get(f"/api/v1/projects/{project['id']}/consistency-check")
     assert passed_response.status_code == 200
@@ -297,7 +309,8 @@ def test_api_contract_returns_503_and_records_failed_run(
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/api-contract")
 
-    assert response.status_code == 503
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(GenerationRun.run_type == "generate_api_contract")
     )
@@ -319,8 +332,8 @@ def test_db_model_returns_502_and_records_failed_run(
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/db-model")
 
-    assert response.status_code == 502
-    assert response.json()["detail"] == "LLM 返回的结构化结果格式不正确，请重试或调整模型配置。"
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(GenerationRun.run_type == "generate_db_model")
     )
@@ -333,9 +346,12 @@ def test_delete_project_cascades_structured_drafts(
 ) -> None:
     _patch_structured_generators(monkeypatch)
     project = _create_project_with_blueprint(client, monkeypatch, patch_blueprint=False)
-    client.post(f"/api/v1/projects/{project['id']}/generate/api-contract")
-    client.post(f"/api/v1/projects/{project['id']}/generate/db-model")
-    client.post(f"/api/v1/projects/{project['id']}/generate/context-packs")
+    api_run = client.post(f"/api/v1/projects/{project['id']}/generate/api-contract").json()
+    run_generation_job_in_new_session(api_run["id"])
+    db_run = client.post(f"/api/v1/projects/{project['id']}/generate/db-model").json()
+    run_generation_job_in_new_session(db_run["id"])
+    pack_run = client.post(f"/api/v1/projects/{project['id']}/generate/context-packs").json()
+    run_generation_job_in_new_session(pack_run["id"])
 
     delete_response = client.delete(f"/api/v1/projects/{project['id']}")
 

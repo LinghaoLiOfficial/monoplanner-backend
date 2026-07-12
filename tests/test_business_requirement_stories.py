@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.generation_run import GenerationRun
 from tests.llm_stream_helpers import patch_llm_stream, patch_llm_stream_sequence
+from tests.queue_helpers import run_generation_job_in_new_session
 
 VALID_LLM_OUTPUT = """
 {
@@ -67,8 +68,9 @@ def _create_business_stories(client: TestClient, monkeypatch) -> list[dict]:
         f"/api/v1/projects/{project['id']}/generate/business-stories",
         json={"requirement_id": requirement["id"]},
     )
-    assert response.status_code == 201
-    return response.json()["items"]
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    return client.get(f"/api/v1/projects/{project['id']}/business-stories").json()
 
 
 def test_generate_business_stories_returns_404_for_missing_project(client: TestClient) -> None:
@@ -101,7 +103,8 @@ def test_generate_business_stories_requires_configured_llm(
         json={},
     )
 
-    assert response.status_code == 503
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(
             GenerationRun.run_type == "generate_business_requirement_stories"
@@ -125,12 +128,13 @@ def test_generate_list_update_and_read_business_stories(
         json={"requirement_id": requirement["id"], "overwrite": False},
     )
 
-    assert response.status_code == 201
-    payload = response.json()
-    assert len(payload["items"]) == 2
-    assert payload["items"][0]["status"] == "draft"
-    assert payload["items"][0]["priority"] == "p1_must"
-    assert payload["items"][0]["generation_run_id"] is not None
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    payload = client.get(f"/api/v1/projects/{project['id']}/business-stories").json()
+    assert len(payload) == 2
+    assert payload[0]["status"] == "draft"
+    assert payload[0]["priority"] == "p1_must"
+    assert payload[0]["generation_run_id"] is not None
 
     run = db_session.scalar(
         select(GenerationRun).where(
@@ -211,7 +215,8 @@ def test_failed_business_story_generation_status_is_persisted(
         json={"requirement_id": requirement["id"]},
     )
 
-    assert response.status_code == 502
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(
             GenerationRun.run_type == "generate_business_requirement_stories"
@@ -378,7 +383,8 @@ def test_generate_business_stories_requests_json_object_response_format(
         json={},
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     assert calls[0]["extra_params"] == {"response_format": {"type": "json_object"}}
 
 
@@ -396,7 +402,8 @@ def test_generate_business_stories_returns_502_for_invalid_json_output(
         json={},
     )
 
-    assert response.status_code == 502
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(
             GenerationRun.run_type == "generate_business_requirement_stories"
@@ -418,8 +425,8 @@ def test_generate_business_stories_validates_llm_output(
         json={},
     )
 
-    assert response.status_code == 502
-    assert response.json()["detail"] == "LLM 返回的结构化结果格式不正确，请重试或调整模型配置。"
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(
             GenerationRun.run_type == "generate_business_requirement_stories"
@@ -440,7 +447,8 @@ def test_generate_business_stories_fails_when_no_valid_story(
         json={},
     )
 
-    assert response.status_code == 502
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
     run = db_session.scalar(
         select(GenerationRun).where(
             GenerationRun.run_type == "generate_business_requirement_stories"
@@ -468,8 +476,10 @@ def test_generate_business_stories_overwrite_false_appends_existing(
         json={"requirement_id": requirement["id"], "overwrite": False},
     )
 
-    assert first.status_code == 201
-    assert second.status_code == 201
+    assert first.status_code == 202
+    assert second.status_code == 202
+    run_generation_job_in_new_session(first.json()["id"])
+    run_generation_job_in_new_session(second.json()["id"])
     stories = db_session.scalars(select(BusinessRequirementStory)).all()
     assert len(stories) == 4
     assert {str(story.requirement_id) for story in stories} == {requirement["id"]}
@@ -494,8 +504,10 @@ def test_generate_business_stories_overwrite_replaces_existing(
         json={"requirement_id": requirement["id"], "overwrite": True},
     )
 
-    assert first.status_code == 201
-    assert second.status_code == 201
+    assert first.status_code == 202
+    assert second.status_code == 202
+    run_generation_job_in_new_session(first.json()["id"])
+    run_generation_job_in_new_session(second.json()["id"])
     stories = db_session.scalars(select(BusinessRequirementStory)).all()
     assert len(stories) == 2
 
@@ -509,7 +521,9 @@ def test_delete_business_story_removes_single_story(
         f"/api/v1/projects/{project['id']}/generate/business-stories",
         json={"requirement_id": requirement["id"]},
     )
-    stories = generate_response.json()["items"]
+    assert generate_response.status_code == 202
+    run_generation_job_in_new_session(generate_response.json()["id"])
+    stories = client.get(f"/api/v1/projects/{project['id']}/business-stories").json()
     deleted_story_id = stories[0]["id"]
     remaining_story_id = stories[1]["id"]
 
@@ -579,15 +593,17 @@ def test_blueprint_includes_business_stories_when_available(
             "open_questions": [],
         },
     )
-    client.post(
+    story_response = client.post(
         f"/api/v1/projects/{project['id']}/generate/business-stories",
         json={"requirement_id": requirement["id"]},
     )
+    run_generation_job_in_new_session(story_response.json()["id"])
 
     response = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint")
 
-    assert response.status_code == 201
-    blueprint = response.json()
+    assert response.status_code == 202
+    run_generation_job_in_new_session(response.json()["id"])
+    blueprint = client.get(f"/api/v1/projects/{project['id']}/blueprints").json()[0]
     assert len(blueprint["content"]["business_requirement_stories"]) == 2
     assert blueprint["content"]["business_requirement_stories"][0]["title"] == "创建任务"
 
@@ -597,10 +613,11 @@ def test_delete_project_cascades_business_stories(
 ) -> None:
     project, requirement = _create_project_with_requirement(client)
     patch_llm_stream(monkeypatch, VALID_LLM_OUTPUT_DICT)
-    client.post(
+    generate_response = client.post(
         f"/api/v1/projects/{project['id']}/generate/business-stories",
         json={"requirement_id": requirement["id"]},
     )
+    run_generation_job_in_new_session(generate_response.json()["id"])
 
     response = client.delete(f"/api/v1/projects/{project['id']}")
 

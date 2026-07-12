@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
 from app.generators.blueprint_generator import (
     BlueprintValidationError,
     build_project_blueprint_content,
@@ -64,6 +65,8 @@ class GenerationService:
             }
             for story in business_stories
         ]
+        frontend_stack = normalize_stack(project.target_frontend_stack, DEFAULT_FRONTEND_STACK)
+        backend_stack = normalize_stack(project.target_backend_stack, DEFAULT_BACKEND_STACK)
         run = GenerationRun(
             project_id=project_id,
             run_type=RUN_TYPE,
@@ -75,8 +78,8 @@ class GenerationService:
                 "business_requirement_story_ids": [
                     story["id"] for story in business_story_context
                 ],
-                "target_frontend_stack": project.target_frontend_stack,
-                "target_backend_stack": project.target_backend_stack,
+                "target_frontend_stack": frontend_stack,
+                "target_backend_stack": backend_stack,
             },
         )
         self.db.add(run)

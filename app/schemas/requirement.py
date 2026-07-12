@@ -1,9 +1,12 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.generation_run import BusinessStoryGenerationStatus
+
+RequirementProgressStatus = Literal["in_progress", "success", "failed"]
 
 
 class RequirementCreate(BaseModel):
@@ -20,6 +23,9 @@ class RequirementRead(BaseModel):
     source_type: str
     created_at: datetime
     updated_at: datetime
+    progress_status: RequirementProgressStatus = "success"
+    progress_label: str = "成功"
+    progress_text: str = "更新成功"
     business_story_generation: BusinessStoryGenerationStatus | None = None
 
     model_config = ConfigDict(from_attributes=True)

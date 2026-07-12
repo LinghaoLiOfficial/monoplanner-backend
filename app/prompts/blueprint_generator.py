@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
+
 SYSTEM_PROMPT = (
     "你是一个资深产品架构师、全栈架构师和敏捷需求分析师。你的任务是将用户需求和业务需求故事"
     "整理成结构化项目蓝图。蓝图不是代码，而是后续 API 契约、数据库模型、前端指令集合、"
@@ -14,11 +16,19 @@ def build_blueprint_generation_payload(
     requirement: Any,
     business_stories: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    frontend_stack = normalize_stack(
+        getattr(project, "target_frontend_stack", None),
+        DEFAULT_FRONTEND_STACK,
+    )
+    backend_stack = normalize_stack(
+        getattr(project, "target_backend_stack", None),
+        DEFAULT_BACKEND_STACK,
+    )
     return {
         "项目名称": project.name,
         "项目描述": project.description or "",
-        "目标前端技术栈": project.target_frontend_stack,
-        "目标后端技术栈": project.target_backend_stack,
+        "目标前端技术栈": frontend_stack,
+        "目标后端技术栈": backend_stack,
         "最新用户需求": {
             "id": str(requirement.id),
             "raw_text": requirement.raw_text,

@@ -20,6 +20,7 @@ from app.llm.client import (
 )
 from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
+from app.models.user import User
 from app.services.api_contract_service import ApiContractService
 from app.services.blueprint_service import BlueprintService
 from app.services.project_service import ProjectService
@@ -30,12 +31,13 @@ NO_BLUEPRINT_MESSAGE = "请先生成项目蓝图。"
 
 
 class DbModelService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User | None = None) -> None:
         self.db = db
+        self.current_user = current_user
 
     def generate_db_model(self, project_id: UUID) -> DbModelDraft:
-        project = ProjectService(self.db).get_project(project_id)
-        blueprint = BlueprintService(self.db).get_latest_blueprint(project_id)
+        project = ProjectService(self.db, self.current_user).get_project(project_id)
+        blueprint = BlueprintService(self.db, self.current_user).get_latest_blueprint(project_id)
         if blueprint is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,7 +48,9 @@ class DbModelService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="项目蓝图内容为空，无法生成数据库模型。",
             )
-        api_contract = ApiContractService(self.db).get_latest_api_contract(project_id)
+        api_contract = ApiContractService(self.db, self.current_user).get_latest_api_contract(
+            project_id
+        )
         api_contract_content = api_contract.content if api_contract is not None else None
 
         run = GenerationRun(
@@ -159,7 +163,7 @@ class DbModelService:
             ) from exc
 
     def list_project_db_models(self, project_id: UUID) -> list[DbModelDraft]:
-        ProjectService(self.db).get_project(project_id)
+        ProjectService(self.db, self.current_user).get_project(project_id)
         return list(
             self.db.scalars(
                 select(DbModelDraft)
@@ -175,6 +179,7 @@ class DbModelService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="DB model draft not found.",
             )
+        ProjectService(self.db, self.current_user).get_project(draft.project_id)
         return draft
 
     def get_latest_db_model(self, project_id: UUID) -> DbModelDraft | None:

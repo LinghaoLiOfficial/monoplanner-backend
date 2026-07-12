@@ -5,7 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
 from app.models.project import Project
+from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
 
 PROJECT_NAME_EMPTY_MESSAGE = "项目名称不能为空。"
@@ -13,20 +15,37 @@ PROJECT_NAME_EXISTS_MESSAGE = "项目名称已存在，请使用其他名称。"
 
 
 class ProjectService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User | None = None) -> None:
         self.db = db
+        self.current_user = current_user
 
     def create_project(self, payload: ProjectCreate) -> Project:
+        user = self._require_user()
         name = self._normalize_project_name(payload.name)
-        self._ensure_name_available(name)
-        project = Project(name=name, description=payload.description)
+        self._ensure_name_available(name, owner_user_id=user.id)
+        project = Project(
+            owner_user_id=user.id,
+            name=name,
+            description=payload.description,
+            target_frontend_stack=normalize_stack(
+                payload.target_frontend_stack,
+                DEFAULT_FRONTEND_STACK,
+            ),
+            target_backend_stack=normalize_stack(
+                payload.target_backend_stack,
+                DEFAULT_BACKEND_STACK,
+            ),
+        )
         self.db.add(project)
         self._commit_project_change()
         self.db.refresh(project)
         return project
 
     def list_projects(self, q: str | None = None) -> list[Project]:
+        user = self._require_user()
         statement = select(Project)
+        if user.role != "admin":
+            statement = statement.where(Project.owner_user_id == user.id)
         keyword = q.strip() if q is not None else ""
         if keyword:
             statement = statement.where(Project.name.ilike(f"%{keyword}%"))
@@ -39,7 +58,19 @@ class ProjectService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Project not found.",
             )
+        self.ensure_project_access(project)
         return project
+
+    def ensure_project_access(self, project: Project) -> None:
+        if self.current_user is None:
+            return
+        user = self.current_user
+        if user.role == "admin" or project.owner_user_id == user.id:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
 
     def update_project(self, project_id: UUID, payload: ProjectUpdate) -> Project:
         project = self.get_project(project_id)
@@ -51,7 +82,21 @@ class ProjectService:
                     detail=PROJECT_NAME_EMPTY_MESSAGE,
                 )
             updates["name"] = self._normalize_project_name(updates["name"])
-            self._ensure_name_available(updates["name"], exclude_project_id=project_id)
+            self._ensure_name_available(
+                updates["name"],
+                owner_user_id=project.owner_user_id,
+                exclude_project_id=project_id,
+            )
+        if "target_frontend_stack" in updates:
+            updates["target_frontend_stack"] = normalize_stack(
+                updates["target_frontend_stack"],
+                DEFAULT_FRONTEND_STACK,
+            )
+        if "target_backend_stack" in updates:
+            updates["target_backend_stack"] = normalize_stack(
+                updates["target_backend_stack"],
+                DEFAULT_BACKEND_STACK,
+            )
         for field, value in updates.items():
             setattr(project, field, value)
         self.db.add(project)
@@ -78,9 +123,16 @@ class ProjectService:
         return normalized_name
 
     def _ensure_name_available(
-        self, name: str, exclude_project_id: UUID | None = None
+        self,
+        name: str,
+        *,
+        owner_user_id: UUID,
+        exclude_project_id: UUID | None = None,
     ) -> None:
-        statement = select(Project.id).where(Project.name == name)
+        statement = select(Project.id).where(
+            Project.owner_user_id == owner_user_id,
+            Project.name == name,
+        )
         if exclude_project_id is not None:
             statement = statement.where(Project.id != exclude_project_id)
         existing_project_id = self.db.scalar(statement)
@@ -99,3 +151,8 @@ class ProjectService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=PROJECT_NAME_EXISTS_MESSAGE,
             ) from exc
+
+    def _require_user(self) -> User:
+        if self.current_user is None:
+            raise RuntimeError("ProjectService requires current_user for protected operations.")
+        return self.current_user

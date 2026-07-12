@@ -6,6 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.business_requirement_story import BusinessRequirementStory
+from app.models.user import User
 from app.schemas.business_requirement_story import BusinessRequirementStoryUpdate
 from app.services.project_service import ProjectService
 
@@ -18,8 +19,9 @@ PRIORITY_ORDER = {
 
 
 class BusinessRequirementStoryService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, current_user: User | None = None) -> None:
         self.db = db
+        self.current_user = current_user
 
     def list_project_stories(
         self,
@@ -28,7 +30,7 @@ class BusinessRequirementStoryService:
         status_filter: str | None = None,
         q: str | None = None,
     ) -> list[BusinessRequirementStory]:
-        ProjectService(self.db).get_project(project_id)
+        ProjectService(self.db, self.current_user).get_project(project_id)
         statement = select(BusinessRequirementStory).where(
             BusinessRequirementStory.project_id == project_id
         )
@@ -61,6 +63,7 @@ class BusinessRequirementStoryService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Business requirement story not found.",
             )
+        ProjectService(self.db, self.current_user).get_project(story.project_id)
         return story
 
     def update_story(

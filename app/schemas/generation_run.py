@@ -13,9 +13,18 @@ class GenerationRunRead(BaseModel):
     status: str
     progress: int
     message: str | None = None
+    queue_payload: dict[str, Any] | None = None
     input_snapshot: dict[str, Any] | None
     output_snapshot: dict[str, Any] | None
     error_message: str | None
+    locked_by: str | None = None
+    attempt_count: int = 0
+    max_attempts: int = 3
+    queued_at: datetime | None = None
+    started_at: datetime | None = None
+    locked_at: datetime | None = None
+    next_attempt_at: datetime | None = None
+    cancelled_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None

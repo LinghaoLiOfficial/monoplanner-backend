@@ -1,4 +1,27 @@
 
+## 2026-07-12 14:58 CST - 修复 make dev 用户迁移 UUID 回填错误
+
+- Request: 用户反馈后端执行 `make dev` 时 Alembic 迁移 `20260712_0009` 报 `owner_user_id` UUID 列与 VARCHAR 参数类型不匹配。
+- Actions: 检查启动报错、迁移文件和 Project/User 模型；将 bootstrap admin id 改为 `UUID` 对象，并在 `UPDATE projects SET owner_user_id = :admin_id` 和用户插入中显式使用 PostgreSQL UUID 绑定参数。
+- Result: `20260712_0009_add_users_and_project_ownership.py` 不再把 UUID 回填参数绑定为 VARCHAR，历史项目 owner 回填可正常执行。
+- Verification: `uv run python -m alembic upgrade head` 通过；`make dev` 成功启动到 Uvicorn application startup complete 后手动停止；`uv run python -m pytest tests/test_auth.py tests/test_projects.py` 通过，23 个测试全部通过。
+
+## 2026-07-11 21:57 CST - 评估队列卡住任务恢复能力
+
+- Request: 用户询问当前版本如果有任务一直卡在队列中，能否顺利解决。
+- Actions: 检查 `GenerationQueueService`、worker 入口、`GenerationRun`/`GenerationWorker` 模型、配置项和队列测试中 stale 恢复覆盖。
+- Result: 确认当前版本可自动恢复超过 `QUEUE_STALE_AFTER_SECONDS` 的 `running` 卡死任务；入队前会通过 worker 心跳避免无 worker 时继续产生 queued 任务；但已经处于 `queued` 且长期无人领取的任务不会自动失败或告警，只会在 worker 恢复后继续被领取。
+- Verification: 静态源码核查；未重新运行测试，因为本次未修改业务代码。
+- Follow-ups: 可增加 queued 等待超时检测、管理端重排/失败/告警接口，以及 running 任务协作式取消。
+
+## 2026-07-11 16:07 CST - 统一本地 PostgreSQL 运行入口
+
+- Request: 将后端所有开发、生产、Docker 和测试入口统一使用宿主机本地 PostgreSQL。
+- Actions: 更新默认 `DATABASE_URL`、Alembic 示例 URL、`.env.example`、`docker-compose.yml`、PostgreSQL 测试 fixture、README 和技术文档；移除 `aiosqlite` dev 依赖并刷新 `uv.lock`；创建本机 `context_orchestrator_test` 测试库。
+- Result: 应用和 Alembic 默认连接 `context_orchestrator`，pytest 默认连接受 `_test` 后缀保护的 `context_orchestrator_test`，Docker API 容器通过 `host.docker.internal:5432` 连接宿主机数据库。
+- Verification: `uv run python -m ruff check .` 通过；`uv run python -m pytest` 通过，69 个测试全部在 PostgreSQL 上通过；`uv run python -m alembic upgrade head` 通过。
+- Follow-ups: Docker Desktop 场景需确保宿主机 PostgreSQL 允许来自容器的本地连接；若其他机器没有测试库，需要先执行 `createdb context_orchestrator_test`。
+
 ## 2026-07-11 15:08 CST - 调整用户需求历史业务故事进度文案
 
 - Request: 检查后端是否向“原始用户需求页面 / 用户需求历史 / 进度条”返回含“生成”的提示文案，并仅在相关范围内改为“更新”。
@@ -149,6 +172,36 @@
 - Result: 后端确实使用了 `monobase`：统一 LLM JSON 封装通过 `monobase.llm.LLMConfig`、`ModelType`、`LLMClientFactory.create(...).invoke(...)` 调用模型，并捕获 `ConfigurationError`、`LLMError`；多个生成器通过 `app.llm.json_client.generate_json` 间接使用该库。
 - Verification: 静态代码搜索与文件阅读；未运行测试，因为本次仅做代码引用排查。
 
+## 2026-07-11 17:08 CST - 入队前检查 worker 心跳
+
+- Request: 用户要求如果 worker 没有启动，将任务推到 worker 的功能需要直接返回 worker 未启动错误。
+- Actions: 新增 `GenerationWorker` ORM 模型和迁移 `20260711_0008_create_generation_workers.py`；worker loop 每轮写入心跳；生成队列入队前检查最近有效 worker 心跳，未发现在线 worker 时返回 503 且不创建 queued run；补充 worker offline 测试并更新配置文档。
+- Result: 生成接口不再在 worker 未启动时静默入队，调用方会收到“后台任务队列 worker 未启动，请先启动 worker 后再提交生成任务。”。
+- Verification: `uv run python -m pytest tests/test_generation_queue.py -q` 通过，10 个测试全部通过；`uv run python -m pytest -q` 通过，71 个测试全部通过；`uv run python -m ruff check .` 通过；`uv run python -m alembic upgrade head && uv run python -m alembic current` 通过并到 `20260711_0008 (head)`。
+
+## 2026-07-11 16:52 CST - 增加 Makefile 队列 worker 启动入口
+
+- Request: 用户询问能否将 worker 进程放到项目根路径 Makefile 中一同启动。
+- Actions: 在 `Makefile` 新增 `worker` 和 `dev-all` phony target；`worker` 单独启动 `app.workers.generation_worker`，`dev-all` 先迁移，再后台启动 worker 并以前台方式启动 FastAPI reload 服务；更新 README 和技术文档。
+- Result: 开发时可用 `make worker` 单独启动队列 worker，也可用 `make dev-all` 同时启动 API 与 worker。
+- Verification: `make -n worker && make -n dev-all` dry-run 通过；`uv run python -m ruff check .` 通过。
+
+## 2026-07-11 16:46 CST - 验收测试后台任务队列
+
+- Request: 用户要求测试轻量任务队列的各种功能是否正常。
+- Actions: 运行队列专项测试、全量回归、ruff 和 Alembic head 检查；发现并行运行多个 pytest 进程会因为共享 PostgreSQL 测试库 `create_all/drop_all` 互相干扰，终止并行进程后重置测试库 schema，改为串行验证。
+- Result: 队列功能验收通过；覆盖入队、状态查询、领取、取消 queued、五类生成任务执行、请求类失败重试、非重试失败、stale running 恢复和 `/stream` 弃用。
+- Verification: `uv run python -m pytest tests/test_generation_queue.py -q` 通过，9 个测试全部通过；`uv run python -m pytest -q` 通过，70 个测试全部通过；`uv run python -m ruff check .` 通过；`uv run python -m alembic current && uv run python -m alembic heads` 均为 `20260711_0007 (head)`。
+- Follow-ups: 本测试库 fixture 使用全库建表/删表隔离，不适合多个 pytest 进程同时使用同一个 `TEST_DATABASE_URL`；并发测试应留在单个 pytest 进程内或使用独立测试数据库。
+
+## 2026-07-11 16:45 CST - 实现 PostgreSQL 轻量后台生成队列
+
+- Request: 用户要求按计划实现轻量级后台任务队列，覆盖五类生成任务并支持单独测试。
+- Actions: 扩展 `GenerationRun` 队列字段和迁移 `20260711_0007`；新增 `GenerationQueueService` 和 `app.workers.generation_worker`；生成 POST 接口改为返回 `202 + GenerationRunRead`，新增任务查询和 queued 取消接口，弃用 `/stream`；Context Pack 适配队列 run；补充队列集成测试并迁移旧同步生成测试为显式 worker 执行。
+- Result: 业务故事、Blueprint、API Contract、DB Model 和 Context Pack 都可入队后台执行；worker 使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取任务，支持请求类失败重试、stale running 恢复、queued 取消和完成后资源 id 快照。
+- Verification: `uv run python -m ruff check .` 通过；`uv run python -m pytest -q` 通过，70 个测试全部通过；`uv run python -m alembic upgrade head && uv run python -m alembic current` 通过并到 `20260711_0007 (head)`。
+- Follow-ups: 生产部署时需要确保 API 进程之外单独启动至少一个 generation worker，并为真实 LLM 环境设置队列监控和告警。
+
 ## 2026-07-11 15:55 CST - 评估轻量级后台消息队列方案
 
 - Request: 用户要求评估当前后端如何实现轻量级后台消息队列。
@@ -163,6 +216,20 @@
 - Result: 当前没有消息队列、后台 worker 或 FastAPI `BackgroundTasks`；四类 LLM 生成接口会在 HTTP 请求生命周期内同步调用 LLM、聚合输出、解析校验、保存数据库并返回，`GenerationRun` 只是状态和进度记录，不代表队列任务。
 - Verification: 静态代码检查与源码阅读；未运行测试，因为本次未修改业务代码。
 
+## 2026-07-11 22:12 CST - 统一需求历史进度状态
+
+- Request: 用户要求为原始用户需求历史接口新增稳定的三态进度字段，统一进度文案并保持不改 API 路径和 `GenerationRun` 技术语义。
+- Actions: 在 `RequirementRead` 新增 `progress_status`、`progress_label`、`progress_text`；在 `RequirementService` 将业务故事生成运行状态映射为 `in_progress/success/failed`；补充需求历史响应测试覆盖默认成功、运行中、成功、失败、未知终止状态和文案无中文句号。
+- Result: `GET/POST /api/v1/projects/{project_id}/requirements` 每条需求历史都返回前端可读的顶层进度状态和文案；保留既有 `business_story_generation` 字段兼容行为；未新增需求历史重试接口。
+- Verification: `uv run python -m pytest tests/test_requirements.py` 通过，3 个测试全部通过；`uv run python -m pytest tests/test_business_requirement_stories.py tests/test_streaming_generation.py` 通过，27 个测试全部通过。`uv run pytest` 和 `uv run --group dev pytest` 仍因 console script spawn 失败不可用，使用 `python -m pytest`。
+
+## 2026-07-11 22:59 CST - 补齐 Project 技术栈字段支持
+
+- Request: 用户要求实现 Project 前后端目标技术栈字段的创建、更新、响应兜底和蓝图生成读取逻辑。
+- Actions: 新增 `app/core/constants.py` 统一默认技术栈和 `normalize_stack`；补齐 `ProjectCreate`、`ProjectUpdate`、`ProjectRead`；更新 `ProjectService` 写入和 PATCH 逻辑；让 blueprint prompt、校验、deterministic fallback、同步/队列 input snapshot 使用规范化后的技术栈；补充 Project 和 Blueprint 相关回归测试。
+- Result: 创建项目未传或传空技术栈会使用默认值；PATCH 可更新技术栈，空字符串会重置默认值；response 和蓝图生成对历史空值兜底；蓝图保存内容以项目当前 `target_frontend_stack`/`target_backend_stack` 为准，不使用旧字段名。
+- Verification: `uv run python -m pytest tests/test_projects.py tests/test_blueprint_generation.py` 通过，28 个测试全部通过；`uv run ruff check app/core/constants.py app/models/project.py app/schemas/project.py app/services/project_service.py app/generators/blueprint_generator.py app/prompts/blueprint_generator.py app/services/generation_service.py app/services/streaming_generation_service.py tests/test_projects.py tests/test_blueprint_generation.py` 通过；`uv run python -m pytest` 通过，81 个测试全部通过。
+
 ## 2026-07-11 15:45 CST - 评估 PostgreSQL 轻量消息队列能力
 
 - Request: 用户询问 PostgreSQL 是否自带当前项目可用的轻量级消息队列。
@@ -176,6 +243,28 @@
 - Actions: 检查 `app/core/config.py`、`app/db/session.py`、`.env`、`docker-compose.yml`、Alembic migration 和项目技术文档中的数据库配置。
 - Result: 确认运行时数据库为 PostgreSQL，连接串通过 `DATABASE_URL` 注入；本机 `.env` 指向 `postgresql+psycopg://llh@localhost:5432/context_orchestrator`，Docker 开发环境使用 `postgres:17-alpine`。
 - Verification: Not run；本次为配置核查，无代码改动。
+
+## 2026-07-12 11:28 CST - 实现用户系统与多租户权限
+
+- Request: 用户要求按评估方案实现完整用户系统、邮箱验证码注册、Cookie/JWT 登录态、管理员用户管理和项目资源 owner 权限隔离。
+- Actions: 新增 `User`、`EmailVerificationCode` 模型和 Alembic 迁移；实现 bcrypt 密码 hash、验证码 hash、JWT Cookie、注册/登录/登出/me/资料修改/admin users 接口；为项目新增 `owner_user_id`，将项目名唯一性改为用户内唯一；给项目及项目下资源、独立资源详情、生成队列查询/取消加入当前用户权限校验；更新测试 fixture 走真实登录 cookie。
+- Result: 非 auth/health 业务接口默认要求登录；普通用户只能访问自己的项目及资源，admin 可访问普通业务全局资源且只能管理非 admin 用户；历史项目迁移归属 bootstrap admin；响应不返回密码 hash、验证码或 token。
+- Verification: `uv run ruff check app tests alembic` 通过；`uv run python -m compileall app alembic/versions/20260712_0009_add_users_and_project_ownership.py` 通过；`uv run python -m pytest -q` 通过，84 个测试全部通过。
+- Follow-ups: 上线前需要在目标环境配置强随机 `AUTH_SECRET_KEY`、bootstrap admin 和 SMTP；如生产已有重复项目名或缺少 bootstrap admin 配置，需要先做数据与配置核查。
+
+## 2026-07-12 10:27 CST - 移除默认 QUEUE_WORKER_ID 示例
+
+- Request: 用户要求实现此前评估建议，让 `QUEUE_WORKER_ID` 不再作为 `.env.example` 中需要手动定义的环境变量。
+- Actions: 从 `.env.example` 和 README 的环境变量示例块移除 `QUEUE_WORKER_ID=`；保留 README 队列配置说明，并改为高级可选覆盖项，提示普通开发和单实例部署不需要设置，多 worker 不要复用固定值。
+- Result: 默认环境模板不再引导用户手动配置 worker ID；代码仍保留 `QUEUE_WORKER_ID` 作为可选覆盖能力，未配置时 worker 自动生成唯一标识。
+- Verification: `rg -n "QUEUE_WORKER_ID" .env.example README.md codex-project-tech-doc.md app/core/config.py app/services/generation_queue_service.py` 确认 `.env.example` 不再包含该变量，README 仅保留高级说明。
+
+## 2026-07-12 10:18 CST - 评估 QUEUE_WORKER_ID 示例配置
+
+- Request: 用户询问后端 `.env.example` 中为什么需要定义 `QUEUE_WORKER_ID=`，并认为该项不应手动定义。
+- Actions: 检查 `.env.example`、`README.md`、`app/core/config.py`、`app/services/generation_queue_service.py`、`app/workers/generation_worker.py`、`Makefile` 和 `docker-compose.yml` 中的 worker 标识配置、默认生成逻辑与启动方式。
+- Result: `QUEUE_WORKER_ID` 在 settings 中是可选项，worker 启动时未配置会使用 `hostname:id(object())` 自动生成；普通开发和单实例部署不需要手动定义。保留在 `.env.example` 的空键容易误导使用者固定填写，且多 worker 复用同一值会影响心跳和 `locked_by` 可观测性。建议从 `.env.example` 默认模板移除，只在 README 高级说明中保留“可选覆盖”。
+- Verification: Not run；本次为配置语义和代码路径评估，未改业务代码或执行测试。
 
 ## 2026-07-10 20:22 CST - 增加业务需求故事单条删除接口
 
@@ -199,6 +288,35 @@
 - Result: PATCH 继续使用 `exclude_unset=True` 保持局部更新；JSON 字段整体赋值保存；业务范围补齐 `included/excluded`，数组字段 trim 并过滤空字符串，非法格式返回可读 400 或 Pydantic 422。
 - Verification: `uv run python -m pytest tests/test_business_requirement_stories.py` 通过，18 个测试全部通过；`uv run python -m pytest` 通过，48 个测试全部通过。
 - Follow-ups: 当前非法 enum 仍由 Pydantic 422 处理；未来若需要统一错误 envelope，可在全局异常处理层调整。
+
+## 2026-07-12 15:14 CST - 为 .env.example 增加逐项注释
+
+- Request: 用户要求为 `.env.example` 中的每个环境变量增加注释。
+- Actions: 重写 `.env.example` 为带逐项中文注释的配置模板，覆盖应用、数据库、测试库、LLM、队列、认证、邮箱验证码、SMTP 和 bootstrap admin 配置；同步项目技术文档说明模板已逐项注释。
+- Result: `.env.example` 中 31 个环境变量前均有独立说明行，变量名和值保持现有配置语义不变。
+- Verification: `rg -n "^[A-Z0-9_]+=" .env.example` 确认变量清单；脚本检查所有变量上一行均为注释并可用 Settings 加载 `.env.example`；`rg -n "LLM_TIMEOUT\\b|llm_timeout\\b" -S .env.example app/core/config.py README.md codex-project-tech-doc.md` 无结果；`git diff --check -- .env.example` 通过。
+
+## 2026-07-12 15:11 CST - 移除 LLM_TIMEOUT 旧配置
+
+- Request: 用户要求 `LLM_TIMEOUT` 和 `LLM_TIMEOUT_SECONDS` 只保留一个，不需要兼容旧配置。
+- Actions: 从 `app/core/config.py` 删除 `llm_timeout` 字段和 `model_post_init` 兼容逻辑；从 `.env.example`、README 和项目技术文档删除 `LLM_TIMEOUT` 示例与说明，只保留 `LLM_TIMEOUT_SECONDS`。
+- Result: 运行配置只认 `LLM_TIMEOUT_SECONDS`；旧环境变量 `LLM_TIMEOUT` 不再被 Settings 读取。
+- Verification: `rg -n "LLM_TIMEOUT\\b|llm_timeout\\b" -S app tests README.md .env.example codex-project-tech-doc.md` 无结果；`uv run python -m ruff check app/core/config.py app/llm/client.py` 通过；轻量配置实例检查确认 `llm_timeout_seconds=60.0` 且无 `llm_timeout` 属性；`git diff --check` 通过。
+
+## 2026-07-12 15:09 CST - 分析 LLM_TIMEOUT 配置冗余
+
+- Request: 用户询问 `.env.example` 中 `LLM_TIMEOUT` 和 `LLM_TIMEOUT_SECONDS` 是否重复冗余。
+- Actions: 检查 `.env.example`、`app/core/config.py`、`app/llm/client.py`、README 和项目技术文档中对两个配置项的引用。
+- Result: 确认两个环境变量语义重复；当前代码实际使用 `llm_timeout_seconds`，`LLM_TIMEOUT` 仅作为旧配置兼容入口，在未设置 `LLM_TIMEOUT_SECONDS` 且自身非默认值时同步过去。
+- Verification: Not run；本次仅做配置引用分析，未改代码。
+- Follow-ups: 建议从 `.env.example` 和 README 示例中移除 `LLM_TIMEOUT`，代码保留一段时间兼容旧 `.env`。
+
+## 2026-07-12 15:07 CST - 说明 TEST_DATABASE_URL 用途
+
+- Request: 用户询问 `.env.example` 中 `TEST_DATABASE_URL` 的用途，并认为可能没必要。
+- Actions: 检查 `.env.example`、`tests/conftest.py`、`app/core/config.py`、README 和项目技术文档中对 `TEST_DATABASE_URL` 的引用。
+- Result: 确认 `TEST_DATABASE_URL` 不属于应用运行时配置，只用于 pytest 将 `DATABASE_URL` 覆盖到独立 PostgreSQL 测试库，并强制数据库名以 `_test` 结尾，防止测试建表/删表影响开发库。
+- Verification: Not run；本次仅做配置引用分析，未改代码。
 
 ## 2026-07-11 00:47 CST - 新增四类 LLM 流式生成接口
 
@@ -237,3 +355,10 @@
 - Result: 四个普通接口返回保存后的数据库资源 JSON，不再向前端输出 token delta；`GenerationRun` 成功统一写 `completed` 并记录 `raw_text_length`、资源 id、counts 和 summary，失败写入 `failure_stage` 与可选 raw 长度；业务故事状态接口继续兼容返回 `succeeded`。
 - Verification: `uv run python -m pytest -q` 通过，69 个测试全部通过；`uv run ruff check .` 通过。`uv run pytest` 仍因 console script spawn 问题不可用，使用 `uv run python -m pytest`。
 - Follow-ups: 若前端仍调用旧 SSE，需要确认它只依赖 `saved/done/error`，不再依赖 `delta`。
+## 2026-07-12 15:28 CST - 评估后台 worker 并发能力
+
+- Request: 用户要求全面深度评估当前后端项目中的 worker 是否能够在后台并发执行任务。
+- Actions: 只读检查 `app/services/generation_queue_service.py`、`app/workers/generation_worker.py`、`app/core/config.py`、`Makefile`、`docker-compose.yml`、README、生成执行服务和队列测试，梳理任务入队、领取、锁、执行、重试、心跳和部署入口。
+- Result: 确认当前单个 worker 进程是串行循环；数据库领取逻辑使用 `FOR UPDATE SKIP LOCKED`，具备多个独立 worker 进程并发领取不同任务的基础；`QUEUE_WORKER_CONCURRENCY` 目前未被执行入口消费；Docker Compose 未启动 worker。
+- Verification: Not run；本次为只读代码评估，未改业务代码、未运行测试。
+- Follow-ups: 如要真正支持可配置并发，需要实现 worker 进程/线程池或多副本部署，并补充多 worker 并发领取与同项目任务互斥/幂等测试。

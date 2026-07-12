@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
 from app.generators.api_contract_generator import (
     ApiContractValidationError,
     validate_api_contract_content,
@@ -163,7 +164,6 @@ class StreamingGenerationService:
         self.llm_client_factory = llm_client_factory or OpenAICompatibleLLMClient
 
     def generate(self, spec: StreamingGenerationSpec) -> Any:
-        started_at = monotonic()
         run = GenerationRun(
             project_id=spec.project_id,
             requirement_id=spec.requirement_id,
@@ -176,9 +176,25 @@ class StreamingGenerationService:
         self.db.add(run)
         self.db.commit()
         self.db.refresh(run)
-        _log_stage(spec, run, "created", started_at)
+        _log_stage(spec, run, "created", monotonic())
+        return self.execute_existing_run(run, spec)
 
+    def execute_existing_run(self, run: GenerationRun, spec: StreamingGenerationSpec) -> Any:
+        started_at = monotonic()
         raw_text_length: int | None = None
+        run.status = "running"
+        run.started_at = run.started_at or datetime.now(UTC)
+        run.completed_at = None
+        run.error_message = None
+        run.requirement_id = spec.requirement_id
+        run.input_snapshot = spec.input_snapshot
+        if run.progress < 0:
+            run.progress = 0
+        if not run.message:
+            run.message = _progress_message(spec.module, 0)
+        self.db.add(run)
+        self.db.commit()
+        self.db.refresh(run)
         try:
             _update_run_progress(self.db, run, 10, _progress_message(spec.module, 10))
             _log_stage(spec, run, "llm_start", started_at)
@@ -493,13 +509,15 @@ class StreamingGenerationService:
             }
             for story in business_stories
         ]
+        frontend_stack = normalize_stack(project.target_frontend_stack, DEFAULT_FRONTEND_STACK)
+        backend_stack = normalize_stack(project.target_backend_stack, DEFAULT_BACKEND_STACK)
         input_snapshot = {
             "project_id": str(project_id),
             "requirement_id": str(requirement.id),
             "source": "requirement + business_stories",
             "business_requirement_story_ids": [story["id"] for story in business_story_context],
-            "target_frontend_stack": project.target_frontend_stack,
-            "target_backend_stack": project.target_backend_stack,
+            "target_frontend_stack": frontend_stack,
+            "target_backend_stack": backend_stack,
         }
 
         def validate(parsed: dict[str, Any]) -> dict[str, Any]:

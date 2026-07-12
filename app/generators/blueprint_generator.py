@@ -1,7 +1,8 @@
 from typing import Any
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
 from app.llm.json_client import generate_json
-from app.models.project import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, Project
+from app.models.project import Project
 from app.models.requirement import Requirement
 from app.prompts.blueprint_generator import SYSTEM_PROMPT, build_blueprint_generation_payload
 
@@ -54,15 +55,17 @@ def validate_blueprint_content(
         project_content.get("business_goal"),
         "基于用户需求交付可执行的全栈产品方案。",
     )
+    frontend_stack = normalize_stack(
+        getattr(project, "target_frontend_stack", None),
+        DEFAULT_FRONTEND_STACK,
+    )
+    backend_stack = normalize_stack(
+        getattr(project, "target_backend_stack", None),
+        DEFAULT_BACKEND_STACK,
+    )
     project_content["tech_stack"] = {
-        "frontend": _string_or_default(
-            tech_stack.get("frontend") if isinstance(tech_stack, dict) else None,
-            project.target_frontend_stack,
-        ),
-        "backend": _string_or_default(
-            tech_stack.get("backend") if isinstance(tech_stack, dict) else None,
-            project.target_backend_stack,
-        ),
+        "frontend": frontend_stack,
+        "backend": backend_stack,
     }
     content["project"] = project_content
     content["tech_stack"] = project_content["tech_stack"]
@@ -114,8 +117,14 @@ def build_deterministic_blueprint_content(
     project: Project, requirement: Requirement
 ) -> dict[str, Any]:
     raw_requirement = getattr(requirement, "raw_text", "") or ""
-    frontend_stack = getattr(project, "target_frontend_stack", None) or DEFAULT_FRONTEND_STACK
-    backend_stack = getattr(project, "target_backend_stack", None) or DEFAULT_BACKEND_STACK
+    frontend_stack = normalize_stack(
+        getattr(project, "target_frontend_stack", None),
+        DEFAULT_FRONTEND_STACK,
+    )
+    backend_stack = normalize_stack(
+        getattr(project, "target_backend_stack", None),
+        DEFAULT_BACKEND_STACK,
+    )
 
     one_liner = raw_requirement.strip().replace("\n", " ")[:120]
     if not one_liner:

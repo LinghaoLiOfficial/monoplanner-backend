@@ -26,14 +26,21 @@ cp .env.example .env
 APP_NAME=Fullstack Context Orchestrator API
 BACKEND_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator
+TEST_DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator_test
 
 # LLM API (OpenAI-compatible). Uncomment and fill these values to enable real LLM generation.
 LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 LLM_API_KEY=replace-with-your-api-key
 LLM_MODEL=qwen-plus
-LLM_TIMEOUT=60
 LLM_TIMEOUT_SECONDS=60
 LLM_THINKING=false
+
+# Background generation queue
+QUEUE_WORKER_CONCURRENCY=1
+QUEUE_POLL_INTERVAL_SECONDS=2
+QUEUE_STALE_AFTER_SECONDS=900
+QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS=15
+QUEUE_MAX_ATTEMPTS=3
 ```
 
 LLM 配置说明：
@@ -41,16 +48,27 @@ LLM 配置说明：
 - `LLM_BASE_URL`: OpenAI-compatible API base URL，不需要包含 `/chat/completions`，例如阿里云 DashScope 兼容模式 `https://dashscope.aliyuncs.com/compatible-mode/v1`。
 - `LLM_API_KEY`: 模型服务 API Key，请只放在本机 `.env` 或部署环境变量中，不要提交真实密钥。
 - `LLM_MODEL`: 文本模型名，例如 `qwen-plus`。
-- `LLM_TIMEOUT`: 单次请求超时时间，单位秒，默认 `60`。
-- `LLM_TIMEOUT_SECONDS`: 兼容旧配置名；未单独设置时沿用 `LLM_TIMEOUT`，单位秒，默认 `60`。
+- `LLM_TIMEOUT_SECONDS`: 单次请求超时时间，单位秒，默认 `60`。
 - `LLM_THINKING`: 是否启用支持思考模式的模型参数，默认 `false`。
+
+队列配置说明：
+
+- `QUEUE_WORKER_CONCURRENCY`: worker 并发数，当前 worker 入口默认串行执行，默认 `1`。
+- `QUEUE_POLL_INTERVAL_SECONDS`: worker 空闲轮询间隔，默认 `2`。
+- `QUEUE_STALE_AFTER_SECONDS`: running 任务超时恢复阈值，默认 `900`。
+- `QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS`: worker 心跳有效期，生成接口在有效期内找不到在线 worker 时返回 503，默认 `15`。
+- `QUEUE_MAX_ATTEMPTS`: 可重试任务最大尝试次数，默认 `3`。
+- `QUEUE_WORKER_ID`: 高级可选覆盖项，普通开发和单实例部署不需要设置；未配置时 worker 会自动生成唯一标识。多 worker 部署时不要让多个 worker 复用同一个固定值。
 
 ## 启动数据库
 
 ```bash
+brew services start postgresql@14
+createdb context_orchestrator
+createdb context_orchestrator_test
 ```
 
-使用本机 PostgreSQL（Homebrew `postgresql@14`）并保证 `DATABASE_URL` 可连接。
+开发和生产默认连接宿主机本地 PostgreSQL：`DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator`。自动化测试使用独立测试库：`TEST_DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator_test`，测试库名必须以 `_test` 结尾。
 
 ## 安装依赖
 
@@ -90,6 +108,35 @@ uv run python -m uvicorn app.main:app --reload
 
 服务默认地址为 [http://127.0.0.1:8000](http://127.0.0.1:8000)，OpenAPI 文档为 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)。
 
+LLM 生成接口使用 PostgreSQL-backed 后台队列。另开一个终端启动 worker：
+
+```bash
+uv run python -m app.workers.generation_worker
+```
+
+也可以使用 Makefile：
+
+```bash
+make worker
+make dev-all
+```
+
+其中 `make worker` 只启动后台队列 worker；`make dev-all` 会先执行 migration，然后同时启动 worker 和 FastAPI 开发服务。
+
+生成接口会先检查最近 worker 心跳；如果 worker 未启动或心跳过期，直接返回 503，不创建 queued 任务。
+
+生成接口返回 `202 Accepted` 和 `GenerationRun` 状态对象，前端可轮询 `GET /api/v1/generation-runs/{run_id}`；任务完成后再通过对应资源列表或详情接口读取保存结果。旧 `/generate/{module}/stream` 接口已弃用并返回 410。
+
+## Docker 启动
+
+`docker compose up api` 会让 API 容器通过 `host.docker.internal:5432` 连接宿主机 PostgreSQL。请先确保宿主机 PostgreSQL 已启动、`context_orchestrator` 数据库已存在，并允许来自 Docker Desktop 的本地连接。
+
+仓库保留了一个可选的 Compose PostgreSQL 服务，仅用于临时本地辅助数据库：
+
+```bash
+docker compose --profile local-db up -d db
+```
+
 ## 核心 API
 
 统一前缀：`/api/v1`
@@ -117,6 +164,8 @@ uv run python -m uvicorn app.main:app --reload
 - `GET /api/v1/projects/{project_id}/db-models`
 - `GET /api/v1/db-models/{db_model_id}`
 - `POST /api/v1/projects/{project_id}/generate/context-packs`
+- `GET /api/v1/generation-runs/{run_id}`
+- `POST /api/v1/generation-runs/{run_id}/cancel`
 - `GET /api/v1/projects/{project_id}/context-packs`
 - `GET /api/v1/context-packs/{context_pack_id}`
 - `POST /api/v1/context-packs/{context_pack_id}/export`
@@ -138,8 +187,9 @@ curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/requirements" \
 curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/business-stories" \
   -H 'Content-Type: application/json' \
   -d '{"requirement_id":null,"overwrite":false}'
+RUN_ID=$(curl -s -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/blueprint" | jq -r .id)
+curl "http://127.0.0.1:8000/api/v1/generation-runs/$RUN_ID"
 curl "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/business-stories"
-curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/blueprint"
 curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/api-contract"
 curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/db-model"
 curl -X POST "http://127.0.0.1:8000/api/v1/projects/$PROJECT_ID/generate/context-packs"

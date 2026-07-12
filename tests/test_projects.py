@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
 from app.models.api_contract import ApiContractDraft
 from app.models.blueprint import ProjectBlueprint
 from app.models.context_pack import ContextPack
@@ -9,6 +10,7 @@ from app.models.generation_run import GenerationRun
 from app.models.project import Project
 from app.models.requirement import Requirement
 from tests.llm_stream_helpers import patch_llm_stream_sequence
+from tests.queue_helpers import run_generation_job_in_new_session
 
 
 def _patch_generation_json(monkeypatch) -> None:
@@ -128,6 +130,47 @@ def test_create_project_does_not_require_description(client: TestClient) -> None
     assert project["description"] is None
 
 
+def test_create_project_uses_default_target_stacks(client: TestClient) -> None:
+    response = client.post("/api/v1/projects", json={"name": "Default Stacks"})
+
+    assert response.status_code == 201
+    project = response.json()
+    assert project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+
+
+def test_create_project_accepts_custom_target_stacks(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "Custom Stacks",
+            "target_frontend_stack": "Remix + React",
+            "target_backend_stack": "Django + PostgreSQL",
+        },
+    )
+
+    assert response.status_code == 201
+    project = response.json()
+    assert project["target_frontend_stack"] == "Remix + React"
+    assert project["target_backend_stack"] == "Django + PostgreSQL"
+
+
+def test_create_project_resets_blank_target_stacks_to_defaults(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "Blank Stacks",
+            "target_frontend_stack": "   ",
+            "target_backend_stack": "",
+        },
+    )
+
+    assert response.status_code == 201
+    project = response.json()
+    assert project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+
+
 def test_create_project_trims_name(client: TestClient) -> None:
     response = client.post("/api/v1/projects", json={"name": "  测试项目  "})
 
@@ -197,6 +240,91 @@ def test_update_project_rejects_null_name(client: TestClient) -> None:
     assert response.json()["detail"] == "项目名称不能为空。"
 
 
+def test_update_project_accepts_target_stacks(client: TestClient) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Stack Update"}).json()
+
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={
+            "target_frontend_stack": "Vue + Vite",
+            "target_backend_stack": "Go + Gin",
+        },
+    )
+
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["target_frontend_stack"] == "Vue + Vite"
+    assert updated_project["target_backend_stack"] == "Go + Gin"
+
+
+def test_update_project_preserves_target_stacks_when_unset(client: TestClient) -> None:
+    project = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "Preserve Stacks",
+            "target_frontend_stack": "SvelteKit",
+            "target_backend_stack": "Litestar",
+        },
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={"description": "updated"},
+    )
+
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["description"] == "updated"
+    assert updated_project["target_frontend_stack"] == "SvelteKit"
+    assert updated_project["target_backend_stack"] == "Litestar"
+
+
+def test_update_project_resets_blank_target_stacks_to_defaults(client: TestClient) -> None:
+    project = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "Reset Stacks",
+            "target_frontend_stack": "Angular",
+            "target_backend_stack": "Rails",
+        },
+    ).json()
+
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={
+            "target_frontend_stack": " ",
+            "target_backend_stack": "",
+        },
+    )
+
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert updated_project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+
+
+def test_project_response_defaults_blank_target_stacks(
+    client: TestClient,
+    db_session,
+    test_user,
+) -> None:
+    project = Project(
+        owner_user_id=test_user.id,
+        name="Blank Stored Stacks",
+        target_frontend_stack="",
+        target_backend_stack="   ",
+    )
+    db_session.add(project)
+    db_session.commit()
+
+    response = client.get(f"/api/v1/projects/{project.id}")
+
+    assert response.status_code == 200
+    project_response = response.json()
+    assert project_response["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert project_response["target_backend_stack"] == DEFAULT_BACKEND_STACK
+
+
 def test_project_list_searches_name_case_insensitively(client: TestClient) -> None:
     client.post("/api/v1/projects", json={"name": "Context Planner"})
     client.post("/api/v1/projects", json={"name": "Billing Portal"})
@@ -234,14 +362,22 @@ def test_delete_project_removes_all_related_content(
         f"/api/v1/projects/{project['id']}/requirements",
         json={"raw_text": "build a full context orchestration workflow"},
     )
-    blueprint = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint").json()
-    api_contract = client.post(
+    blueprint_run = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint").json()
+    run_generation_job_in_new_session(blueprint_run["id"])
+    blueprint = client.get(f"/api/v1/projects/{project['id']}/blueprints").json()[0]
+    api_run = client.post(
         f"/api/v1/projects/{project['id']}/generate/api-contract"
     ).json()
-    db_model = client.post(f"/api/v1/projects/{project['id']}/generate/db-model").json()
-    context_packs = client.post(
+    run_generation_job_in_new_session(api_run["id"])
+    api_contract = client.get(f"/api/v1/projects/{project['id']}/api-contracts").json()[0]
+    db_run = client.post(f"/api/v1/projects/{project['id']}/generate/db-model").json()
+    run_generation_job_in_new_session(db_run["id"])
+    db_model = client.get(f"/api/v1/projects/{project['id']}/db-models").json()[0]
+    pack_run = client.post(
         f"/api/v1/projects/{project['id']}/generate/context-packs"
     ).json()
+    run_generation_job_in_new_session(pack_run["id"])
+    context_packs = client.get(f"/api/v1/projects/{project['id']}/context-packs").json()
 
     delete_response = client.delete(f"/api/v1/projects/{project['id']}")
 

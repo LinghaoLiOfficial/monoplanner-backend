@@ -1,4 +1,4 @@
-.PHONY: install migrate run dev lint test
+.PHONY: install migrate run worker dev dev-all lint test
 
 UVICORN_RELOAD_ARGS = --reload --reload-dir app --reload-include '*.py' --reload-include '.env' --reload-exclude '.venv/*' --reload-exclude '*.pyc'
 
@@ -11,9 +11,19 @@ migrate:
 run:
 	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
 
+worker:
+	uv run python -m app.workers.generation_worker
+
 dev:
 	uv run python -m alembic upgrade head
 	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
+
+dev-all:
+	uv run python -m alembic upgrade head
+	(uv run python -m app.workers.generation_worker & \
+	WORKER_PID=$$!; \
+	trap 'kill $$WORKER_PID' INT TERM EXIT; \
+	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS))
 
 lint:
 	uv run python -m ruff check .

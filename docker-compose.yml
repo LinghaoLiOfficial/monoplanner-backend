@@ -32,5 +32,26 @@ services:
       sh -c "uv run alembic upgrade head &&
       uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
+  worker:
+    build:
+      context: .
+    container_name: context-orchestrator-worker
+    environment:
+      APP_NAME: Fullstack Context Orchestrator API
+      DATABASE_URL: postgresql+psycopg://llh@host.docker.internal:5432/context_orchestrator
+      LLM_PROVIDER: openai_compatible
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+      LLM_THINKING: ${LLM_THINKING:-false}
+      QUEUE_WORKER_CONCURRENCY: ${QUEUE_WORKER_CONCURRENCY:-1}
+      QUEUE_POLL_INTERVAL_SECONDS: ${QUEUE_POLL_INTERVAL_SECONDS:-2}
+      QUEUE_STALE_AFTER_SECONDS: ${QUEUE_STALE_AFTER_SECONDS:-900}
+      QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS: ${QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS:-15}
+      QUEUE_MAX_ATTEMPTS: ${QUEUE_MAX_ATTEMPTS:-3}
+      QUEUE_WORKER_ID: ${QUEUE_WORKER_ID:-}
+    command: uv run python -m app.workers.generation_worker
+
 volumes:
   postgres_data:

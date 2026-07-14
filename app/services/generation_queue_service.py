@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
 import socket
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from hashlib import sha1
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -34,6 +37,7 @@ COMPLETED_STATUS = "completed"
 FAILED_STATUS = "failed"
 CANCELLED_STATUS = "cancelled"
 WORKER_OFFLINE_DETAIL = "后台任务队列 worker 未启动，请先启动 worker 后再提交生成任务。"
+WORKER_ID_MAX_LENGTH = 100
 
 MODULE_BY_RUN_TYPE = {
     BUSINESS_STORY_RUN_TYPE: "business_stories",
@@ -283,6 +287,7 @@ class GenerationQueueService:
                     GenerationRun.locked_at.is_not(None),
                     GenerationRun.locked_at < cutoff,
                 )
+                .with_for_update(skip_locked=True)
             )
         )
         recovered = 0
@@ -376,16 +381,48 @@ class GenerationQueueService:
         raise ValueError(f"Unsupported generation run type: {run.run_type}")
 
 
-def run_worker_loop(worker_id: str | None = None, *, stop_after_idle: bool = False) -> None:
+def run_worker_loop(
+    worker_id: str | None = None,
+    *,
+    stop_after_idle: bool = False,
+    concurrency: int | None = None,
+) -> None:
+    resolved_concurrency = concurrency or settings.queue_worker_concurrency
+    if resolved_concurrency < 1:
+        raise ValueError("Worker concurrency must be at least 1.")
+
+    base_worker_id = worker_id or settings.queue_worker_id or _default_worker_id()
+    worker_ids = _worker_ids(base_worker_id, resolved_concurrency)
+    if resolved_concurrency == 1:
+        _run_worker_slot(worker_ids[0], stop_after_idle=stop_after_idle)
+        return
+
+    logger.info(
+        "generation.worker_pool.start concurrency=%s base_worker_id=%s",
+        resolved_concurrency,
+        _fit_worker_id(base_worker_id),
+    )
+    with ThreadPoolExecutor(
+        max_workers=resolved_concurrency,
+        thread_name_prefix="generation-worker",
+    ) as executor:
+        futures = [
+            executor.submit(_run_worker_slot, slot_worker_id, stop_after_idle=stop_after_idle)
+            for slot_worker_id in worker_ids
+        ]
+        for future in futures:
+            future.result()
+
+
+def _run_worker_slot(worker_id: str, *, stop_after_idle: bool) -> None:
     from app.db.session import SessionLocal
 
-    resolved_worker_id = worker_id or settings.queue_worker_id or _default_worker_id()
     while True:
         with SessionLocal() as db:
             service = GenerationQueueService(db)
-            service.heartbeat_worker(resolved_worker_id)
+            service.heartbeat_worker(worker_id)
             service.recover_stale_runs()
-            run = service.run_once(resolved_worker_id)
+            run = service.run_once(worker_id)
         if run is None:
             if stop_after_idle:
                 return
@@ -413,7 +450,21 @@ def _is_retryable(exc: Exception) -> bool:
 
 
 def _default_worker_id() -> str:
-    return f"{socket.gethostname()}:{id(object())}"
+    return f"{socket.gethostname()}:{os.getpid()}:{uuid4().hex[:8]}"
+
+
+def _worker_ids(base_worker_id: str, concurrency: int) -> list[str]:
+    if concurrency == 1:
+        return [_fit_worker_id(base_worker_id)]
+    return [_fit_worker_id(f"{base_worker_id}:{slot}") for slot in range(1, concurrency + 1)]
+
+
+def _fit_worker_id(worker_id: str) -> str:
+    if len(worker_id) <= WORKER_ID_MAX_LENGTH:
+        return worker_id
+    digest = sha1(worker_id.encode("utf-8")).hexdigest()[:10]
+    prefix_limit = WORKER_ID_MAX_LENGTH - len(digest) - 1
+    return f"{worker_id[:prefix_limit]}:{digest}"
 
 
 def _excerpt(value: str, limit: int) -> str:

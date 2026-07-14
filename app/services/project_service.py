@@ -27,14 +27,9 @@ class ProjectService:
             owner_user_id=user.id,
             name=name,
             description=payload.description,
-            target_frontend_stack=normalize_stack(
-                payload.target_frontend_stack,
-                DEFAULT_FRONTEND_STACK,
-            ),
-            target_backend_stack=normalize_stack(
-                payload.target_backend_stack,
-                DEFAULT_BACKEND_STACK,
-            ),
+            target_frontend_stack=DEFAULT_FRONTEND_STACK,
+            target_backend_stack=DEFAULT_BACKEND_STACK,
+            target_stacks_configured=False,
         )
         self.db.add(project)
         self._commit_project_change()
@@ -97,6 +92,16 @@ class ProjectService:
                 updates["target_backend_stack"],
                 DEFAULT_BACKEND_STACK,
             )
+        if "target_frontend_stack" in updates or "target_backend_stack" in updates:
+            updates["target_frontend_stack"] = normalize_stack(
+                updates.get("target_frontend_stack", project.target_frontend_stack),
+                DEFAULT_FRONTEND_STACK,
+            )
+            updates["target_backend_stack"] = normalize_stack(
+                updates.get("target_backend_stack", project.target_backend_stack),
+                DEFAULT_BACKEND_STACK,
+            )
+            updates["target_stacks_configured"] = True
         for field, value in updates.items():
             setattr(project, field, value)
         self.db.add(project)

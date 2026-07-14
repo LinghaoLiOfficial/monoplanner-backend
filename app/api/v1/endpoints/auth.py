@@ -34,6 +34,14 @@ def send_email_verification_code(
     return AuthService(db).send_register_code(str(payload.email))
 
 
+@router.post("/register/code", response_model=SendEmailVerificationResponse)
+def send_register_code(
+    db: DbSession,
+    payload: SendEmailVerificationRequest,
+) -> SendEmailVerificationResponse:
+    return send_email_verification_code(db, payload)
+
+
 @router.post("/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED)
 def register(db: DbSession, payload: RegisterRequest) -> AuthUserResponse:
     return AuthUserResponse(user=AuthService(db).register(payload))

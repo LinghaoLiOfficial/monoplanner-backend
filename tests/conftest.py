@@ -33,6 +33,8 @@ os.environ["LLM_BASE_URL"] = ""
 os.environ["LLM_API_KEY"] = ""
 os.environ["LLM_MODEL"] = ""
 os.environ["AUTH_SECRET_KEY"] = "test-auth-secret"
+os.environ["AUTH_COOKIE_SECURE"] = "false"
+os.environ["AUTH_COOKIE_SAMESITE"] = "lax"
 
 security = importlib.import_module("app.core.security")
 User = importlib.import_module("app.models.user").User

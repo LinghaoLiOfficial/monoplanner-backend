@@ -12,7 +12,7 @@
 - 分层约定：endpoint 负责请求/响应和依赖注入，业务逻辑放在 `app/services/`，LLM 生成入口放在 `app/generators/`，统一 LLM JSON 调用封装放在 `app/llm/`。
 - 配置：项目不区分开发、测试、生产环境，应用和 Alembic 读取根目录单个 `.env`；pytest 会把 `DATABASE_URL` 覆盖为 `TEST_DATABASE_URL`，并要求测试库名以 `_test` 结尾。
 - LLM：业务需求故事池和结构化生成器统一使用 `app/llm/client.py` 的 OpenAI-compatible Chat Completions；缺少 `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL` 时返回 503，不生成 mock 数据。`OpenAICompatibleLLMClient.stream()` 支持 OpenAI-compatible streaming chat completions，解析 `data: ...` SSE chunk 并产出 `choices[0].delta.content`、`choices[0].message.content` 或 `choices[0].text`；空 `choices`、usage-only chunk 和非法 JSON chunk 视为可忽略供应商 metadata，provider error chunk 仍抛错。
-- 后台生成队列：`POST /api/v1/projects/{project_id}/generate/business-stories`、`/blueprint`、`/api-contract`、`/db-model`、`/context-packs` 当前只做业务前置校验并创建 `GenerationRun(status="queued")`，HTTP 返回 `202 Accepted` 和 `GenerationRunRead`；独立 worker 通过 `uv run python -m app.workers.generation_worker` 启动，使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取任务并在后台执行 LLM/Context Pack 生成。单个 worker 入口当前是串行 `run_once()` 循环，`QUEUE_WORKER_CONCURRENCY` 只是配置字段，尚未被 `run_worker_loop()` 消费；多个独立 worker 进程/副本可以依赖行锁并发领取不同任务，但当前 Makefile 默认只启动一个 worker，Docker Compose 默认不启动 worker。
+- 后台生成队列：`POST /api/v1/projects/{project_id}/generate/business-stories`、`/blueprint`、`/api-contract`、`/db-model`、`/context-packs` 当前只做业务前置校验并创建 `GenerationRun(status="queued")`，HTTP 返回 `202 Accepted` 和 `GenerationRunRead`；独立 worker 通过 `uv run python -m app.workers.generation_worker` 启动，使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取任务并在后台执行 LLM/Context Pack 生成。`QUEUE_WORKER_CONCURRENCY` 当前真实控制单 worker 进程内的线程执行槽位数，默认 `1`；大于 `1` 时每个槽位使用独立 SQLAlchemy `Session` 和派生 `worker_id`，同一 project 下不同任务允许并发执行。Docker Compose 提供独立 `worker` service，复用 API 镜像并只运行后台 worker。
 - 队列可靠性：`GenerationRun` 已扩展 `queue_payload`、`queued_at`、`started_at`、`locked_at`、`locked_by`、`attempt_count`、`max_attempts`、`next_attempt_at`、`cancelled_at`。LLM 请求失败可按 `QUEUE_MAX_ATTEMPTS` 自动重试，格式/校验/配置类失败直接 failed；stale running 任务按 `QUEUE_STALE_AFTER_SECONDS` 恢复；仅 queued 任务可取消。已进入 `queued` 的任务如果长期无人领取，当前不会自动标记 failed 或告警，worker 恢复后会继续按 `created_at` 顺序领取。
 - worker 可用性：worker 会写入 `generation_workers` 心跳；生成接口入队前会检查 `QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS` 时间窗口内是否有在线 worker，找不到时返回 503 且不创建 queued 任务。
 - SSE 兼容接口：`POST /api/v1/projects/{project_id}/generate/{module}/stream` 已弃用并返回 410；前端应调用普通生成接口获取 `run_id`，轮询 `GET /api/v1/generation-runs/{run_id}`，完成后通过资源列表/详情接口读取保存结果。
@@ -27,7 +27,7 @@
 - 删除策略：`DELETE /api/v1/projects/{project_id}` 在 `ProjectService.delete_project` 中执行，删除失败会 rollback；Requirement、Blueprint、GenerationRun、BusinessRequirementStory 和结构化草案表通过既有 `ondelete="CASCADE"` 外键和 relationship cascade 清理。`DELETE /api/v1/business-stories/{story_id}` 在 `BusinessRequirementStoryService.delete_story` 中硬删除单条故事，删除失败会 rollback，不影响项目、需求、蓝图或其他故事。
 - JSON 约定：模型层使用 `JSON().with_variant(JSONB, "postgresql")`，当前运行和测试都走 PostgreSQL JSONB。
 - CORS：只读取 `BACKEND_CORS_ORIGINS`，逗号分隔。
-- Auth：`/api/v1/auth/email-verification-codes`、`/register`、`/login` 为公开入口；登录成功通过 `access_token` HttpOnly Cookie 保存 7 天 JWT，登出清除 Cookie；`/auth/me` 和 `/auth/me` PATCH 返回/修改当前用户资料，不返回密码 hash、验证码或 token。密码使用 `bcrypt` hash，验证码只保存 HMAC-SHA256 hash。
+- Auth：`/api/v1/auth/email-verification-codes`、`/api/v1/auth/register/code`（验证码发送兼容别名）、`/api/v1/auth/register`、`/api/v1/auth/login` 为公开入口；登录成功通过 `access_token` HttpOnly Cookie 保存 7 天 JWT，登出清除 Cookie；`/api/v1/auth/me` 和 `/api/v1/auth/me` PATCH 返回/修改当前用户资料，不返回密码 hash、验证码或 token。密码使用 `bcrypt` hash，验证码只保存 HMAC-SHA256 hash。
 - 权限：除 health 和 auth 公开入口外，业务接口默认要求登录。普通用户只能访问自己的 `Project` 及其下游 Requirement、BusinessRequirementStory、Blueprint、ApiContractDraft、DbModelDraft、ContextPack、GenerationRun；admin 可访问普通业务全局资源，但 admin 管理接口只允许管理非 admin 用户，不能提升其他用户为 admin。
 - 多租户项目：`projects.owner_user_id` 指向 `users.id`；`Project.name` 唯一性改为同一 owner 内唯一，迁移会创建/查找 bootstrap admin 并把历史项目归属到该用户。
 
@@ -88,11 +88,10 @@ AUTH_COOKIE_SECURE=false
 AUTH_COOKIE_SAMESITE=lax
 EMAIL_VERIFICATION_EXPIRE_MINUTES=10
 EMAIL_VERIFICATION_RESEND_SECONDS=60
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USERNAME=
-SMTP_PASSWORD=
-SMTP_FROM_EMAIL=
+SMTP_HOST=smtp.qq.com
+SMTP_PORT=465
+SMTP_CODE=
+SMTP_SENDER_EMAIL=
 SMTP_USE_TLS=true
 BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 BOOTSTRAP_ADMIN_USERNAME=admin
@@ -115,11 +114,11 @@ Makefile 快捷命令：
 
 ```bash
 make run
-make worker
+make workers
 make dev-all
 ```
 
-`make worker` 单独启动后台生成 worker；`make dev-all` 先执行 migration，再在同一 shell 中后台启动 worker，并以前台方式启动 FastAPI reload 服务，退出时会清理 worker 子进程。
+`make workers` 单独启动后台生成 worker 并发池；`make dev-all` 先执行 migration，再在同一 shell 中后台启动 worker，并以前台方式启动 FastAPI reload 服务，退出时会清理 worker 子进程。
 
 本机 PostgreSQL：
 
@@ -161,7 +160,7 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - 有需求生成 blueprint、列表和详情查询；blueprint content 包含 `tech_stack.frontend/backend`；当前按阶段要求始终走 deterministic mock。
 - Blueprint prompt、`GenerationRun.input_snapshot` 和保存后的 `content.project.tech_stack` 使用项目当前保存的 `target_frontend_stack`、`target_backend_stack`；历史空值按默认技术栈兜底。
 - 业务需求故事生成覆盖 Project/Requirement 缺失、无效 `requirement_id` 400、LLM 未配置 503、合法 LLM JSON 保存、非法输出 502、0 条故事失败、`overwrite=false` 追加、`overwrite=true` 重建、列表过滤、详情、PATCH 局部更新、可编辑 JSON 字段规范化、非法格式、单条 DELETE 删除、删除不存在 404、`GenerationRun` succeeded/failed 进度记录和最新状态查询。
-- 后台队列测试覆盖 worker 未启动 503、入队、查询、取消 queued、领取最早任务、`FOR UPDATE SKIP LOCKED` 防重复领取、五类生成任务 worker 执行、LLM 请求失败重试、非重试失败、stale running 恢复和 `/stream` 弃用。
+- 后台队列测试覆盖 worker 未启动 503、入队、查询、取消 queued、领取最早任务、`FOR UPDATE SKIP LOCKED` 防重复领取、五类生成任务 worker 执行、LLM 请求失败重试、非重试失败、stale running 恢复、并发 worker pool 多槽位领取、stale recovery 并发安全、`QUEUE_WORKER_CONCURRENCY` 配置校验和 `/stream` 弃用。
 - Blueprint 生成在项目已有业务需求故事时，会在 `content.business_requirement_stories` 中包含故事标题、优先级、状态和用户故事；无故事时保持原逻辑。
 - Blueprint 生成器内部未知异常会记录 failed `GenerationRun`，并转换为中文可读 HTTP 500。
 - 生成 API contract、DB model、Context Pack，支持列表、详情、role 过滤和 Markdown 导出；无 LLM 必填配置时走 deterministic fallback。
@@ -170,7 +169,7 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - 删除 Project 后关联 Requirement、BusinessRequirementStory、GenerationRun 和第二批结构化草案 cascade 清理。
 - 删除 Project 后项目详情和按项目访问 requirements、blueprints、api-contracts、db-models、context-packs 均返回 404，已删除关联资源详情不可再访问。
 - 旧 auth/template_items 占位接口保持测试通过。
-- Auth 测试覆盖登录 Cookie、`/auth/me` 安全响应、未登录业务接口 401、邮箱验证码注册成功和弱密码拒绝；测试 fixture 默认创建真实用户并通过登录拿 Cookie。
+- Auth 测试覆盖登录 Cookie、`/auth/me` 安全响应、未登录业务接口 401、邮箱验证码发送兼容路径、邮箱验证码注册成功和弱密码拒绝；测试 fixture 默认创建真实用户并通过登录拿 Cookie。
 - 多租户测试覆盖用户内项目访问、项目 owner 写入、独立资源 ID 访问权限和删除项目后关联资源不可访问。
 
 ## Current Decisions and Conventions
@@ -182,7 +181,7 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - 用户角色固定为 `user`、`vip-plus`、`vip-pro`、`vip-pro-max`、`admin`；本批不做会员限流或功能差异化，所有非 admin 角色可使用同样普通功能。
 - Admin 不可管理其他 admin，也不可把非 admin 用户提升为 admin；如未来需要超级管理员，需要新增独立权限模型。
 - `GenerationRun` 是后台生成队列任务表，记录 `queued/running/completed/failed/cancelled` 状态；`generate_blueprint`、`generate_api_contract`、`generate_db_model`、`generate_context_packs` 和 `generate_business_requirement_stories` 都通过队列执行。
-- `QUEUE_WORKER_ID` 是 worker 标识的可选覆盖项；未配置时 `run_worker_loop()` 自动生成 `hostname:id(object())`。普通开发和单实例部署不应要求手填该变量，避免在多 worker 复用环境中出现心跳记录和 `locked_by` 标识混淆。
+- `QUEUE_WORKER_ID` 是 worker 标识的可选覆盖项；未配置时 `run_worker_loop()` 自动生成 `hostname:pid:uuid8`。并发数为 `1` 时使用该 base id；并发数大于 `1` 时派生为 `base:1`、`base:2` 等，并在超过 `generation_workers.worker_id` 长度限制时截断并追加短 hash，避免多槽位复用同一心跳记录和 `locked_by` 标识。
 - `GenerationRun` 成功状态统一写 `completed`；业务故事状态查询接口会把 `completed` 兼容映射为前端既有 `succeeded`。成功 `output_snapshot` 记录 `raw_text_length`、资源 id 或资源 id 列表、counts 和 summary；失败 `output_snapshot` 记录 `failure_stage` 和可选 `raw_text_length`，并保存 `error_message`。
 - 业务需求故事优先级固定为 `p1_must`、`p2_should`、`p3_could`、`p4_wont`；状态固定为 `draft`、`ready`、`in_progress`、`done`、`deferred`，生成默认 `draft`。
 - 业务需求故事 LLM 输出必须是 JSON object，顶层含非空 `stories` list；每个故事必须含 `title`、`priority`、`user_story`、`business_scope`、`data_rules`、`acceptance_criteria`，其中 `business_scope` 会规范化为 `included` 和 `excluded`。若未生成任何有效故事，生成任务失败并记录“未生成有效业务需求故事。”。
@@ -202,9 +201,9 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 
 - 尚未实现超级管理员、审计日志、登录失败限流、密码重置、多用户协作、生产监控和会员功能限流。
 - `AUTH_SECRET_KEY` 生产环境必须配置强随机值；默认开发 fallback 仅用于本地调试，不应上线使用。
-- SMTP 未配置时验证码只写后端日志用于开发；生产环境需要配置 SMTP 并避免日志采集暴露验证码。
+- SMTP 未配置时验证码只写后端日志用于开发；QQ 邮箱配置使用 `SMTP_HOST=smtp.qq.com`、`SMTP_PORT=465`、`SMTP_CODE` 授权码和 `SMTP_SENDER_EMAIL` 发件邮箱，465 端口自动使用 `SMTP_SSL`；生产环境需要配置 SMTP 并避免日志采集暴露验证码。
 - 后台队列当前只自动恢复 stale `running` 任务；对长期 `queued` 等待任务尚无超时失败、告警、管理端重排或强制失败机制。
-- `QUEUE_WORKER_CONCURRENCY` 当前未生效；如要单实例内并发执行，需要实现 worker pool/多进程启动并确保每个执行单元使用独立 SQLAlchemy `Session` 和唯一 `worker_id`。多 worker 并发部署还应评估同一项目多种生成任务同时写入最新资源时的业务竞态，必要时增加 project/module 级互斥或幂等约束。
+- 多 worker 并发池当前不做 project/module 级互斥；如果未来发现同一项目多种生成任务同时写入最新资源导致业务竞态，可增加 project/module 级领取条件、advisory lock 或幂等约束。
 - `running` 生成任务尚不支持提前终止；如需支持，需要增加协作式取消状态并在 worker 的 LLM 调用前后、解析前、保存前检查取消请求。
 - Consistency check 当前只做基础结构一致性检查，后续可扩展为 schema/endpoint/DB 字段级别校验。
 - Context Pack prompt 在真实运行时由 LLM 生成；测试 fallback 仍使用本地模板文案，后续可扩展为可配置模板和版本管理。

@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=60.0, alias="LLM_TIMEOUT_SECONDS")
     llm_thinking: bool = Field(default=False, alias="LLM_THINKING")
     llm_use_response_format: bool = Field(default=True, alias="LLM_USE_RESPONSE_FORMAT")
-    queue_worker_concurrency: int = Field(default=1, alias="QUEUE_WORKER_CONCURRENCY")
+    queue_worker_concurrency: int = Field(default=1, ge=1, alias="QUEUE_WORKER_CONCURRENCY")
     queue_poll_interval_seconds: float = Field(default=2.0, alias="QUEUE_POLL_INTERVAL_SECONDS")
     queue_stale_after_seconds: int = Field(default=900, alias="QUEUE_STALE_AFTER_SECONDS")
     queue_worker_heartbeat_timeout_seconds: int = Field(
@@ -43,8 +43,14 @@ class Settings(BaseSettings):
     smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
     smtp_port: int = Field(default=587, alias="SMTP_PORT")
     smtp_username: str | None = Field(default=None, alias="SMTP_USERNAME")
-    smtp_password: str | None = Field(default=None, alias="SMTP_PASSWORD")
-    smtp_from_email: str | None = Field(default=None, alias="SMTP_FROM_EMAIL")
+    smtp_code: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SMTP_CODE", "SMTP_PASSWORD"),
+    )
+    smtp_sender_email: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SMTP_SENDER_EMAIL", "SMTP_FROM_EMAIL"),
+    )
     smtp_use_tls: bool = Field(default=True, alias="SMTP_USE_TLS")
     bootstrap_admin_email: str | None = Field(default=None, alias="BOOTSTRAP_ADMIN_EMAIL")
     bootstrap_admin_username: str | None = Field(default=None, alias="BOOTSTRAP_ADMIN_USERNAME")
@@ -60,7 +66,11 @@ class Settings(BaseSettings):
 
     @property
     def smtp_configured(self) -> bool:
-        return bool(self.smtp_host and self.smtp_from_email)
+        return bool(self.smtp_host and self.smtp_sender_email)
+
+    @property
+    def smtp_login_username(self) -> str | None:
+        return self.smtp_username or self.smtp_sender_email
 
     model_config = SettingsConfigDict(
         env_file=".env",

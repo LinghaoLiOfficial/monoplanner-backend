@@ -128,6 +128,7 @@ def test_create_project_does_not_require_description(client: TestClient) -> None
     project = response.json()
     assert project["name"] == "测试项目"
     assert project["description"] is None
+    assert project["target_stacks_configured"] is False
 
 
 def test_create_project_uses_default_target_stacks(client: TestClient) -> None:
@@ -137,9 +138,10 @@ def test_create_project_uses_default_target_stacks(client: TestClient) -> None:
     project = response.json()
     assert project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
     assert project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert project["target_stacks_configured"] is False
 
 
-def test_create_project_accepts_custom_target_stacks(client: TestClient) -> None:
+def test_create_project_ignores_custom_target_stacks_until_saved(client: TestClient) -> None:
     response = client.post(
         "/api/v1/projects",
         json={
@@ -151,8 +153,9 @@ def test_create_project_accepts_custom_target_stacks(client: TestClient) -> None
 
     assert response.status_code == 201
     project = response.json()
-    assert project["target_frontend_stack"] == "Remix + React"
-    assert project["target_backend_stack"] == "Django + PostgreSQL"
+    assert project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert project["target_stacks_configured"] is False
 
 
 def test_create_project_resets_blank_target_stacks_to_defaults(client: TestClient) -> None:
@@ -169,6 +172,7 @@ def test_create_project_resets_blank_target_stacks_to_defaults(client: TestClien
     project = response.json()
     assert project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
     assert project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert project["target_stacks_configured"] is False
 
 
 def test_create_project_trims_name(client: TestClient) -> None:
@@ -255,13 +259,31 @@ def test_update_project_accepts_target_stacks(client: TestClient) -> None:
     updated_project = response.json()
     assert updated_project["target_frontend_stack"] == "Vue + Vite"
     assert updated_project["target_backend_stack"] == "Go + Gin"
+    assert updated_project["target_stacks_configured"] is True
+
+
+def test_update_project_accepts_partial_target_stack_and_marks_configured(
+    client: TestClient,
+) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Partial Stack Update"}).json()
+
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={"target_frontend_stack": "Vue + Vite"},
+    )
+
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["target_frontend_stack"] == "Vue + Vite"
+    assert updated_project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert updated_project["target_stacks_configured"] is True
 
 
 def test_update_project_preserves_target_stacks_when_unset(client: TestClient) -> None:
-    project = client.post(
-        "/api/v1/projects",
+    project = client.post("/api/v1/projects", json={"name": "Preserve Stacks"}).json()
+    project = client.patch(
+        f"/api/v1/projects/{project['id']}",
         json={
-            "name": "Preserve Stacks",
             "target_frontend_stack": "SvelteKit",
             "target_backend_stack": "Litestar",
         },
@@ -277,6 +299,7 @@ def test_update_project_preserves_target_stacks_when_unset(client: TestClient) -
     assert updated_project["description"] == "updated"
     assert updated_project["target_frontend_stack"] == "SvelteKit"
     assert updated_project["target_backend_stack"] == "Litestar"
+    assert updated_project["target_stacks_configured"] is True
 
 
 def test_update_project_resets_blank_target_stacks_to_defaults(client: TestClient) -> None:
@@ -301,6 +324,7 @@ def test_update_project_resets_blank_target_stacks_to_defaults(client: TestClien
     updated_project = response.json()
     assert updated_project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
     assert updated_project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert updated_project["target_stacks_configured"] is True
 
 
 def test_project_response_defaults_blank_target_stacks(

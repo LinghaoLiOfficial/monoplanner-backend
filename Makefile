@@ -1,4 +1,4 @@
-.PHONY: install migrate run worker dev dev-all lint test
+.PHONY: install migrate run workers dev dev-all lint test
 
 UVICORN_RELOAD_ARGS = --reload --reload-dir app --reload-include '*.py' --reload-include '.env' --reload-exclude '.venv/*' --reload-exclude '*.pyc'
 
@@ -11,7 +11,7 @@ migrate:
 run:
 	uv run python -m uvicorn app.main:app $(UVICORN_RELOAD_ARGS)
 
-worker:
+workers:
 	uv run python -m app.workers.generation_worker
 
 dev:

@@ -362,3 +362,29 @@
 - Result: 确认当前单个 worker 进程是串行循环；数据库领取逻辑使用 `FOR UPDATE SKIP LOCKED`，具备多个独立 worker 进程并发领取不同任务的基础；`QUEUE_WORKER_CONCURRENCY` 目前未被执行入口消费；Docker Compose 未启动 worker。
 - Verification: Not run；本次为只读代码评估，未改业务代码、未运行测试。
 - Follow-ups: 如要真正支持可配置并发，需要实现 worker 进程/线程池或多副本部署，并补充多 worker 并发领取与同项目任务互斥/幂等测试。
+## 2026-07-12 15:48 CST - 实现多 Worker 并发池
+
+- Request: 用户要求按既定计划把单 worker 重构为可由 `QUEUE_WORKER_CONCURRENCY` 配置的多 worker 并发池，并保持现有生成队列功能。
+- Actions: 在 `GenerationQueueService` worker 入口实现线程池执行槽位、派生 worker id、独立 session 循环和并发安全 stale recovery；为并发数增加 Settings 最小值校验；更新 Docker Compose worker service、README、`.env.example`；补充并发领取、单线程兼容、stale recovery 并发安全和配置校验测试；固定测试环境 Cookie secure 设置。
+- Result: `uv run python -m app.workers.generation_worker` 现在会按 `QUEUE_WORKER_CONCURRENCY` 启动单进程多线程执行池，默认 `1` 保持兼容；多槽位通过 PostgreSQL `SKIP LOCKED` 并发领取不同任务，同一项目任务仍允许并发。
+- Verification: `uv run python -m ruff check .` 通过；`uv run python -m pytest tests/test_generation_queue.py -q` 通过，14 个测试全部通过；`uv run python -m pytest -q` 通过，88 个测试全部通过。
+## 2026-07-12 15:52 CST - 重命名 worker 启动命令
+
+- Request: 用户认为启动后台并发池的 Makefile 命令应从 `make worker` 改为 `make workers`。
+- Actions: 将 Makefile phony target `worker` 重命名为 `workers`；同步 README 和项目技术文档中的启动命令与说明；用 `make -n workers` 验证命令展开。
+- Result: 推荐启动命令统一为 `make workers`，语义与多 worker 并发池一致；不保留旧 `make worker` target。
+- Verification: `make -n workers` 输出 `uv run python -m app.workers.generation_worker`。
+
+## 2026-07-12 16:22 CST - 调整邮箱验证码 SMTP 配置格式
+
+- Request: 用户希望邮箱验证码功能使用 `SMTP_HOST`、`SMTP_PORT`、`SMTP_CODE`、`SMTP_SENDER_EMAIL` 这一组 QQ 邮箱配置格式。
+- Actions: 更新 `Settings` 兼容 `SMTP_CODE` 和 `SMTP_SENDER_EMAIL`，保留旧 `SMTP_PASSWORD`/`SMTP_FROM_EMAIL` 作为读取 fallback；发送验证码时对 465 端口自动使用 `SMTP_SSL`，默认用发件邮箱作为登录用户名；同步 `.env`、`.env.example` 和技术文档；补充配置加载测试。
+- Result: 本地 `.env` 已按 `smtp.qq.com`、`465`、授权码和 `1136720776@qq.com` 配置，验证码邮件发送逻辑适配 QQ 邮箱授权码格式。
+- Verification: `uv run python -m ruff check app/core/config.py app/services/auth_service.py tests/test_auth.py` 通过；`uv run python -m pytest tests/test_auth.py -q` 通过，5 个测试全部通过。
+
+## 2026-07-12 16:32 CST - 兼容注册验证码前端路径
+
+- Request: 用户反馈注册页点击“发送验证码”时前端显示 Not Found，控制台显示 `POST /api/v1/auth/register/code` 返回 404。
+- Actions: 检查后端 auth 路由，确认既有验证码发送接口为 `/api/v1/auth/email-verification-codes`；新增 `/api/v1/auth/register/code` 路由别名复用同一发送逻辑，并补充回归测试；同步技术文档。
+- Result: 前端当前调用的 `/api/v1/auth/register/code` 不再 404，会执行与推荐验证码接口相同的邮箱校验、频率限制、验证码生成和发送逻辑。
+- Verification: `uv run python -m pytest tests/test_auth.py -q` 通过，6 个测试全部通过；`git diff --check -- app/api/v1/endpoints/auth.py tests/test_auth.py` 通过。

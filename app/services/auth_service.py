@@ -228,16 +228,17 @@ class AuthService:
             return
         message = EmailMessage()
         message["Subject"] = "邮箱验证码"
-        message["From"] = settings.smtp_from_email or ""
+        message["From"] = settings.smtp_sender_email or ""
         message["To"] = email
         message.set_content(
             f"您的验证码是：{code}，{settings.email_verification_expire_minutes} 分钟内有效。"
         )
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
-            if settings.smtp_use_tls:
+        smtp_class = smtplib.SMTP_SSL if settings.smtp_port == 465 else smtplib.SMTP
+        with smtp_class(settings.smtp_host, settings.smtp_port) as smtp:
+            if settings.smtp_use_tls and settings.smtp_port != 465:
                 smtp.starttls()
-            if settings.smtp_username and settings.smtp_password:
-                smtp.login(settings.smtp_username, settings.smtp_password)
+            if settings.smtp_login_username and settings.smtp_code:
+                smtp.login(settings.smtp_login_username, settings.smtp_code)
             smtp.send_message(message)
 
     def _commit_unique_user_change(self) -> None:

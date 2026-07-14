@@ -28,6 +28,7 @@ class ProjectRead(BaseModel):
     description: str | None
     target_frontend_stack: str = DEFAULT_FRONTEND_STACK
     target_backend_stack: str = DEFAULT_BACKEND_STACK
+    target_stacks_configured: bool = False
     status: str
     created_at: datetime
     updated_at: datetime

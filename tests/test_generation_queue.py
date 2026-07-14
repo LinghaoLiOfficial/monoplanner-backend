@@ -1,15 +1,22 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from threading import Barrier, Lock
 
+import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import Settings
+from app.db.session import SessionLocal
 from app.llm.client import LLMRequestError
 from app.models.blueprint import ProjectBlueprint
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
+from app.models.generation_worker import GenerationWorker
 from app.services.generation_queue_service import (
     CANCELLED_STATUS,
     COMPLETED_STATUS,
@@ -18,6 +25,7 @@ from app.services.generation_queue_service import (
     RUNNING_STATUS,
     WORKER_OFFLINE_DETAIL,
     GenerationQueueService,
+    run_worker_loop,
 )
 from tests.llm_stream_helpers import patch_llm_stream, patch_llm_stream_sequence
 from tests.test_blueprint_generation import _mock_blueprint_content
@@ -25,8 +33,8 @@ from tests.test_business_requirement_stories import VALID_LLM_OUTPUT_DICT
 from tests.test_structured_drafts import _mock_api_contract_content, _mock_db_model_content
 
 
-def _create_project_with_requirement(client: TestClient) -> dict:
-    project = client.post("/api/v1/projects", json={"name": "Queue Project"}).json()
+def _create_project_with_requirement(client: TestClient, name: str = "Queue Project") -> dict:
+    project = client.post("/api/v1/projects", json={"name": name}).json()
     requirement = client.post(
         f"/api/v1/projects/{project['id']}/requirements",
         json={"raw_text": "做一个可以把业务需求转成结构化上下文包的工具"},
@@ -106,6 +114,82 @@ def test_claim_next_job_locks_oldest_run(client: TestClient, db_session: Session
     assert claimed.locked_at is not None
     remaining = db_session.get(GenerationRun, second["id"])
     assert remaining.status == QUEUE_STATUS
+
+
+def test_run_worker_loop_single_concurrency_uses_base_worker_id(
+    client: TestClient, db_session: Session, monkeypatch
+) -> None:
+    project = _create_project_with_requirement(client)
+    queued = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint").json()
+
+    def complete_run(self, run_id):
+        run = self.get_run(run_id)
+        run.status = COMPLETED_STATUS
+        run.progress = 100
+        run.completed_at = datetime.now(UTC)
+        run.locked_at = None
+        run.locked_by = None
+        self.db.add(run)
+        self.db.commit()
+        self.db.refresh(run)
+        return run
+
+    monkeypatch.setattr(GenerationQueueService, "execute_run", complete_run)
+
+    run_worker_loop(worker_id="single-worker", stop_after_idle=True, concurrency=1)
+
+    db_session.expire_all()
+    run = db_session.get(GenerationRun, queued["id"])
+    worker_ids = set(db_session.scalars(select(GenerationWorker.worker_id)).all())
+    assert run.status == COMPLETED_STATUS
+    assert "single-worker" in worker_ids
+    assert "single-worker:1" not in worker_ids
+
+
+def test_run_worker_loop_concurrency_executes_multiple_runs_once(
+    client: TestClient, db_session: Session, monkeypatch
+) -> None:
+    projects = [
+        _create_project_with_requirement(client, f"Queue Project {index}") for index in range(3)
+    ]
+    queued_ids = [
+        client.post(f"/api/v1/projects/{project['id']}/generate/blueprint").json()["id"]
+        for project in projects
+    ]
+    executed_run_ids: list[str] = []
+    locked_by_values: list[str] = []
+    lock = Lock()
+    execution_barrier = Barrier(3, timeout=5)
+
+    def complete_run(self, run_id):
+        run = self.get_run(run_id)
+        with lock:
+            executed_run_ids.append(str(run.id))
+            locked_by_values.append(str(run.locked_by))
+        execution_barrier.wait()
+        run.status = COMPLETED_STATUS
+        run.progress = 100
+        run.completed_at = datetime.now(UTC)
+        run.locked_at = None
+        run.locked_by = None
+        self.db.add(run)
+        self.db.commit()
+        self.db.refresh(run)
+        return run
+
+    monkeypatch.setattr(GenerationQueueService, "execute_run", complete_run)
+
+    run_worker_loop(worker_id="pool-worker", stop_after_idle=True, concurrency=3)
+
+    db_session.expire_all()
+    runs = db_session.scalars(select(GenerationRun).where(GenerationRun.id.in_(queued_ids))).all()
+    worker_ids = set(db_session.scalars(select(GenerationWorker.worker_id)).all())
+    assert {run.status for run in runs} == {COMPLETED_STATUS}
+    assert sorted(executed_run_ids) == sorted(queued_ids)
+    assert len(executed_run_ids) == len(set(executed_run_ids))
+    assert worker_ids.issuperset({"pool-worker:1", "pool-worker:2", "pool-worker:3"})
+    assert set(locked_by_values).issubset({"pool-worker:1", "pool-worker:2", "pool-worker:3"})
+    assert len(set(locked_by_values)) >= 2
 
 
 def test_cancel_only_allows_queued_runs(client: TestClient, db_session: Session) -> None:
@@ -206,6 +290,36 @@ def test_stale_running_runs_are_recovered(client: TestClient, db_session: Sessio
     refreshed = db_session.get(GenerationRun, run["id"])
     assert refreshed.status == QUEUE_STATUS
     assert refreshed.locked_by is None
+
+
+def test_stale_running_recovery_is_safe_under_concurrent_workers(
+    client: TestClient, db_session: Session
+) -> None:
+    project = _create_project_with_requirement(client)
+    run = client.post(f"/api/v1/projects/{project['id']}/generate/blueprint").json()
+    claimed = GenerationQueueService(db_session).claim_next_job("worker-a")
+    claimed.locked_at = datetime.now(UTC) - timedelta(hours=1)
+    db_session.add(claimed)
+    db_session.commit()
+
+    def recover_in_new_session() -> int:
+        with SessionLocal() as db:
+            return GenerationQueueService(db).recover_stale_runs()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        recovered_counts = list(executor.map(lambda _: recover_in_new_session(), range(2)))
+
+    db_session.expire_all()
+    refreshed = db_session.get(GenerationRun, run["id"])
+    assert sum(recovered_counts) == 1
+    assert refreshed.status == QUEUE_STATUS
+    assert refreshed.locked_by is None
+
+
+def test_queue_worker_concurrency_settings_validation() -> None:
+    assert Settings(queue_worker_concurrency=3).queue_worker_concurrency == 3
+    with pytest.raises(ValidationError):
+        Settings(queue_worker_concurrency=0)
 
 
 def test_stream_endpoints_are_deprecated(client: TestClient) -> None:

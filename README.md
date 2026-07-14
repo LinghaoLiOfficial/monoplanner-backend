@@ -53,7 +53,7 @@ LLM 配置说明：
 
 队列配置说明：
 
-- `QUEUE_WORKER_CONCURRENCY`: worker 并发数，当前 worker 入口默认串行执行，默认 `1`。
+- `QUEUE_WORKER_CONCURRENCY`: 单个 worker 进程内的并发线程数，默认 `1`。大于 `1` 时每个执行槽位使用独立数据库 session 和派生 worker id，并通过 PostgreSQL 行锁领取不同任务。
 - `QUEUE_POLL_INTERVAL_SECONDS`: worker 空闲轮询间隔，默认 `2`。
 - `QUEUE_STALE_AFTER_SECONDS`: running 任务超时恢复阈值，默认 `900`。
 - `QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS`: worker 心跳有效期，生成接口在有效期内找不到在线 worker 时返回 503，默认 `15`。
@@ -117,11 +117,11 @@ uv run python -m app.workers.generation_worker
 也可以使用 Makefile：
 
 ```bash
-make worker
+make workers
 make dev-all
 ```
 
-其中 `make worker` 只启动后台队列 worker；`make dev-all` 会先执行 migration，然后同时启动 worker 和 FastAPI 开发服务。
+其中 `make workers` 只启动后台队列 worker 并发池，并按 `QUEUE_WORKER_CONCURRENCY` 启动执行槽位；`make dev-all` 会先执行 migration，然后同时启动 worker 和 FastAPI 开发服务。
 
 生成接口会先检查最近 worker 心跳；如果 worker 未启动或心跳过期，直接返回 503，不创建 queued 任务。
 
@@ -129,7 +129,7 @@ make dev-all
 
 ## Docker 启动
 
-`docker compose up api` 会让 API 容器通过 `host.docker.internal:5432` 连接宿主机 PostgreSQL。请先确保宿主机 PostgreSQL 已启动、`context_orchestrator` 数据库已存在，并允许来自 Docker Desktop 的本地连接。
+`docker compose up api worker` 会让 API 和 worker 容器通过 `host.docker.internal:5432` 连接宿主机 PostgreSQL。请先确保宿主机 PostgreSQL 已启动、`context_orchestrator` 数据库已存在，并允许来自 Docker Desktop 的本地连接。API 容器负责执行 migration，worker 容器只运行后台队列 worker，并按 `QUEUE_WORKER_CONCURRENCY` 启动并发执行池。
 
 仓库保留了一个可选的 Compose PostgreSQL 服务，仅用于临时本地辅助数据库：
 

@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -9,6 +10,7 @@ from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, no
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.schemas.project_config import ProjectConfigUpdate
 
 PROJECT_NAME_EMPTY_MESSAGE = "项目名称不能为空。"
 PROJECT_NAME_EXISTS_MESSAGE = "项目名称已存在，请使用其他名称。"
@@ -70,6 +72,25 @@ class ProjectService:
     def update_project(self, project_id: UUID, payload: ProjectUpdate) -> Project:
         project = self.get_project(project_id)
         updates = payload.model_dump(exclude_unset=True)
+        self._apply_project_updates(project, updates)
+        self.db.add(project)
+        self._commit_project_change()
+        self.db.refresh(project)
+        return project
+
+    def get_project_config(self, project_id: UUID) -> Project:
+        return self.get_project(project_id)
+
+    def update_project_config(self, project_id: UUID, payload: ProjectConfigUpdate) -> Project:
+        project = self.get_project(project_id)
+        updates = payload.model_dump(exclude_unset=True)
+        self._apply_project_updates(project, updates)
+        self.db.add(project)
+        self._commit_project_change()
+        self.db.refresh(project)
+        return project
+
+    def _apply_project_updates(self, project: Project, updates: dict[str, Any]) -> None:
         if "name" in updates:
             if updates["name"] is None:
                 raise HTTPException(
@@ -80,7 +101,7 @@ class ProjectService:
             self._ensure_name_available(
                 updates["name"],
                 owner_user_id=project.owner_user_id,
-                exclude_project_id=project_id,
+                exclude_project_id=project.id,
             )
         if "target_frontend_stack" in updates:
             updates["target_frontend_stack"] = normalize_stack(
@@ -104,10 +125,6 @@ class ProjectService:
             updates["target_stacks_configured"] = True
         for field, value in updates.items():
             setattr(project, field, value)
-        self.db.add(project)
-        self._commit_project_change()
-        self.db.refresh(project)
-        return project
 
     def delete_project(self, project_id: UUID) -> None:
         project = self.get_project(project_id)

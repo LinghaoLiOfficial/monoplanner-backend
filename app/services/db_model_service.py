@@ -21,8 +21,10 @@ from app.llm.client import (
 from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from app.models.user import User
+from app.schemas.db_model_draft import DbModelDraftUpdate
 from app.services.api_contract_service import ApiContractService
 from app.services.blueprint_service import BlueprintService
+from app.services.design_asset_service import DesignAssetService
 from app.services.project_service import ProjectService
 
 logger = logging.getLogger(__name__)
@@ -188,6 +190,14 @@ class DbModelService:
             .where(DbModelDraft.project_id == project_id)
             .order_by(DbModelDraft.created_at.desc())
             .limit(1)
+        )
+
+    def update_db_model(self, db_model_id: UUID, payload: DbModelDraftUpdate) -> DbModelDraft:
+        return DesignAssetService(self.db, self.current_user).update_asset(
+            DbModelDraft,
+            db_model_id,
+            payload,
+            not_found_detail="DB model draft not found.",
         )
 
     def get_next_version(self, project_id: UUID) -> int:

@@ -44,11 +44,24 @@ class BusinessRequirementStory(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     priority: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft", index=True)
+    implementation_scope: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="fullstack", server_default="fullstack"
+    )
+    affected_layers: Mapped[list[str]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
     user_story: Mapped[str] = mapped_column(Text(), nullable=False)
     business_scope: Mapped[dict[str, Any]] = mapped_column(json_type, nullable=False)
     data_rules: Mapped[list[dict[str, Any]]] = mapped_column(json_type, nullable=False)
     acceptance_criteria: Mapped[list[str]] = mapped_column(json_type, nullable=False)
     vertical_slice_note: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    depends_on: Mapped[list[Any]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
+    source_requirement_ids: Mapped[list[str]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
+    execution_notes: Mapped[str | None] = mapped_column(Text(), nullable=True)
     source_requirement_excerpt: Mapped[str | None] = mapped_column(Text(), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(

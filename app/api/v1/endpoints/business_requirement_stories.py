@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_active_user, get_db
@@ -60,6 +60,24 @@ def update_business_story(
     payload: BusinessRequirementStoryUpdate,
 ) -> BusinessRequirementStoryResponse:
     return BusinessRequirementStoryService(db, current_user).update_story(story_id, payload)
+
+
+@router.post(
+    "/business-stories/{story_id}/select",
+    response_model=BusinessRequirementStoryResponse,
+)
+def select_business_story(
+    db: DbSession, current_user: CurrentUser, story_id: UUID
+) -> BusinessRequirementStoryResponse:
+    return BusinessRequirementStoryService(db, current_user).select_story(story_id)
+
+
+@router.post("/business-stories/{story_id}/execute")
+def execute_business_story(story_id: UUID) -> None:
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=f"Business story execution is not implemented in Phase 1-2: {story_id}.",
+    )
 
 
 @router.delete(

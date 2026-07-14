@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -29,6 +30,9 @@ class ProjectRead(BaseModel):
     target_frontend_stack: str = DEFAULT_FRONTEND_STACK
     target_backend_stack: str = DEFAULT_BACKEND_STACK
     target_stacks_configured: bool = False
+    global_constraints: list[Any] = Field(default_factory=list)
+    coding_preferences: list[Any] = Field(default_factory=list)
+    prompt_preferences: list[Any] = Field(default_factory=list)
     status: str
     created_at: datetime
     updated_at: datetime

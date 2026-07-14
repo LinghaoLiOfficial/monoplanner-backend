@@ -9,10 +9,11 @@ from app.generators.context_pack_generator import build_context_pack_payloads
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
 from app.models.user import User
-from app.schemas.context_pack import ContextPackExportResponse
+from app.schemas.context_pack import ContextPackExportResponse, ContextPackUpdate
 from app.services.api_contract_service import ApiContractService
 from app.services.blueprint_service import BlueprintService
 from app.services.db_model_service import DbModelService
+from app.services.design_asset_service import DesignAssetService
 from app.services.project_service import ProjectService
 
 
@@ -182,6 +183,17 @@ class ContextPackService:
             filename=filename,
             content_type="text/markdown",
             content=pack.prompt_text,
+        )
+
+    def update_context_pack(
+        self, context_pack_id: UUID, payload: ContextPackUpdate
+    ) -> ContextPack:
+        return DesignAssetService(self.db, self.current_user).update_asset(
+            ContextPack,
+            context_pack_id,
+            payload,
+            not_found_detail="Context pack not found.",
+            extra_fields={"role", "prompt_text", "format"},
         )
 
     def get_project_roles(self, project_id: UUID) -> set[str]:

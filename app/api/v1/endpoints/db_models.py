@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_active_user, get_db
 from app.models.user import User
-from app.schemas.db_model_draft import DbModelDraftResponse
+from app.schemas.db_model_draft import DbModelDraftResponse, DbModelDraftUpdate
 from app.services.db_model_service import DbModelService
 
 router = APIRouter()
@@ -26,3 +26,13 @@ def get_db_model(
     db: DbSession, current_user: CurrentUser, db_model_id: UUID
 ) -> DbModelDraftResponse:
     return DbModelService(db, current_user).get_db_model(db_model_id)
+
+
+@router.patch("/db-models/{db_model_id}", response_model=DbModelDraftResponse)
+def update_db_model(
+    db: DbSession,
+    current_user: CurrentUser,
+    db_model_id: UUID,
+    payload: DbModelDraftUpdate,
+) -> DbModelDraftResponse:
+    return DbModelService(db, current_user).update_db_model(db_model_id, payload)

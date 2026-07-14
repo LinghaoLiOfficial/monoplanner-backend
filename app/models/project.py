@@ -1,25 +1,33 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.types import Uuid
+from sqlalchemy.types import JSON, Uuid
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
     from app.models.api_contract import ApiContractDraft
+    from app.models.backend_service_design import BackendServiceDesign
+    from app.models.backend_tooling import BackendTooling
     from app.models.blueprint import ProjectBlueprint
     from app.models.business_requirement_story import BusinessRequirementStory
+    from app.models.change_set import ChangeSet
     from app.models.context_pack import ContextPack
     from app.models.db_model_draft import DbModelDraft
+    from app.models.frontend_page_structure import FrontendPageStructure
+    from app.models.frontend_tooling import FrontendTooling
     from app.models.generation_run import GenerationRun
     from app.models.requirement import Requirement
     from app.models.user import User
+
+json_type = JSON().with_variant(JSONB, "postgresql")
 
 class Project(Base):
     __tablename__ = "projects"
@@ -42,6 +50,15 @@ class Project(Base):
     )
     target_stacks_configured: Mapped[bool] = mapped_column(
         Boolean(), nullable=False, default=False, server_default="false"
+    )
+    global_constraints: Mapped[list[Any]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
+    coding_preferences: Mapped[list[Any]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
+    prompt_preferences: Mapped[list[Any]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft")
     created_at: Mapped[datetime] = mapped_column(
@@ -78,5 +95,20 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )
     business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    change_sets: Mapped[list[ChangeSet]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    frontend_page_structures: Mapped[list[FrontendPageStructure]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    frontend_toolings: Mapped[list[FrontendTooling]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    backend_service_designs: Mapped[list[BackendServiceDesign]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    backend_toolings: Mapped[list[BackendTooling]] = relationship(
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )

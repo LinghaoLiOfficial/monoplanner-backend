@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON, Uuid
@@ -14,8 +14,12 @@ from app.db.base_class import Base
 if TYPE_CHECKING:
     from app.models.api_contract import ApiContractDraft
     from app.models.blueprint import ProjectBlueprint
+    from app.models.business_requirement_story import BusinessRequirementStory
+    from app.models.change_set import ChangeSet
     from app.models.db_model_draft import DbModelDraft
+    from app.models.generation_run import GenerationRun
     from app.models.project import Project
+    from app.models.requirement import Requirement
 
 json_type = JSON().with_variant(JSONB, "postgresql")
 
@@ -48,10 +52,38 @@ class ContextPack(Base):
         nullable=True,
         index=True,
     )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    source_requirement_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("requirements.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    source_story_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("business_requirement_stories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    change_set_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("change_sets.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    generation_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("generation_runs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     role: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     summary: Mapped[str] = mapped_column(Text(), nullable=False)
     content: Mapped[dict[str, Any]] = mapped_column(json_type, nullable=False)
+    diff_from_previous: Mapped[dict[str, Any]] = mapped_column(
+        json_type, nullable=False, default=dict, server_default="{}"
+    )
     prompt_text: Mapped[str] = mapped_column(Text(), nullable=False)
     format: Mapped[str] = mapped_column(String(50), nullable=False, default="markdown")
     created_at: Mapped[datetime] = mapped_column(
@@ -73,3 +105,7 @@ class ContextPack(Base):
     blueprint: Mapped[ProjectBlueprint | None] = relationship()
     api_contract: Mapped[ApiContractDraft | None] = relationship(back_populates="context_packs")
     db_model: Mapped[DbModelDraft | None] = relationship(back_populates="context_packs")
+    source_requirement: Mapped[Requirement | None] = relationship()
+    source_story: Mapped[BusinessRequirementStory | None] = relationship()
+    change_set: Mapped[ChangeSet | None] = relationship()
+    generation_run: Mapped[GenerationRun | None] = relationship()

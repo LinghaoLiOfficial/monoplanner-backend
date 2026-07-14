@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_active_user, get_db
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.project_config import ProjectConfigRead, ProjectConfigUpdate
 from app.services.project_service import ProjectService
 
 router = APIRouter(prefix="/projects")
@@ -29,6 +30,23 @@ def list_projects(
 @router.get("/{project_id}", response_model=ProjectRead)
 def get_project(db: DbSession, current_user: CurrentUser, project_id: UUID) -> ProjectRead:
     return ProjectService(db, current_user).get_project(project_id)
+
+
+@router.get("/{project_id}/config", response_model=ProjectConfigRead)
+def get_project_config(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> ProjectConfigRead:
+    return ProjectService(db, current_user).get_project_config(project_id)
+
+
+@router.patch("/{project_id}/config", response_model=ProjectConfigRead)
+def update_project_config(
+    db: DbSession,
+    current_user: CurrentUser,
+    project_id: UUID,
+    payload: ProjectConfigUpdate,
+) -> ProjectConfigRead:
+    return ProjectService(db, current_user).update_project_config(project_id, payload)
 
 
 @router.patch("/{project_id}", response_model=ProjectRead)

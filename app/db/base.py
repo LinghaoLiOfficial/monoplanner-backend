@@ -1,10 +1,15 @@
 from app.db.base_class import Base
 from app.models import (
     ApiContractDraft,
+    BackendServiceDesign,
+    BackendTooling,
     BusinessRequirementStory,
+    ChangeSet,
     ContextPack,
     DbModelDraft,
     EmailVerificationCode,
+    FrontendPageStructure,
+    FrontendTooling,
     GenerationRun,
     GenerationWorker,
     Project,
@@ -16,11 +21,16 @@ from app.models import (
 
 __all__ = [
     "ApiContractDraft",
+    "BackendServiceDesign",
+    "BackendTooling",
     "Base",
     "BusinessRequirementStory",
+    "ChangeSet",
     "ContextPack",
     "DbModelDraft",
     "EmailVerificationCode",
+    "FrontendPageStructure",
+    "FrontendTooling",
     "GenerationRun",
     "GenerationWorker",
     "Project",

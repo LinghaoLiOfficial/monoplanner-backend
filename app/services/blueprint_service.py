@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.models.blueprint import ProjectBlueprint
 from app.models.user import User
+from app.schemas.blueprint import ProjectBlueprintUpdate
+from app.services.design_asset_service import DesignAssetService
 from app.services.project_service import ProjectService
 
 
@@ -49,4 +51,14 @@ class BlueprintService:
             .where(ProjectBlueprint.project_id == project_id)
             .order_by(ProjectBlueprint.created_at.desc())
             .limit(1)
+        )
+
+    def update_blueprint(
+        self, blueprint_id: UUID, payload: ProjectBlueprintUpdate
+    ) -> ProjectBlueprint:
+        return DesignAssetService(self.db, self.current_user).update_asset(
+            ProjectBlueprint,
+            blueprint_id,
+            payload,
+            not_found_detail="Project blueprint not found.",
         )

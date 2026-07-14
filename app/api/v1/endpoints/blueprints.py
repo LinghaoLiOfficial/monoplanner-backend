@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_active_user, get_db
 from app.models.user import User
-from app.schemas.blueprint import ProjectBlueprintRead
+from app.schemas.blueprint import ProjectBlueprintRead, ProjectBlueprintUpdate
 from app.services.blueprint_service import BlueprintService
 
 router = APIRouter()
@@ -26,3 +26,13 @@ def get_blueprint(
     db: DbSession, current_user: CurrentUser, blueprint_id: UUID
 ) -> ProjectBlueprintRead:
     return BlueprintService(db, current_user).get_blueprint(blueprint_id)
+
+
+@router.patch("/blueprints/{blueprint_id}", response_model=ProjectBlueprintRead)
+def update_blueprint(
+    db: DbSession,
+    current_user: CurrentUser,
+    blueprint_id: UUID,
+    payload: ProjectBlueprintUpdate,
+) -> ProjectBlueprintRead:
+    return BlueprintService(db, current_user).update_blueprint(blueprint_id, payload)

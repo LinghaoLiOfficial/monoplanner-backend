@@ -81,8 +81,24 @@ class BusinessRequirementStoryService:
             updates["acceptance_criteria"] = _normalize_acceptance_criteria(
                 updates["acceptance_criteria"]
             )
+        if "affected_layers" in updates:
+            updates["affected_layers"] = _normalize_string_list_or_empty(updates["affected_layers"])
+        if "depends_on" in updates:
+            updates["depends_on"] = _normalize_json_list(updates["depends_on"], "依赖格式不正确。")
+        if "source_requirement_ids" in updates:
+            updates["source_requirement_ids"] = _normalize_string_list_or_empty(
+                updates["source_requirement_ids"]
+            )
         for field, value in updates.items():
             setattr(story, field, value)
+        self.db.add(story)
+        self.db.commit()
+        self.db.refresh(story)
+        return story
+
+    def select_story(self, story_id: UUID) -> BusinessRequirementStory:
+        story = self.get_story(story_id)
+        story.status = "selected"
         self.db.add(story)
         self.db.commit()
         self.db.refresh(story)
@@ -180,3 +196,16 @@ def _normalize_string_list(value: Any) -> list[str]:
         if text:
             normalized.append(text)
     return normalized
+
+
+def _normalize_string_list_or_empty(value: Any) -> list[str]:
+    try:
+        return _normalize_string_list(value)
+    except ValueError as exc:
+        raise _bad_request("列表格式不正确。") from exc
+
+
+def _normalize_json_list(value: Any, detail: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise _bad_request(detail)
+    return value

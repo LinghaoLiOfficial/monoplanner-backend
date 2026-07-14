@@ -1,4 +1,12 @@
 
+## 2026-07-14 13:15 CST - 实现全栈上下文编排器 Phase 1-2
+
+- Request: 用户要求按已确认计划实现 Phase 1-2 重构，补齐 12 模块数据模型、版本化字段、读取/详情/手动更新接口，并保持旧接口兼容。
+- Actions: 新增 ChangeSet、FrontendPageStructure、FrontendTooling、BackendServiceDesign、BackendTooling 模型、schema、service、endpoint 和 Alembic migration；扩展 Project 配置字段、BusinessRequirementStory 范围字段和现有设计资产统一版本化来源/diff 字段；为 Project config、旧资产 PATCH、prompt-packs alias 和业务故事 select 补接口；新增 Phase 1-2 资产接口测试。
+- Result: 后端已具备 Phase 1-2 的统一设计资产存储和 API 表面；LLM Story -> ChangeSet -> 资产更新主编排仍按计划留到 Phase 3，相关 execute/regenerate/generate 路径返回明确 501。
+- Verification: `uv run ruff check app alembic tests` 通过；`uv run python -m compileall app` 通过；`uv run python -m pytest tests/test_design_assets_phase_1_2.py` 通过，3 个测试全部通过；`uv run python -m pytest tests/test_projects.py tests/test_business_requirement_stories.py tests/test_structured_drafts.py tests/test_generation_queue.py` 通过，66 个测试全部通过；`uv run python -m pytest` 通过，94 个测试全部通过；`DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator_test uv run python -m alembic upgrade head` 通过。
+- Follow-ups: Phase 3 需要实现 Story execute 创建 ChangeSet、ChangeSet apply 按 affected_layers 生成新版本设计资产、蓝图总结和 prompt-pack 生成。
+
 ## 2026-07-12 14:58 CST - 修复 make dev 用户迁移 UUID 回填错误
 
 - Request: 用户反馈后端执行 `make dev` 时 Alembic 迁移 `20260712_0009` 报 `owner_user_id` UUID 列与 VARCHAR 参数类型不匹配。

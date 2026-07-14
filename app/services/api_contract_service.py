@@ -24,7 +24,9 @@ from app.llm.client import (
 from app.models.api_contract import ApiContractDraft
 from app.models.generation_run import GenerationRun
 from app.models.user import User
+from app.schemas.api_contract import ApiContractDraftUpdate
 from app.services.blueprint_service import BlueprintService
+from app.services.design_asset_service import DesignAssetService
 from app.services.project_service import ProjectService
 
 logger = logging.getLogger(__name__)
@@ -185,6 +187,17 @@ class ApiContractService:
             .where(ApiContractDraft.project_id == project_id)
             .order_by(ApiContractDraft.created_at.desc())
             .limit(1)
+        )
+
+    def update_api_contract(
+        self, api_contract_id: UUID, payload: ApiContractDraftUpdate
+    ) -> ApiContractDraft:
+        return DesignAssetService(self.db, self.current_user).update_asset(
+            ApiContractDraft,
+            api_contract_id,
+            payload,
+            not_found_detail="API contract draft not found.",
+            extra_fields={"base_path"},
         )
 
     def get_next_version(self, project_id: UUID) -> int:

@@ -16,7 +16,9 @@ from app.models import (
     ProjectBlueprint,
     Requirement,
     TemplateItem,
+    UIDesign,
     User,
+    UXDesign,
 )
 
 __all__ = [
@@ -37,5 +39,7 @@ __all__ = [
     "ProjectBlueprint",
     "Requirement",
     "TemplateItem",
+    "UIDesign",
     "User",
+    "UXDesign",
 ]

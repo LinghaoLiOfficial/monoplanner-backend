@@ -25,7 +25,9 @@ if TYPE_CHECKING:
     from app.models.frontend_tooling import FrontendTooling
     from app.models.generation_run import GenerationRun
     from app.models.requirement import Requirement
+    from app.models.ui_design import UIDesign
     from app.models.user import User
+    from app.models.ux_design import UXDesign
 
 json_type = JSON().with_variant(JSONB, "postgresql")
 
@@ -110,5 +112,11 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )
     backend_toolings: Mapped[list[BackendTooling]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    ux_designs: Mapped[list[UXDesign]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", passive_deletes=True
+    )
+    ui_designs: Mapped[list[UIDesign]] = relationship(
         back_populates="project", cascade="all, delete-orphan", passive_deletes=True
     )

@@ -94,7 +94,7 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
     with TestClient(app) as test_client:
         response = test_client.post(
             "/api/v1/auth/login",
-            json={"username": test_user.username, "password": "StrongPass1!"},
+            json={"email": test_user.email, "password": "StrongPass1!"},
         )
         assert response.status_code == 200
         yield test_client

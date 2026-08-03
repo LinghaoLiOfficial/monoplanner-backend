@@ -38,6 +38,7 @@ from app.services.requirement_service import RequirementService
 logger = logging.getLogger(__name__)
 
 VALID_PRIORITIES = {"p1_must", "p2_should", "p3_could", "p4_wont"}
+VALID_IMPLEMENTATION_SCOPES = {"frontend_only", "backend_only", "fullstack", "non_code"}
 RUN_TYPE = "generate_business_requirement_stories"
 NO_REQUIREMENT_MESSAGE = "请先在“用户需求”模块提交至少一条用户需求。"
 EMPTY_REQUIREMENT_MESSAGE = "用户需求内容为空，无法生成业务需求故事。"
@@ -112,11 +113,16 @@ class BusinessStoryGenerationService:
                     title=story_payload["title"],
                     priority=story_payload["priority"],
                     status="draft",
+                    implementation_scope=story_payload["implementation_scope"],
+                    affected_layers=story_payload["affected_layers"],
                     user_story=story_payload["user_story"],
                     business_scope=story_payload["business_scope"],
                     data_rules=story_payload["data_rules"],
                     acceptance_criteria=story_payload["acceptance_criteria"],
                     vertical_slice_note=story_payload.get("vertical_slice_note"),
+                    depends_on=story_payload["depends_on"],
+                    source_requirement_ids=story_payload["source_requirement_ids"],
+                    execution_notes=story_payload.get("execution_notes"),
                     source_requirement_excerpt=requirement.raw_text[:500],
                     sort_order=index,
                 )
@@ -319,11 +325,22 @@ def _normalize_story(story: dict[str, Any]) -> dict[str, Any]:
     return {
         "title": _require_non_empty_string(story["title"], "title"),
         "priority": _normalize_priority(story["priority"]),
+        "implementation_scope": _normalize_implementation_scope(
+            story.get("implementation_scope")
+        ),
+        "affected_layers": _normalize_story_string_list(story.get("affected_layers", [])),
         "user_story": _require_non_empty_string(story["user_story"], "user_story"),
         "business_scope": _normalize_business_scope(story["business_scope"]),
         "data_rules": _normalize_data_rules(story["data_rules"]),
         "acceptance_criteria": _normalize_acceptance_criteria(story["acceptance_criteria"]),
         "vertical_slice_note": vertical_slice_note,
+        "depends_on": story.get("depends_on") if isinstance(story.get("depends_on"), list) else [],
+        "source_requirement_ids": _normalize_story_string_list(
+            story.get("source_requirement_ids", [])
+        ),
+        "execution_notes": story.get("execution_notes")
+        if isinstance(story.get("execution_notes"), str)
+        else None,
     }
 
 
@@ -380,6 +397,23 @@ def _normalize_priority(value: Any) -> str:
         if marker in normalized:
             return priority
     raise ValueError("Story priority is invalid.")
+
+
+def _normalize_implementation_scope(value: Any) -> str:
+    if not isinstance(value, str):
+        return "fullstack"
+    normalized = value.strip()
+    return normalized if normalized in VALID_IMPLEMENTATION_SCOPES else "fullstack"
+
+
+def _normalize_story_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    normalized = []
+    for item in value:
+        if isinstance(item, str) and item.strip():
+            normalized.append(item.strip())
+    return normalized
 
 
 def _normalize_business_scope(value: Any) -> dict[str, list[str]]:

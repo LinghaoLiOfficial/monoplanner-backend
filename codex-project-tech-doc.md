@@ -2,7 +2,7 @@
 
 ## Overview
 
-本项目是 `Fullstack Context Orchestrator API` 后端，目标是把自然语言业务需求编排为业务需求故事池、结构化 Project Blueprint，并继续生成 API 契约草案、数据库模型草案、Codex Context Pack 和基础一致性检查结果。当前实现包含数据库、API、schema、service layer、Cookie/JWT 用户认证、多租户项目权限隔离、管理员用户管理、OpenAI-compatible 真实 LLM 生成链路，以及 Phase 1-2 的统一版本化设计资产存储与读取/手动更新接口；业务需求故事、Project Blueprint、API Contract Draft 和 Db Model Draft 生成均默认要求真实 LLM 配置，未配置时返回 503，不静默生成 mock 数据；LLM 请求失败或结构化输出错误返回 502 并记录 failed `GenerationRun`。
+本项目是 `Fullstack Context Orchestrator API` 后端，目标是把自然语言业务需求编排为业务需求故事池、变更集、版本化全栈设计资产、项目蓝图和 Codex Prompt Pack。当前实现包含数据库、API、schema、service layer、Cookie/JWT 用户认证、多租户项目权限隔离、管理员用户管理、OpenAI-compatible 真实 LLM 生成链路、统一版本化设计资产存储与读取/手动更新接口，以及 Phase 3-4 的 Story -> ChangeSet -> Design Assets -> Blueprint -> PromptPack 队列化编排主链路；业务需求故事、Project Blueprint、API Contract Draft 和 Db Model Draft 生成均默认要求真实 LLM 配置，未配置时返回 503，不静默生成 mock 数据；LLM 请求失败或结构化输出错误返回 502 并记录 failed `GenerationRun`。
 
 ## Architecture
 
@@ -12,7 +12,7 @@
 - 分层约定：endpoint 负责请求/响应和依赖注入，业务逻辑放在 `app/services/`，LLM 生成入口放在 `app/generators/`，统一 LLM JSON 调用封装放在 `app/llm/`。
 - 配置：项目不区分开发、测试、生产环境，应用和 Alembic 读取根目录单个 `.env`；pytest 会把 `DATABASE_URL` 覆盖为 `TEST_DATABASE_URL`，并要求测试库名以 `_test` 结尾。
 - LLM：业务需求故事池和结构化生成器统一使用 `app/llm/client.py` 的 OpenAI-compatible Chat Completions；缺少 `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL` 时返回 503，不生成 mock 数据。`OpenAICompatibleLLMClient.stream()` 支持 OpenAI-compatible streaming chat completions，解析 `data: ...` SSE chunk 并产出 `choices[0].delta.content`、`choices[0].message.content` 或 `choices[0].text`；空 `choices`、usage-only chunk 和非法 JSON chunk 视为可忽略供应商 metadata，provider error chunk 仍抛错。
-- 后台生成队列：`POST /api/v1/projects/{project_id}/generate/business-stories`、`/blueprint`、`/api-contract`、`/db-model`、`/context-packs` 当前只做业务前置校验并创建 `GenerationRun(status="queued")`，HTTP 返回 `202 Accepted` 和 `GenerationRunRead`；独立 worker 通过 `uv run python -m app.workers.generation_worker` 启动，使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取任务并在后台执行 LLM/Context Pack 生成。`QUEUE_WORKER_CONCURRENCY` 当前真实控制单 worker 进程内的线程执行槽位数，默认 `1`；大于 `1` 时每个槽位使用独立 SQLAlchemy `Session` 和派生 `worker_id`，同一 project 下不同任务允许并发执行。Docker Compose 提供独立 `worker` service，复用 API 镜像并只运行后台 worker。
+- 后台生成队列：旧生成入口 `POST /api/v1/projects/{project_id}/generate/business-stories`、`/blueprint`、`/api-contract`、`/db-model`、`/context-packs` 和新版入口 `POST /api/v1/business-stories/{story_id}/execute`、`POST /api/v1/change-sets/{id}/apply`、`POST /api/v1/change-sets/{id}/regenerate`、`POST /api/v1/projects/{project_id}/prompt-packs/generate` 都只做业务前置校验并创建 `GenerationRun(status="queued")`，HTTP 返回 `202 Accepted` 和 `GenerationRunRead`；独立 worker 通过 `uv run python -m app.workers.generation_worker` 启动，使用 PostgreSQL `FOR UPDATE SKIP LOCKED` 领取任务并在后台执行 LLM/Context Pack/编排任务。`QUEUE_WORKER_CONCURRENCY` 当前真实控制单 worker 进程内的线程执行槽位数，默认 `1`；大于 `1` 时每个槽位使用独立 SQLAlchemy `Session` 和派生 `worker_id`，同一 project 下不同任务允许并发执行。Docker Compose 提供独立 `worker` service，复用 API 镜像并只运行后台 worker。worker 运行时会通过项目统一 logging 在控制台输出启动、slot 启动、任务领取、开始、完成、失败、重试、stale 恢复和进入空闲等待等状态。
 - 队列可靠性：`GenerationRun` 已扩展 `queue_payload`、`queued_at`、`started_at`、`locked_at`、`locked_by`、`attempt_count`、`max_attempts`、`next_attempt_at`、`cancelled_at`。LLM 请求失败可按 `QUEUE_MAX_ATTEMPTS` 自动重试，格式/校验/配置类失败直接 failed；stale running 任务按 `QUEUE_STALE_AFTER_SECONDS` 恢复；仅 queued 任务可取消。已进入 `queued` 的任务如果长期无人领取，当前不会自动标记 failed 或告警，worker 恢复后会继续按 `created_at` 顺序领取。
 - worker 可用性：worker 会写入 `generation_workers` 心跳；生成接口入队前会检查 `QUEUE_WORKER_HEARTBEAT_TIMEOUT_SECONDS` 时间窗口内是否有在线 worker，找不到时返回 503 且不创建 queued 任务。
 - SSE 兼容接口：`POST /api/v1/projects/{project_id}/generate/{module}/stream` 已弃用并返回 410；前端应调用普通生成接口获取 `run_id`，轮询 `GET /api/v1/generation-runs/{run_id}`，完成后通过资源列表/详情接口读取保存结果。
@@ -20,8 +20,8 @@
 - Project 技术栈：默认前端技术栈和后端技术栈统一定义在 `app/core/constants.py`，分别为 `DEFAULT_FRONTEND_STACK` 和 `DEFAULT_BACKEND_STACK`；`normalize_stack()` 会把 `None`、空字符串和全空白字符串兜底为默认值。`ProjectCreate` 和 `ProjectUpdate` 均支持 `target_frontend_stack`、`target_backend_stack`，PATCH 未传字段不改变原值，传空字符串会重置为默认值；`ProjectRead` 对历史空值也会返回默认值。
 - Project 配置：`Project` 复用为项目配置模块，除名称、描述和目标技术栈外，新增 `global_constraints`、`coding_preferences`、`prompt_preferences` 三个 JSONB 数组字段；`GET/PATCH /api/v1/projects/{project_id}/config` 返回和更新配置，PATCH 复用项目名 trim/重复校验与技术栈规范化逻辑。
 - 业务需求池：位于 Requirement 和 Blueprint 之间，`POST /projects/{project_id}/generate/business-stories` 会把最新或指定 Requirement 拆解为垂直切片故事，保存到 `business_requirement_stories` 并记录绑定 `requirement_id` 的 `GenerationRun`；`GET /projects/{project_id}/requirements` 会在每条需求响应中附带最新 `business_story_generation` 以及顶层 `progress_status/progress_label/progress_text`，`GET /requirements/{requirement_id}/business-story-generation` 可轮询单条需求最新生成状态；`PATCH /business-stories/{story_id}` 支持局部更新标题、优先级、状态、用户故事、业务范围、数据规则和验收标准，其中可编辑 JSON 字段在 service 层规范化后整体赋值保存；`DELETE /business-stories/{story_id}` 硬删除单条故事并返回 204；Blueprint 生成时若已有业务故事，会把精简故事列表写入 `content.business_requirement_stories`。
-- 统一设计资产：Phase 1-2 已新增 `ChangeSet`、`FrontendPageStructure`、`FrontendTooling`、`BackendServiceDesign`、`BackendTooling`，并给现有 `ProjectBlueprint`、`ApiContractDraft`、`DbModelDraft`、`ContextPack` 补齐 `source_requirement_id`、`source_story_id`、`change_set_id`、`generation_run_id`、`diff_from_previous` 等版本化来源字段；`ContextPack` 新增 `version`。新增资产模块提供项目列表、详情和 PATCH 手动更新接口；旧资产模块保留原路径并新增 PATCH；`prompt-packs` 是 `context-packs` 的兼容 alias。
-- Phase 3 留白：`POST /business-stories/{story_id}/execute`、`POST /change-sets/{id}/regenerate`、`POST /projects/{project_id}/prompt-packs/generate` 当前返回 501，表示 Story -> ChangeSet -> 设计资产更新 -> Prompt Pack 的 LLM 主编排尚未实现；`POST /change-sets/{id}/apply` 当前只把 ChangeSet 标记为 `applied`。
+- 统一设计资产：已新增 `ChangeSet`、`UXDesign`、`UIDesign`、`FrontendPageStructure`、`FrontendTooling`、`BackendServiceDesign`、`BackendTooling`，并给现有 `ProjectBlueprint`、`ApiContractDraft`、`DbModelDraft`、`ContextPack` 补齐 `source_requirement_id`、`source_story_id`、`change_set_id`、`generation_run_id`、`diff_from_previous` 等版本化来源字段；`ContextPack` 新增 `version`。新增资产模块提供项目列表、详情和 PATCH 手动更新接口；旧资产模块保留原路径并新增 PATCH；`prompt-packs` 是 `context-packs` 的兼容 alias。
+- 新版编排链路：`business-stories/{story_id}/execute` 创建 `generate_change_set` run，worker 调用 `ChangeSetGenerationService` 生成新版 ChangeSet；`change-sets/{id}/apply` 创建 `apply_change_set` run，worker 调用 `DesignAssetOrchestrationService` 按 `ux_design`、`ui_design`、`frontend_pages`、`frontend_tools`、`api_contract`、`backend_services`、`backend_tools`、`database_models` 的固定顺序逐资产生成新版本资产，随后生成新版 ProjectBlueprint，并按 `prompt_assets` 或推荐策略生成 `role="prompt_pack"` 的 ContextPack；`prompt-packs/generate` 创建 `generate_prompt_pack` run，只生成 PromptPack，不修改设计资产。
 - 用户需求历史进度文案：Requirement 响应顶层 `progress_status` 固定为 `in_progress`、`success`、`failed` 三种之一；`progress_label` 固定为“进行中”“成功”“失败”；`progress_text` 固定为“正在更新”“更新成功”“更新失败”，不带中文句号。无业务故事生成记录时按同步创建完成处理为 `success`；`pending/queued/running/processing` 映射为 `in_progress`，`completed/succeeded/success` 映射为 `success`，`failed/error` 及未知终止状态映射为 `failed`。`business_story_generation.message` 继续保留原有技术/模块进度提示兼容行为；保留 `/generate/...` 路径、`run_type="generate_business_requirement_stories"` 和 `GenerationRun` 等技术标识不变。
 - 响应约定：核心接口按任务定义直接返回资源本体或列表，不使用旧 `ApiResponse` 包装。
 - 项目列表：`GET /api/v1/projects` 支持可选 `q` 参数，service layer 对 `q` 做 trim，非空时按 `Project.name.ilike("%q%")` 大小写不敏感模糊搜索，结果仍按 `created_at desc` 排序。
@@ -30,27 +30,32 @@
 - 删除策略：`DELETE /api/v1/projects/{project_id}` 在 `ProjectService.delete_project` 中执行，删除失败会 rollback；Requirement、Blueprint、GenerationRun、BusinessRequirementStory 和结构化草案表通过既有 `ondelete="CASCADE"` 外键和 relationship cascade 清理。`DELETE /api/v1/business-stories/{story_id}` 在 `BusinessRequirementStoryService.delete_story` 中硬删除单条故事，删除失败会 rollback，不影响项目、需求、蓝图或其他故事。
 - JSON 约定：模型层使用 `JSON().with_variant(JSONB, "postgresql")`，当前运行和测试都走 PostgreSQL JSONB。
 - CORS：只读取 `BACKEND_CORS_ORIGINS`，逗号分隔。
-- Auth：`/api/v1/auth/email-verification-codes`、`/api/v1/auth/register/code`（验证码发送兼容别名）、`/api/v1/auth/register`、`/api/v1/auth/login` 为公开入口；登录成功通过 `access_token` HttpOnly Cookie 保存 7 天 JWT，登出清除 Cookie；`/api/v1/auth/me` 和 `/api/v1/auth/me` PATCH 返回/修改当前用户资料，不返回密码 hash、验证码或 token。密码使用 `bcrypt` hash，验证码只保存 HMAC-SHA256 hash。
+- Auth：`/api/v1/auth/email-verification-codes`、`/api/v1/auth/register/code`（验证码发送兼容别名）、`/api/v1/auth/register`、`/api/v1/auth/login` 为公开入口；注册请求仍包含 `email`、`username`、`password`、`verification_code`，但登录请求只接受 `email` 和 `password`，会 trim/lowercase email 后按 `users.email` 查询用户，用户名不再作为登录凭证；登录成功通过 `access_token` HttpOnly Cookie 保存 7 天 JWT，登出清除 Cookie；`/api/v1/auth/me` 和 `/api/v1/auth/me` PATCH 返回/修改当前用户资料，不返回密码 hash、验证码或 token。密码使用 `bcrypt` hash，验证码只保存 HMAC-SHA256 hash。
 - 权限：除 health 和 auth 公开入口外，业务接口默认要求登录。普通用户只能访问自己的 `Project` 及其下游 Requirement、BusinessRequirementStory、Blueprint、ApiContractDraft、DbModelDraft、ContextPack、GenerationRun；admin 可访问普通业务全局资源，但 admin 管理接口只允许管理非 admin 用户，不能提升其他用户为 admin。
 - 多租户项目：`projects.owner_user_id` 指向 `users.id`；`Project.name` 唯一性改为同一 owner 内唯一，迁移会创建/查找 bootstrap admin 并把历史项目归属到该用户。
 
 ## Key Files and Directories
 
-- `app/models/`: `Project`、`Requirement`、`BusinessRequirementStory`、`ChangeSet`、`FrontendPageStructure`、`FrontendTooling`、`ApiContractDraft`、`BackendServiceDesign`、`BackendTooling`、`DbModelDraft`、`ProjectBlueprint`、`ContextPack`、`GenerationRun` ORM 模型。
+- `app/models/`: `Project`、`Requirement`、`BusinessRequirementStory`、`ChangeSet`、`UXDesign`、`UIDesign`、`FrontendPageStructure`、`FrontendTooling`、`ApiContractDraft`、`BackendServiceDesign`、`BackendTooling`、`DbModelDraft`、`ProjectBlueprint`、`ContextPack`、`GenerationRun` ORM 模型。
 - `app/models/user.py`、`app/models/email_verification_code.py`: 用户和邮箱验证码 ORM 模型。
 - `app/core/security.py`: bcrypt 密码 hash/verify、验证码 hash/verify、JWT encode/decode、密码强度校验和 avatar seed/color helper。
 - `app/core/constants.py`: 全局默认技术栈常量和技术栈空值规范化 helper。
 - `app/schemas/`: 各资源的 request/response Pydantic schema，response schema 使用 `from_attributes=True`。
-- `app/api/v1/endpoints/`: health、projects、requirements、business_requirement_stories、change_sets、frontend_page_structures、frontend_toolings、blueprints、generation、api_contracts、backend_service_designs、backend_toolings、db_models、context_packs、consistency routes。
+- `app/api/v1/endpoints/`: health、projects、requirements、business_requirement_stories、change_sets、ux_designs、ui_designs、frontend_page_structures、frontend_toolings、blueprints、generation、api_contracts、backend_service_designs、backend_toolings、db_models、context_packs、consistency routes。
 - `app/services/`: Project/Requirement/BusinessRequirementStory/BusinessStoryGeneration/Blueprint/Generation 以及 API contract、DB model、Context Pack、一致性检查服务；项目列表搜索和删除事务边界位于 `ProjectService`。
 - `app/services/llm_generation_runtime.py`: 后端内部 LLM stream 聚合工具，负责调用 `OpenAICompatibleLLMClient.stream()` 并拼接完整 raw text。
 - `app/services/streaming_generation_service.py`: 四类 LLM 生成的共享执行层，负责调用内部流式聚合、JSON 解析、结构校验、资源保存、错误映射和更新已有 `GenerationRun`。
 - `app/services/generation_queue_service.py`: PostgreSQL-backed 轻量队列服务，负责入队、领取、执行、重试/失败、取消 queued 任务和恢复 stale running 任务。
 - `app/services/design_asset_service.py`: Phase 1-2 通用设计资产读取和 PATCH 服务，被新增资产模块及旧资产 PATCH 复用。
 - `app/services/change_set_service.py`: ChangeSet 列表、详情、PATCH、apply/discard 的 Phase 1-2 服务。
+- `app/services/change_set_generation_service.py`: Story execute 和 ChangeSet regenerate 的 LLM 变更集生成服务。
+- `app/services/design_asset_orchestration_service.py`: ChangeSet apply 主编排服务，负责逐资产 LLM 生成、统一落库、蓝图总结和可选 prompt pack 生成。
+- `app/services/prompt_pack_generation_service.py`: 显式 PromptPack 生成服务，也被 apply 编排复用。
+- `app/services/orchestration_validators.py`、`app/services/orchestration_context.py`、`app/prompts/orchestration.py`: Phase 3-4 编排 prompt、上下文快照和输出校验。
 - `app/workers/generation_worker.py`: 独立后台 worker 入口。
 - `app/generators/`: blueprint、API contract、DB model、Context Pack 生成入口；blueprint、API contract、DB model 默认调用真实 LLM 并做结构校验和规范化；consistency checker 仍为本地规则检查。
 - `app/llm/json_client.py`: JSON 清洗和解析工具，兼容纯 JSON、Markdown fenced JSON 和前后少量解释文本；旧非流式调用入口仍存在，但四个主生成接口不再依赖它发起 LLM 请求。
+- `app/prompts/`: 当前后端提示词模板集中目录，以 Python `SYSTEM_PROMPT` 常量和 `build_*_payload` 函数组织，不使用独立 `.md` 或 `.txt` 模板文件。
 - `app/prompts/business_story_decomposer.py`: 业务需求故事分解 system prompt 和 user payload builder，约束严格 JSON、垂直切片、优先级定义和禁止事项。
 - `app/prompts/blueprint_generator.py`、`app/prompts/api_contract_generator.py`、`app/prompts/db_model_generator.py`: 三类结构化草案的 system prompt 和 user payload builder。
 - `alembic/versions/20260708_0002_create_orchestrator_tables.py`: 创建第一批核心业务表。
@@ -60,6 +65,7 @@
 - `alembic/versions/20260711_0006_add_generation_run_progress.py`: 为 `generation_runs` 增加 `requirement_id`、`progress`、`message`，支持前端刷新后恢复业务故事生成进度。
 - `alembic/versions/20260712_0009_add_users_and_project_ownership.py`: 创建 `users`、`email_verification_codes`，为 `projects` 增加 owner 外键并把项目名唯一性改为 `owner_user_id + name`；历史项目 owner 回填使用 PostgreSQL UUID 类型绑定，避免 UUID 列与 VARCHAR 参数类型不匹配。
 - `alembic/versions/20260714_0011_add_phase_1_2_design_assets.py`: Phase 1-2 迁移，新增 ChangeSet 和四个前后端设计资产表，扩展 Project 配置、BusinessRequirementStory 范围字段，以及现有设计资产统一来源/diff/version 字段。
+- `alembic/versions/20260802_0012_add_ux_ui_design_assets.py`: 新增 `ux_designs`、`ui_designs` 两张版本化设计资产表，包含 project/source/change_set/generation_run 外键和索引，不回填或修改历史 `affected_layers`。
 - `tests/`: 使用本机 PostgreSQL 测试库验证 API、生成链路和 cascade 行为；`tests/conftest.py` 默认读取 `TEST_DATABASE_URL`，并拒绝非 PostgreSQL 或非 `_test` 数据库。
 
 ## Setup and Runbook
@@ -124,7 +130,9 @@ make workers
 make dev-all
 ```
 
-`make workers` 单独启动后台生成 worker 并发池；`make dev-all` 先执行 migration，再在同一 shell 中后台启动 worker，并以前台方式启动 FastAPI reload 服务，退出时会清理 worker 子进程。
+`make dev`、`make run`、`make workers` 等命令内部使用 `uv run python -m ...`。如果 shell 里激活了其他项目的虚拟环境，uv 会提示 `VIRTUAL_ENV=... does not match the project environment path .venv and will be ignored`；这表示 uv 忽略了外部虚拟环境并使用当前项目 `.venv`，通常不影响运行。消除提示的推荐做法是先 `deactivate`，或激活当前项目 `.venv`；只有确实想使用当前已激活环境时才使用 `uv run --active ...`。
+
+`make workers` 单独启动后台生成 worker 并发池；`make dev-all` 先执行 migration，再在同一 shell 中后台启动 worker，并以前台方式启动 FastAPI reload 服务，退出时会清理 worker 子进程。worker 控制台日志使用 `generation.worker.*` 前缀展示启动、领取任务、执行结果、重试/失败和空闲等待状态。
 
 本机 PostgreSQL：
 
@@ -148,10 +156,11 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 当前验证结果：
 
 - `uv run python -m ruff check .` 通过。
-- `uv run python -m pytest` 最近一次全量通过，94 个测试全部通过。
+- `uv run python -m pytest` 最近一次全量通过，99 个测试全部通过。
 - `uv run ruff check app alembic tests` 通过，覆盖 Phase 1-2 新增文件。
 - `uv run python -m compileall app` 通过。
 - `uv run python -m pytest tests/test_design_assets_phase_1_2.py` 通过，3 个测试全部通过。
+- `uv run python -m pytest tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py` 通过，8 个测试全部通过。
 - `uv run python -m pytest tests/test_projects.py tests/test_business_requirement_stories.py tests/test_structured_drafts.py tests/test_generation_queue.py` 通过，66 个测试全部通过。
 - `DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator_test uv run python -m alembic upgrade head` 通过，从空测试库升级到 `20260714_0011`。
 - 当前环境中 `uv run <console-script>` 可能出现 spawn 失败，因此 Makefile 使用 `uv run python -m ...` 调用 alembic、uvicorn、ruff 和 pytest。
@@ -179,9 +188,10 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - 删除 Project 后关联 Requirement、BusinessRequirementStory、GenerationRun 和第二批结构化草案 cascade 清理。
 - 删除 Project 后项目详情和按项目访问 requirements、blueprints、api-contracts、db-models、context-packs 均返回 404，已删除关联资源详情不可再访问。
 - 旧 auth/template_items 占位接口保持测试通过。
-- Auth 测试覆盖登录 Cookie、`/auth/me` 安全响应、未登录业务接口 401、邮箱验证码发送兼容路径、邮箱验证码注册成功和弱密码拒绝；测试 fixture 默认创建真实用户并通过登录拿 Cookie。
+- Auth 测试覆盖邮箱登录 Cookie、用户名登录请求 422、错误邮箱或密码 401、邮箱大小写/空白归一化、禁用用户 403、登录 OpenAPI schema、`/auth/me` 安全响应、未登录业务接口 401、邮箱验证码发送兼容路径、邮箱验证码注册成功和弱密码拒绝；测试 fixture 默认创建真实用户并通过邮箱登录拿 Cookie。
 - 多租户测试覆盖用户内项目访问、项目 owner 写入、独立资源 ID 访问权限和删除项目后关联资源不可访问。
-- Phase 1-2 资产测试覆盖 Project config 读取/PATCH，新四类设计资产列表/详情/PATCH，ChangeSet 列表/apply，旧 Blueprint/API Contract/DB Model/ContextPack PATCH，以及 `prompt-packs` alias。
+- Phase 1-2 资产测试覆盖 Project config 读取/PATCH，UX/UI 与四类前后端设计资产列表/详情/PATCH、版本倒序、跨项目权限隔离，ChangeSet 列表、旧 Blueprint/API Contract/DB Model/ContextPack PATCH，以及 `prompt-packs` alias。
+- Phase 3-4 编排测试覆盖 Story execute 入队并生成含 UX/UI layer 的 ChangeSet、ChangeSet apply 按 UX -> UI -> 前端页面结构顺序生成资产、页面结构输入读取 UX/UI、蓝图输出 UX/UI 摘要、PromptPack 包含 UX/UI 差异、applied 状态 apply 返回 409、regenerate 创建新 ChangeSet、显式 prompt-pack generate 只生成 ContextPack。
 
 ## Current Decisions and Conventions
 
@@ -191,11 +201,16 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - `Project.name` 当前采用 `(owner_user_id, name)` 唯一约束，因此不同用户可以同名；同一用户内大小写敏感唯一，service layer 会先 trim 再查重，并捕获数据库 `IntegrityError` 转成业务 409。
 - 用户角色固定为 `user`、`vip-plus`、`vip-pro`、`vip-pro-max`、`admin`；本批不做会员限流或功能差异化，所有非 admin 角色可使用同样普通功能。
 - Admin 不可管理其他 admin，也不可把非 admin 用户提升为 admin；如未来需要超级管理员，需要新增独立权限模型。
-- `GenerationRun` 是后台生成队列任务表，记录 `queued/running/completed/failed/cancelled` 状态；`generate_blueprint`、`generate_api_contract`、`generate_db_model`、`generate_context_packs` 和 `generate_business_requirement_stories` 都通过队列执行。
+- `GenerationRun` 是后台生成队列任务表，记录 `queued/running/completed/failed/cancelled` 状态；`generate_blueprint`、`generate_api_contract`、`generate_db_model`、`generate_context_packs`、`generate_business_requirement_stories`、`generate_change_set`、`apply_change_set`、`generate_prompt_pack` 都通过队列执行。
 - `QUEUE_WORKER_ID` 是 worker 标识的可选覆盖项；未配置时 `run_worker_loop()` 自动生成 `hostname:pid:uuid8`。并发数为 `1` 时使用该 base id；并发数大于 `1` 时派生为 `base:1`、`base:2` 等，并在超过 `generation_workers.worker_id` 长度限制时截断并追加短 hash，避免多槽位复用同一心跳记录和 `locked_by` 标识。
 - `GenerationRun` 成功状态统一写 `completed`；业务故事状态查询接口会把 `completed` 兼容映射为前端既有 `succeeded`。成功 `output_snapshot` 记录 `raw_text_length`、资源 id 或资源 id 列表、counts 和 summary；失败 `output_snapshot` 记录 `failure_stage` 和可选 `raw_text_length`，并保存 `error_message`。
 - 业务需求故事优先级固定为 `p1_must`、`p2_should`、`p3_could`、`p4_wont`；新工作流状态为 `draft`、`ready`、`selected`、`applied`、`implemented`、`verified`、`deferred`，schema 暂时兼容旧 `in_progress`、`done`；生成默认 `draft`，`POST /business-stories/{story_id}/select` 会把状态更新为 `selected`。
-- 业务需求故事新增 `implementation_scope`、`affected_layers`、`depends_on`、`source_requirement_ids`、`execution_notes`，用于后续 ChangeSet 编排；当前 LLM 生成仍兼容旧输出，缺失字段使用数据库默认值。
+- 业务需求故事新增 `implementation_scope`、`affected_layers`、`depends_on`、`source_requirement_ids`、`execution_notes`，用于后续 ChangeSet 编排；业务故事和 ChangeSet prompt 均要求区分 UX/UI 影响层：用户路径、交互流程、状态反馈、空状态、错误状态和权限体验归入 `ux_design`，视觉层级、布局、颜色语义、组件样式、按钮层级、Badge 和响应式规则归入 `ui_design`；旧输出缺失字段仍使用数据库默认值。
+- ChangeSet apply 只允许 `draft`、`ready`、`failed` 状态入队；`applied` 或 `discarded` 返回 409 且不创建 run。成功 apply 后会把 ChangeSet 标记为 `applied`。
+- ChangeSet apply 采用“按 affected layer 逐资产调用 LLM、全部校验通过后统一提交”的模式；若任一 LLM 输出解析、校验或保存失败，worker 会 rollback 并把 run 标记 failed，避免半套资产落库。
+- ChangeSet apply 的前端页面结构生成必须读取最新或本轮刚生成的 `ux_design` 与 `ui_design`，页面结构只负责页面、组件、路由、目录、文件路径、数据依赖和 API client 落点，通过 `ux_refs`、`ui_refs` 引用 UX/UI。
+- ProjectBlueprint 汇总 prompt 会读取最新 UX/UI、前端、后端、API、DB 设计资产，并在 content 中保留 `ux_summary` 和 `ui_summary`。
+- PromptPack 当前保存为 `ContextPack(role="prompt_pack")`，content 使用新版 prompt pack JSON 结构，`prompt_text` 由 UX/UI 差异、frontend prompt 和 backend prompt 合并为 Markdown。
 - 业务需求故事 LLM 输出必须是 JSON object，顶层含非空 `stories` list；每个故事必须含 `title`、`priority`、`user_story`、`business_scope`、`data_rules`、`acceptance_criteria`，其中 `business_scope` 会规范化为 `included` 和 `excluded`。若未生成任何有效故事，生成任务失败并记录“未生成有效业务需求故事。”。
 - 业务需求故事 PATCH 使用 `model_dump(exclude_unset=True)` 做局部更新；`user_story` 保存 trim 后非空字符串；`business_scope` 保存为 `{"included": list[str], "excluded": list[str]}`，缺失项补空数组；`data_rules` 允许 `{rule}` 或 `{field, rule}`，过滤空 rule；`acceptance_criteria` trim 并过滤空字符串。
 - 业务需求故事生成会向 LLM 请求传入 `response_format={"type":"json_object"}`；主生成流程不再发起二次非流式 JSON 修复，解析或结构校验失败直接返回 502 并记录 failed `GenerationRun`。
@@ -215,6 +230,8 @@ Compose 内置 PostgreSQL 服务仅作为可选辅助本地数据库保留，需
 - `AUTH_SECRET_KEY` 生产环境必须配置强随机值；默认开发 fallback 仅用于本地调试，不应上线使用。
 - SMTP 未配置时验证码只写后端日志用于开发；QQ 邮箱配置使用 `SMTP_HOST=smtp.qq.com`、`SMTP_PORT=465`、`SMTP_CODE` 授权码和 `SMTP_SENDER_EMAIL` 发件邮箱，465 端口自动使用 `SMTP_SSL`；生产环境需要配置 SMTP 并避免日志采集暴露验证码。
 - 后台队列当前只自动恢复 stale `running` 任务；对长期 `queued` 等待任务尚无超时失败、告警、管理端重排或强制失败机制。
+- Phase 3-4 真实 LLM 环境尚需人工端到端验收；当前自动化测试通过 monkeypatch LLM stream 验证结构化链路。
+- ChangeSet apply 当前没有项目级互斥锁；同一项目多个 apply 并发时可能生成相邻版本竞态，生产化可增加 project-level advisory lock 或队列领取条件。
 - 多 worker 并发池当前不做 project/module 级互斥；如果未来发现同一项目多种生成任务同时写入最新资源导致业务竞态，可增加 project/module 级领取条件、advisory lock 或幂等约束。
 - `running` 生成任务尚不支持提前终止；如需支持，需要增加协作式取消状态并在 worker 的 LLM 调用前后、解析前、保存前检查取消请求。
 - Consistency check 当前只做基础结构一致性检查，后续可扩展为 schema/endpoint/DB 字段级别校验。

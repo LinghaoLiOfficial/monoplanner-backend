@@ -18,6 +18,8 @@ from app.api.v1.endpoints import (
     projects,
     requirements,
     template_items,
+    ui_designs,
+    ux_designs,
 )
 
 api_router = APIRouter()
@@ -29,6 +31,8 @@ api_router.include_router(blueprints.router, tags=["blueprints"])
 api_router.include_router(api_contracts.router, tags=["api-contracts"])
 api_router.include_router(business_requirement_stories.router, tags=["business-stories"])
 api_router.include_router(change_sets.router, tags=["change-sets"])
+api_router.include_router(ux_designs.router, tags=["ux-designs"])
+api_router.include_router(ui_designs.router, tags=["ui-designs"])
 api_router.include_router(frontend_page_structures.router, tags=["frontend-page-structures"])
 api_router.include_router(frontend_toolings.router, tags=["frontend-toolings"])
 api_router.include_router(backend_service_designs.router, tags=["backend-service-designs"])

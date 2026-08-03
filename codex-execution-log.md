@@ -1,4 +1,19 @@
 
+## 2026-08-02 10:41 +08 - 增加 worker 控制台运行状态日志
+
+- Request: 用户要求 workers 运行时在控制台打印相关运行状态信息。
+- Actions: 在 `app/services/generation_queue_service.py` 的 worker loop、slot、任务领取、开始、完成、失败、重试和 stale 恢复节点补充 `INFO`/`WARNING` 日志，并避免空闲轮询持续刷屏。
+- Result: `make workers` 或 `uv run python -m app.workers.generation_worker` 启动后，控制台会显示 worker/slot 启动、任务处理生命周期、空闲等待和异常恢复状态。
+- Verification: `uv run ruff check app/services/generation_queue_service.py` 通过；`uv run python -m compileall app/services/generation_queue_service.py` 通过；`uv run python -m pytest tests/test_generation_queue.py -q` 通过，14 个测试全部通过。
+
+## 2026-07-14 14:29 CST - 实现全栈上下文编排器 Phase 3-4
+
+- Request: 用户要求按 Phase 3-4 计划继续实现新版编排主链路，复用队列和 worker，保留旧接口兼容。
+- Actions: 新增 orchestration prompt、LLM runtime、ChangeSet 生成、设计资产 apply、PromptPack 生成、编排 validator/context helper；将 business story execute、change-set apply/regenerate、prompt-packs generate 改为 `202 + GenerationRunRead` 入队；worker 支持 `generate_change_set`、`apply_change_set`、`generate_prompt_pack`；业务故事生成补齐 implementation scope 和 affected layers；旧 blueprint/API/DB/context-pack 生成补写 generation_run_id；新增 Phase 3-4 队列集成测试并更新 Phase 1-2 apply 预期。
+- Result: 新版主链路已可从业务故事生成 ChangeSet，再由 ChangeSet apply 按 affected_layers 生成版本化设计资产、项目蓝图和 prompt pack；显式 prompt-pack generate 可单独生成 ContextPack；旧生成接口语义保持兼容。
+- Verification: `uv run ruff check app tests alembic` 通过；`uv run python -m compileall app` 通过；`uv run python -m pytest tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py` 通过，8 个测试全部通过；`uv run python -m pytest tests/test_generation_queue.py tests/test_business_requirement_stories.py tests/test_structured_drafts.py tests/test_projects.py` 通过，66 个测试全部通过；`uv run python -m pytest` 通过，99 个测试全部通过；`DATABASE_URL=postgresql+psycopg://llh@localhost:5432/context_orchestrator_test uv run python -m alembic upgrade head` 通过。
+- Follow-ups: 真实 LLM 环境还需要端到端人工验收；当前 apply 为每个 affected layer 单独调用 LLM，未来可增加单资产重试、项目级并发锁和更丰富的前端进度事件。
+
 ## 2026-07-14 13:15 CST - 实现全栈上下文编排器 Phase 1-2
 
 - Request: 用户要求按已确认计划实现 Phase 1-2 重构，补齐 12 模块数据模型、版本化字段、读取/详情/手动更新接口，并保持旧接口兼容。
@@ -319,6 +334,20 @@
 - Verification: Not run；本次仅做配置引用分析，未改代码。
 - Follow-ups: 建议从 `.env.example` 和 README 示例中移除 `LLM_TIMEOUT`，代码保留一段时间兼容旧 `.env`。
 
+## 2026-07-14 18:44 CST - 解释 uv 虚拟环境 warning
+
+- Request: 用户询问 `make dev` 中 `VIRTUAL_ENV` 与当前项目 `.venv` 不匹配的 uv warning 如何解决。
+- Actions: 检查 `Makefile` 中 `make dev` 使用的 `uv run python -m alembic` 和 `uv run python -m uvicorn` 命令，确认 warning 来源为当前 shell 激活了其他项目虚拟环境。
+- Result: 明确该 warning 不影响当前服务启动；推荐退出错误虚拟环境或激活当前项目 `.venv` 后再运行，也可按需使用 `uv run --active` 明确使用已激活环境。
+- Verification: Not run；本次为只读排查和运行环境说明，未改业务代码。
+
+## 2026-08-01 15:59 +08 - 登录改为邮箱密码
+
+- Request: 用户要求将登录凭证从 `username + password` 改为 `email + password`，保持注册、用户资料、角色权限和 Cookie/JWT 登录态不变。
+- Actions: 更新 `LoginRequest`、登录 endpoint 和 `AuthService.login()`，按归一化 email 查询用户并使用“邮箱或密码错误。”模糊错误文案；测试 fixture 改为邮箱登录；补充邮箱登录成功、用户名请求 422、错误凭证 401、邮箱大小写/空白兼容、禁用用户 403 和 OpenAPI schema 测试。
+- Result: `/api/v1/auth/login` 现在只接受 `email` 和 `password`，OpenAPI 登录请求体不再包含 `username`；`username` 仍保留为注册字段和用户资料字段；JWT payload、Cookie 名称、7 天过期和刷新过期时间逻辑未改。
+- Verification: `uv run python -m pytest tests/test_auth.py` 通过，13 个测试全部通过；`uv run pytest tests/test_auth.py` 在当前环境因 pytest console script spawn 失败不可用。
+
 ## 2026-07-12 15:07 CST - 说明 TEST_DATABASE_URL 用途
 
 - Request: 用户询问 `.env.example` 中 `TEST_DATABASE_URL` 的用途，并认为可能没必要。
@@ -396,3 +425,17 @@
 - Actions: 检查后端 auth 路由，确认既有验证码发送接口为 `/api/v1/auth/email-verification-codes`；新增 `/api/v1/auth/register/code` 路由别名复用同一发送逻辑，并补充回归测试；同步技术文档。
 - Result: 前端当前调用的 `/api/v1/auth/register/code` 不再 404，会执行与推荐验证码接口相同的邮箱校验、频率限制、验证码生成和发送逻辑。
 - Verification: `uv run python -m pytest tests/test_auth.py -q` 通过，6 个测试全部通过；`git diff --check -- app/api/v1/endpoints/auth.py tests/test_auth.py` 通过。
+
+## 2026-08-02 13:50 +08 - 新增 UX/UI 设计资产编排
+
+- Request: 用户要求实现 UX/UI 设计资产模块，并接入 ChangeSet apply、项目蓝图和 PromptPack 编排链路。
+- Actions: 新增 `UXDesign`、`UIDesign` ORM、schema、API endpoint 和 Alembic 迁移；注册项目关系、路由和资产 layer 映射；扩展 affected layer 校验、业务故事拆解 prompt、ChangeSet/设计资产/蓝图/PromptPack prompt；按 UX、UI、前端页面结构等固定顺序生成资产，并让后续资产读取已生成的 UX/UI 上下文；补充 UX/UI CRUD、权限、排序、ChangeSet 生成、apply 顺序、蓝图摘要和 PromptPack 差异测试。
+- Result: 后端现在支持 `ux_design`、`ui_design` 两个版本化设计资产层，ChangeSet apply 会在生成前端页面结构前先生成并传入 UX/UI，项目蓝图包含 UX/UI 摘要，PromptPack 文本包含 UX/UI 差异。
+- Verification: `.venv/bin/python -m ruff check app tests` 通过；`.venv/bin/python -m pytest tests/test_design_assets_phase_1_2.py tests/test_orchestration_phase_3_4.py` 通过，9 个测试全部通过；`.venv/bin/python -m pytest` 通过，107 个测试全部通过；`.venv/bin/python -m alembic heads` 显示 `20260802_0012 (head)`。
+
+## 2026-08-03 12:34 +08 - 定位提示词模板文件
+
+- Request: 用户询问当前后端的提示词模板文件在哪里。
+- Actions: 使用 `rg` 搜索 prompt/template/LLM 相关文件和内容，查看 `app/prompts/` 目录及关键 prompt builder 文件。
+- Result: 确认后端提示词模板集中在 `app/prompts/`，以 Python `SYSTEM_PROMPT` 常量和 `build_*_payload` 函数组织，不是独立 `.md` 或 `.txt` 模板文件。
+- Verification: Not run；本次为只读定位和文档记录，未改业务代码。

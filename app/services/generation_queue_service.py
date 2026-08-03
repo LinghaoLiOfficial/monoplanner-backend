@@ -16,16 +16,26 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.llm.client import REQUEST_ERROR_DETAIL
+from app.models.business_requirement_story import BusinessRequirementStory
+from app.models.change_set import ChangeSet
 from app.models.generation_run import GenerationRun
 from app.models.generation_worker import GenerationWorker
 from app.models.user import User
 from app.schemas.business_requirement_story import GenerateBusinessRequirementStoriesRequest
 from app.services.api_contract_service import RUN_TYPE as API_CONTRACT_RUN_TYPE
 from app.services.business_story_generation_service import RUN_TYPE as BUSINESS_STORY_RUN_TYPE
+from app.services.change_set_generation_service import RUN_TYPE as CHANGE_SET_RUN_TYPE
 from app.services.context_pack_service import ContextPackService
 from app.services.db_model_service import RUN_TYPE as DB_MODEL_RUN_TYPE
+from app.services.design_asset_orchestration_service import (
+    APPLIABLE_STATUSES,
+)
+from app.services.design_asset_orchestration_service import (
+    RUN_TYPE as APPLY_CHANGE_SET_RUN_TYPE,
+)
 from app.services.generation_service import RUN_TYPE as BLUEPRINT_RUN_TYPE
 from app.services.project_service import ProjectService
+from app.services.prompt_pack_generation_service import RUN_TYPE as PROMPT_PACK_RUN_TYPE
 from app.services.streaming_generation_service import StreamingGenerationService
 
 logger = logging.getLogger(__name__)
@@ -45,6 +55,9 @@ MODULE_BY_RUN_TYPE = {
     API_CONTRACT_RUN_TYPE: "api_contract",
     DB_MODEL_RUN_TYPE: "db_model",
     CONTEXT_PACK_RUN_TYPE: "context_packs",
+    CHANGE_SET_RUN_TYPE: "change_set",
+    APPLY_CHANGE_SET_RUN_TYPE: "apply_change_set",
+    PROMPT_PACK_RUN_TYPE: "prompt_pack",
 }
 
 
@@ -128,6 +141,101 @@ class GenerationQueueService:
             module="context_packs",
             queue_payload={"project_id": str(project_id)},
             input_snapshot={"project_id": str(project_id)},
+        )
+
+    def enqueue_change_set_for_story(self, story_id: UUID) -> GenerationRun:
+        story = self.db.get(BusinessRequirementStory, story_id)
+        if story is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Business requirement story not found.",
+            )
+        self._ensure_project_access(story.project_id)
+        return self._enqueue(
+            project_id=story.project_id,
+            requirement_id=story.requirement_id,
+            run_type=CHANGE_SET_RUN_TYPE,
+            module="change_set",
+            queue_payload={
+                "project_id": str(story.project_id),
+                "story_id": str(story.id),
+            },
+            input_snapshot={
+                "project_id": str(story.project_id),
+                "story_id": str(story.id),
+                "source": "business_story",
+            },
+        )
+
+    def enqueue_apply_change_set(self, change_set_id: UUID) -> GenerationRun:
+        change_set = self._get_change_set_for_workflow(change_set_id)
+        if change_set.status not in APPLIABLE_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only draft, ready, or failed change sets can be applied.",
+            )
+        return self._enqueue(
+            project_id=change_set.project_id,
+            requirement_id=change_set.source_requirement_id,
+            run_type=APPLY_CHANGE_SET_RUN_TYPE,
+            module="apply_change_set",
+            queue_payload={
+                "project_id": str(change_set.project_id),
+                "change_set_id": str(change_set.id),
+            },
+            input_snapshot={
+                "project_id": str(change_set.project_id),
+                "change_set_id": str(change_set.id),
+                "affected_layers": change_set.affected_layers,
+            },
+        )
+
+    def enqueue_regenerate_change_set(self, change_set_id: UUID) -> GenerationRun:
+        change_set = self._get_change_set_for_workflow(change_set_id)
+        if change_set.source_story_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Change set has no source story to regenerate from.",
+            )
+        return self._enqueue(
+            project_id=change_set.project_id,
+            requirement_id=change_set.source_requirement_id,
+            run_type=CHANGE_SET_RUN_TYPE,
+            module="change_set",
+            queue_payload={
+                "project_id": str(change_set.project_id),
+                "story_id": str(change_set.source_story_id),
+                "source_change_set_id": str(change_set.id),
+            },
+            input_snapshot={
+                "project_id": str(change_set.project_id),
+                "story_id": str(change_set.source_story_id),
+                "source_change_set_id": str(change_set.id),
+                "source": "regenerate_change_set",
+            },
+        )
+
+    def enqueue_prompt_pack(self, project_id: UUID, change_set_id: UUID) -> GenerationRun:
+        self._ensure_project_access(project_id)
+        change_set = self.db.get(ChangeSet, change_set_id)
+        if change_set is None or change_set.project_id != project_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Change set not found.",
+            )
+        return self._enqueue(
+            project_id=project_id,
+            requirement_id=change_set.source_requirement_id,
+            run_type=PROMPT_PACK_RUN_TYPE,
+            module="prompt_pack",
+            queue_payload={
+                "project_id": str(project_id),
+                "change_set_id": str(change_set.id),
+            },
+            input_snapshot={
+                "project_id": str(project_id),
+                "change_set_id": str(change_set.id),
+            },
         )
 
     def get_run(self, run_id: UUID) -> GenerationRun:
@@ -214,6 +322,16 @@ class GenerationQueueService:
         self.db.add(run)
         self.db.commit()
         self.db.refresh(run)
+        logger.info(
+            "generation.worker.job.claimed worker_id=%s run_id=%s run_type=%s "
+            "project_id=%s attempt=%s/%s",
+            worker_id,
+            run.id,
+            run.run_type,
+            run.project_id,
+            run.attempt_count,
+            run.max_attempts,
+        )
         return run
 
     def execute_run(self, run_id: UUID) -> GenerationRun:
@@ -228,9 +346,31 @@ class GenerationQueueService:
             self.db.commit()
             self.db.refresh(run)
 
+        worker_id = run.locked_by
+        logger.info(
+            "generation.worker.job.started worker_id=%s run_id=%s run_type=%s project_id=%s",
+            worker_id,
+            run.id,
+            run.run_type,
+            run.project_id,
+        )
         try:
             if run.run_type == CONTEXT_PACK_RUN_TYPE:
                 ContextPackService(self.db).execute_context_pack_run(run)
+            elif run.run_type == CHANGE_SET_RUN_TYPE:
+                from app.services.change_set_generation_service import ChangeSetGenerationService
+
+                ChangeSetGenerationService(self.db).execute_run(run)
+            elif run.run_type == APPLY_CHANGE_SET_RUN_TYPE:
+                from app.services.design_asset_orchestration_service import (
+                    DesignAssetOrchestrationService,
+                )
+
+                DesignAssetOrchestrationService(self.db).execute_run(run)
+            elif run.run_type == PROMPT_PACK_RUN_TYPE:
+                from app.services.prompt_pack_generation_service import PromptPackGenerationService
+
+                PromptPackGenerationService(self.db).execute_run(run)
             else:
                 spec = self._build_spec_for_run(run)
                 StreamingGenerationService(self.db).execute_existing_run(run, spec)
@@ -239,6 +379,15 @@ class GenerationQueueService:
             self.db.add(run)
             self.db.commit()
             self.db.refresh(run)
+            logger.info(
+                "generation.worker.job.finished worker_id=%s run_id=%s run_type=%s "
+                "status=%s progress=%s",
+                worker_id,
+                run.id,
+                run.run_type,
+                run.status,
+                run.progress,
+            )
             return run
         except Exception as exc:
             return self.mark_retry_or_failed(run, exc)
@@ -246,12 +395,22 @@ class GenerationQueueService:
     def mark_retry_or_failed(self, run: GenerationRun, exc: Exception) -> GenerationRun:
         self.db.rollback()
         run = self.get_run(run.id)
+        worker_id = run.locked_by
         if run.status == FAILED_STATUS and not _is_retryable(exc):
             run.locked_at = None
             run.locked_by = None
             self.db.add(run)
             self.db.commit()
             self.db.refresh(run)
+            logger.warning(
+                "generation.worker.job.failed worker_id=%s run_id=%s run_type=%s "
+                "status=%s error=%s",
+                worker_id,
+                run.id,
+                run.run_type,
+                run.status,
+                _excerpt(str(exc), 300),
+            )
             return run
         if _is_retryable(exc) and run.attempt_count < run.max_attempts:
             delay_seconds = 2 ** max(run.attempt_count - 1, 0)
@@ -265,6 +424,17 @@ class GenerationQueueService:
             self.db.add(run)
             self.db.commit()
             self.db.refresh(run)
+            logger.warning(
+                "generation.worker.job.retry_scheduled worker_id=%s run_id=%s "
+                "run_type=%s attempt=%s/%s retry_in_seconds=%s error=%s",
+                worker_id,
+                run.id,
+                run.run_type,
+                run.attempt_count,
+                run.max_attempts,
+                delay_seconds,
+                _excerpt(str(exc), 300),
+            )
             return run
 
         run.status = FAILED_STATUS
@@ -276,6 +446,16 @@ class GenerationQueueService:
         self.db.add(run)
         self.db.commit()
         self.db.refresh(run)
+        logger.exception(
+            "generation.worker.job.failed worker_id=%s run_id=%s run_type=%s "
+            "attempt=%s/%s error=%s",
+            worker_id,
+            run.id,
+            run.run_type,
+            run.attempt_count,
+            run.max_attempts,
+            _excerpt(str(exc), 300),
+        )
         return run
 
     def recover_stale_runs(self) -> int:
@@ -309,6 +489,8 @@ class GenerationQueueService:
             self.db.add(run)
             recovered += 1
         self.db.commit()
+        if recovered:
+            logger.warning("generation.worker.stale_runs.recovered count=%s", recovered)
         return recovered
 
     def run_once(self, worker_id: str) -> GenerationRun | None:
@@ -360,6 +542,16 @@ class GenerationQueueService:
             return
         ProjectService(self.db, self.current_user).get_project(project_id)
 
+    def _get_change_set_for_workflow(self, change_set_id: UUID) -> ChangeSet:
+        change_set = self.db.get(ChangeSet, change_set_id)
+        if change_set is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Change set not found.",
+            )
+        self._ensure_project_access(change_set.project_id)
+        return change_set
+
     def _build_spec_for_run(self, run: GenerationRun):
         payload = run.queue_payload or {}
         project_id = UUID(str(payload.get("project_id") or run.project_id))
@@ -394,6 +586,10 @@ def run_worker_loop(
     base_worker_id = worker_id or settings.queue_worker_id or _default_worker_id()
     worker_ids = _worker_ids(base_worker_id, resolved_concurrency)
     if resolved_concurrency == 1:
+        logger.info(
+            "generation.worker.start concurrency=1 worker_id=%s",
+            worker_ids[0],
+        )
         _run_worker_slot(worker_ids[0], stop_after_idle=stop_after_idle)
         return
 
@@ -417,6 +613,8 @@ def run_worker_loop(
 def _run_worker_slot(worker_id: str, *, stop_after_idle: bool) -> None:
     from app.db.session import SessionLocal
 
+    logger.info("generation.worker.slot.start worker_id=%s", worker_id)
+    idle_logged = False
     while True:
         with SessionLocal() as db:
             service = GenerationQueueService(db)
@@ -425,8 +623,18 @@ def _run_worker_slot(worker_id: str, *, stop_after_idle: bool) -> None:
             run = service.run_once(worker_id)
         if run is None:
             if stop_after_idle:
+                logger.info("generation.worker.slot.stop_after_idle worker_id=%s", worker_id)
                 return
+            if not idle_logged:
+                logger.info(
+                    "generation.worker.slot.idle worker_id=%s poll_interval_seconds=%s",
+                    worker_id,
+                    settings.queue_poll_interval_seconds,
+                )
+                idle_logged = True
             time.sleep(settings.queue_poll_interval_seconds)
+            continue
+        idle_logged = False
 
 
 def _queued_message(module: str) -> str:
@@ -434,12 +642,24 @@ def _queued_message(module: str) -> str:
         return "业务需求故事更新已加入后台队列。"
     if module == "context_packs":
         return "Context Pack 生成已加入后台队列。"
+    if module == "change_set":
+        return "变更集生成已加入后台队列。"
+    if module == "apply_change_set":
+        return "变更集应用已加入后台队列。"
+    if module == "prompt_pack":
+        return "指令集合生成已加入后台队列。"
     return "生成任务已加入后台队列。"
 
 
 def _failure_message(run: GenerationRun) -> str:
     if run.run_type == BUSINESS_STORY_RUN_TYPE:
         return "业务需求故事更新失败"
+    if run.run_type == CHANGE_SET_RUN_TYPE:
+        return "变更集生成失败"
+    if run.run_type == APPLY_CHANGE_SET_RUN_TYPE:
+        return "变更集应用失败"
+    if run.run_type == PROMPT_PACK_RUN_TYPE:
+        return "指令集合生成失败"
     return "生成失败"
 
 

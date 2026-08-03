@@ -94,12 +94,12 @@ class AuthService:
         self.db.refresh(user)
         return user
 
-    def login(self, username: str, password: str, response: Response) -> User:
-        user = self.db.scalar(select(User).where(User.username == username.strip()))
+    def login(self, email: str, password: str, response: Response) -> User:
+        user = self.db.scalar(select(User).where(User.email == _normalize_email(email)))
         if user is None or not verify_password(password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="用户名或密码错误。",
+                detail="邮箱或密码错误。",
             )
         if not user.is_active:
             raise HTTPException(

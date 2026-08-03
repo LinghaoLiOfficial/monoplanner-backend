@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_verification_code
+from app.core.security import hash_password, hash_verification_code
 from app.models.email_verification_code import EmailVerificationCode
 from app.models.user import User
 from app.services.auth_service import AuthService
@@ -36,6 +36,91 @@ def test_login_sets_cookie_and_me_returns_safe_user(client: TestClient) -> None:
     assert payload["username"] == "testuser"
     assert "password_hash" not in payload
     assert "access_token" not in payload
+
+
+def test_login_accepts_email_and_sets_cookie(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "test@example.com", "password": "StrongPass1!"},
+    )
+
+    assert response.status_code == 200
+    assert "access_token" in response.cookies
+    payload = response.json()["user"]
+    assert payload["email"] == "test@example.com"
+    assert payload["username"] == "testuser"
+
+
+def test_login_rejects_username_payload(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "testuser", "password": "StrongPass1!"},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"email": "missing@example.com", "password": "StrongPass1!"},
+        {"email": "test@example.com", "password": "WrongPass1!"},
+    ],
+)
+def test_login_rejects_unknown_email_or_wrong_password(
+    client: TestClient,
+    payload: dict[str, str],
+) -> None:
+    response = client.post("/api/v1/auth/login", json=payload)
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "邮箱或密码错误。"
+
+
+def test_login_normalizes_email_case(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "  TEST@EXAMPLE.COM  ", "password": "StrongPass1!"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["user"]["email"] == "test@example.com"
+
+
+def test_login_rejects_inactive_user(db_session: Session, client: TestClient) -> None:
+    disabled_user = User(
+        email="disabled@example.com",
+        username="disableduser",
+        password_hash=hash_password("StrongPass1!"),
+        role="user",
+        is_active=False,
+        is_email_verified=True,
+        avatar_seed="D",
+        avatar_bg_color="#2563eb",
+    )
+    db_session.add(disabled_user)
+    db_session.commit()
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "disabled@example.com", "password": "StrongPass1!"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_login_openapi_schema_uses_email_not_username(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+    login_schema_ref = schema["paths"]["/api/v1/auth/login"]["post"]["requestBody"][
+        "content"
+    ]["application/json"]["schema"]["$ref"]
+    login_schema_name = login_schema_ref.rsplit("/", 1)[-1]
+    login_schema = schema["components"]["schemas"][login_schema_name]
+
+    assert set(login_schema["properties"]) == {"email", "password"}
+    assert "email" in login_schema["required"]
+    assert "password" in login_schema["required"]
+    assert "username" not in login_schema["properties"]
 
 
 def test_unauthenticated_project_request_returns_401(

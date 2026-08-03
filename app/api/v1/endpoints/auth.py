@@ -49,7 +49,7 @@ def register(db: DbSession, payload: RegisterRequest) -> AuthUserResponse:
 
 @router.post("/login", response_model=LoginResponse)
 def login(db: DbSession, payload: LoginRequest, response: Response) -> LoginResponse:
-    return LoginResponse(user=AuthService(db).login(payload.username, payload.password, response))
+    return LoginResponse(user=AuthService(db).login(str(payload.email), payload.password, response))
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

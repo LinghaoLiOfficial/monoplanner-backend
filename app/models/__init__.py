@@ -16,7 +16,9 @@ from app.models.generation_worker import GenerationWorker
 from app.models.project import Project
 from app.models.requirement import Requirement
 from app.models.template_item import TemplateItem
+from app.models.ui_design import UIDesign
 from app.models.user import User
+from app.models.ux_design import UXDesign
 
 __all__ = [
     "ApiContractDraft",
@@ -35,5 +37,7 @@ __all__ = [
     "ProjectBlueprint",
     "Requirement",
     "TemplateItem",
+    "UIDesign",
     "User",
+    "UXDesign",
 ]

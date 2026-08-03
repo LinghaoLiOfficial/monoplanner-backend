@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 UserRole = Literal["user", "vip-plus", "vip-pro", "vip-pro-max", "admin"]
 ManageableUserRole = Literal["user", "vip-plus", "vip-pro", "vip-pro-max"]
@@ -27,8 +27,17 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=1)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
 
 class UserRead(BaseModel):

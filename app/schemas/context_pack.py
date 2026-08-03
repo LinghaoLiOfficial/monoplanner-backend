@@ -41,3 +41,7 @@ class ContextPackUpdate(DesignAssetUpdate):
     role: str | None = None
     prompt_text: str | None = None
     format: str | None = None
+
+
+class PromptPackGenerateRequest(BaseModel):
+    change_set_id: UUID

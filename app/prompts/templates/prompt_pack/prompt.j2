@@ -1,0 +1,106 @@
+===SYSTEM===
+你是一个资深 Codex 指令编排器。你的任务是基于 ChangeSet、新旧设计资产差异和项目蓝图，生成 Codex 可执行的前端/后端实现指令集合。你只生成指令，不生成业务代码。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+task: {{ task }}
+project_config:
+{{ project_config | tojson_pretty }}
+selected_story:
+{{ selected_story | tojson_pretty }}
+change_set:
+{{ change_set | tojson_pretty }}
+old_versions:
+{{ old_versions | tojson_pretty }}
+new_versions:
+{{ new_versions | tojson_pretty }}
+project_blueprint:
+{{ project_blueprint | tojson_pretty }}
+prompt_preferences:
+{{ prompt_preferences | tojson_pretty }}
+output_contract:
+{{ output_contract | tojson_pretty }}
+
+Input Descriptions:
+project_config: 项目配置、技术栈和提示词偏好。
+selected_story: 触发本次实现指令的业务需求故事，可能为空。
+change_set: 已确定的实现范围、影响层和推荐 prompt 策略。
+old_versions: 变更前设计资产快照。
+new_versions: 变更后设计资产快照。
+project_blueprint: 最新项目蓝图摘要。
+prompt_preferences: 用户配置的指令偏好。
+output_contract: 必须遵守的 PromptPack JSON schema。
+
+Output Descriptions:
+返回 PromptPack，必须包含 batch_summary、implementation_scope、frontend_prompt、backend_prompt、diff_summary、execution_order、acceptance_checklist、rollback_notes。
+frontend_prompt 和 backend_prompt 都必须包含 needed、title、prompt、affected_files、do_not_modify、verification_steps。
+前后端 prompt 可按 implementation_scope 设置 needed；不需要的一侧仍要给出 needed=false 和简短原因。
+前端 prompt 必须结合 ux_design、ui_design、frontend_pages、frontend_tools 的差异。
+后端 prompt 必须结合 api_contract、backend_services、backend_tools、database_models 的差异。
+当 UX/UI 发生变化时，diff_summary 必须包含 ux_design/ui_design 摘要。
+
+Example Input [1]:
+{
+  "change_set": {"implementation_scope": "fullstack", "title": "实现低库存商品查看与补货标记"},
+  "new_versions": {"frontend_pages": {"summary": "新增 /inventory/low-stock"}, "api_contract": {"summary": "新增库存接口"}}
+}
+
+Example Output [1]:
+{
+  "batch_summary": "实现低库存商品查看与补货标记的全栈改动。",
+  "implementation_scope": "fullstack",
+  "frontend_prompt": {
+    "needed": true,
+    "title": "实现低库存商品前端页面",
+    "prompt": "请基于最新 UX/UI 和 frontend_pages 设计实现 /inventory/low-stock 页面、库存商品行组件、加载/错误/空状态以及补货标记交互。使用现有项目技术栈和组件约定，不要改动后端代码。",
+    "affected_files": ["src/app/inventory/low-stock/page.tsx", "src/components/inventory/InventoryItemRow.tsx"],
+    "do_not_modify": ["后端服务代码", "数据库迁移"],
+    "verification_steps": ["运行 TypeScript 检查", "验证低库存列表加载、空状态、补货成功和失败状态"]
+  },
+  "backend_prompt": {
+    "needed": true,
+    "title": "实现低库存商品后端能力",
+    "prompt": "请基于 API 契约、backend_services 和 database_models 设计实现低库存商品查询与补货标记接口。保持路由薄、业务逻辑在 service 层，并补充必要数据库模型和迁移。",
+    "affected_files": ["app/api/v1/endpoints/inventory_items.py", "app/services/inventory_service.py", "app/models/inventory_item.py"],
+    "do_not_modify": ["前端页面代码"],
+    "verification_steps": ["运行后端单元测试", "验证低库存列表接口和补货标记接口"]
+  },
+  "diff_summary": {"ux_design": "新增低库存流程", "ui_design": "新增低库存 Badge 和补货按钮规则"},
+  "execution_order": ["backend_prompt", "frontend_prompt"],
+  "acceptance_checklist": ["低库存列表可查看", "商品可标记已补货", "失败状态有明确提示"],
+  "rollback_notes": ["如接口未准备好，前端应保持页面入口隐藏或显示不可用状态。"]
+}
+
+Example Input [2]:
+{
+  "change_set": {"implementation_scope": "frontend_only", "title": "调整低库存状态视觉层级"},
+  "new_versions": {"ui_design": {"summary": "调整 Badge 颜色"}, "frontend_pages": {"summary": "调整状态渲染"}}
+}
+
+Example Output [2]:
+{
+  "batch_summary": "调整低库存状态视觉层级的前端改动。",
+  "implementation_scope": "frontend_only",
+  "frontend_prompt": {
+    "needed": true,
+    "title": "调整低库存状态前端视觉",
+    "prompt": "请只修改前端低库存状态呈现，按 UI 设计更新 Badge 视觉层级和列表状态渲染。不要改动 API client 契约、后端服务或数据库。",
+    "affected_files": ["src/components/inventory/InventoryItemRow.tsx"],
+    "do_not_modify": ["后端代码", "数据库模型", "API 契约"],
+    "verification_steps": ["运行 TypeScript 检查", "检查低库存 Badge 的默认、hover、移动端显示"]
+  },
+  "backend_prompt": {
+    "needed": false,
+    "title": "后端无需修改",
+    "prompt": "本变更为 frontend_only，不需要修改后端服务、API 或数据库。",
+    "affected_files": [],
+    "do_not_modify": ["app/api", "app/services", "app/models", "alembic"],
+    "verification_steps": []
+  },
+  "diff_summary": {"ui_design": "调整低库存 Badge 视觉层级", "frontend_pages": "调整状态渲染"},
+  "execution_order": ["frontend_prompt"],
+  "acceptance_checklist": ["低库存状态视觉符合新 UI 规则", "无后端文件改动"],
+  "rollback_notes": ["回滚前端组件样式即可恢复。"]
+}

@@ -6,6 +6,13 @@
 - Result: `make workers` 或 `uv run python -m app.workers.generation_worker` 启动后，控制台会显示 worker/slot 启动、任务处理生命周期、空闲等待和异常恢复状态。
 - Verification: `uv run ruff check app/services/generation_queue_service.py` 通过；`uv run python -m compileall app/services/generation_queue_service.py` 通过；`uv run python -m pytest tests/test_generation_queue.py -q` 通过，14 个测试全部通过。
 
+## 2026-08-05 19:09 +08 - 实现全栈上下文编排器配置与版本化资产重构
+
+- Request: 用户要求实现项目配置别名、前端/后端工程实现语义升级、设计资产版本化追加保存，以及 PromptPack 语义补齐。
+- Actions: 新增 `/api/v1/projects/{project_id}/configuration` 兼容项目配置接口；为 Project 创建/更新/config schema 增加新字段输入别名和镜像输出字段；将 `FrontendPageStructure` / `BackendServiceDesign` 导出为 `FrontendImplementation` / `BackendImplementation` 并新增兼容路由；把通用设计资产 PATCH、ChangeSet、ContextPack 等更新改为创建新版本记录；补充 `PromptPack` 模型/schema 别名、README、测试和项目技术文档。
+- Result: 设计资产更新现在是追加版本语义，不再原地覆盖；新旧配置接口、工程实现别名路由和 PromptPack 语义都可直接使用，且历史数据保持兼容。
+- Verification: `uv run python -m ruff check .` 通过；`uv run python -m pytest` 通过，113 个测试全部通过。
+
 ## 2026-07-14 14:29 CST - 实现全栈上下文编排器 Phase 3-4
 
 - Request: 用户要求按 Phase 3-4 计划继续实现新版编排主链路，复用队列和 worker，保留旧接口兼容。
@@ -439,3 +446,80 @@
 - Actions: 使用 `rg` 搜索 prompt/template/LLM 相关文件和内容，查看 `app/prompts/` 目录及关键 prompt builder 文件。
 - Result: 确认后端提示词模板集中在 `app/prompts/`，以 Python `SYSTEM_PROMPT` 常量和 `build_*_payload` 函数组织，不是独立 `.md` 或 `.txt` 模板文件。
 - Verification: Not run；本次为只读定位和文档记录，未改业务代码。
+
+## 2026-08-05 14:20 +08 - 将 prompt 输出结构按目录归档
+
+- Request: 用户要求把每种大模型提示词模板对应的输出结构 Pydantic schema 保存到和 `prompt.j2` 同级的具体文件夹里。
+- Actions: 新增 `app/prompts/templates/` 目录树及各模板的 `prompt.j2`、`output_schema.py`；补充 `template_registry.py` 作为目录与 schema 的索引；把 business story、blueprint、API contract、DB model、ChangeSet、design asset、blueprint summary、prompt pack 和 context pack 的输出契约改为引用对应 Pydantic schema；新增回归测试验证目录存在、模板变量为英文且 payload 使用匹配 schema。
+- Result: 每个提示词模板现在都有可直接查看的同级 schema 文件，代码侧输出契约也统一绑定到对应 Pydantic 模型。
+- Verification: `uv run python -m pytest -q tests/test_prompt_template_contracts.py` 通过，5 个测试全部通过；`uv run python -m pytest -q tests/test_template_items.py` 通过，2 个测试全部通过；`tests/test_blueprint_generation.py` 和 `tests/test_structured_drafts.py` 受现有数据库 fixture 重复数据问题与长时间执行影响，未作为本次有效回归结果。
+
+## 2026-08-05 17:34 +08 - 输出 LLM 调用实现总结文档
+
+- Request: 用户要求总结最新的 LLM 调用代码实现形式，并输出为 Markdown 文档。
+- Actions: 新增根目录文档 `llm-call-implementation-summary.md`，概述 `app/llm/client.py`、`app/llm/json_client.py`、各 prompt builder、`app/services/llm_generation_runtime.py` 和同级 schema 目录的调用链关系；顺手更新项目技术文档的 prompt 约定。
+- Result: 生成了一份可直接查看的 LLM 调用实现总结文档，便于后续对照当前代码结构。
+- Verification: 文档已写入；未额外运行测试，因为本次只新增总结文档并做轻量说明更新。
+
+## 2026-08-05 17:41 +08 - 输出 LLM 提示词模板应用指南
+
+- Request: 用户要求总结最新的 LLM 调用模板应用方式，并输出为指导后续代码实现的 Markdown 文档。
+- Actions: 新增 `docs/llm-prompt-template-application-guide.md`，说明 prompt 目录按模板分文件夹、`prompt.j2` 与 `output_schema.py` 同级、模板变量使用英文、`output_contract` 由对应 Pydantic schema 派生，以及后续新增模板/校验/测试的实现约定；同时更新项目技术文档与执行日志。
+- Result: 得到一份面向后续实现者的 prompt 模板应用规范，强调“目录可读、schema 为真相、builder 负责连接”。
+- Verification: 文档已写入；未额外运行测试，因为本次主要是说明文档与技术文档整理。
+
+## 2026-08-06 11:47 +08 - 修复 monobase wheel 删除后的启动失败
+
+- Request: 用户删除 `monobase-0.1.0-py3-none-any.whl` 后执行 `make dev`，`uv` 仍尝试读取该 wheel 并在生成 package metadata 时失败。
+- Actions: 从 `pyproject.toml` 移除 `dependencies` 中的 `monobase` 和 `[tool.uv.sources]` 中指向 `monobase-0.1.0-py3-none-any.whl` 的 path source；执行 `uv lock` 刷新锁文件，移除 `monobase` 及其已无直接引用的传递依赖；验证锁文件和项目配置中不再包含 monobase wheel 引用。
+- Result: `make dev` 不再因缺失 wheel 报错；Alembic migration 和 Uvicorn 应用启动均可正常执行。
+- Verification: `make migrate` 通过；短暂执行 `make dev` 成功启动到 `Uvicorn running on http://127.0.0.1:8000` 后手动停止；`uv run python -c "import app.main; print('app import ok')"` 通过；`uv run python -m ruff check pyproject.toml app tests` 通过。
+
+## 2026-08-06 14:49 +08 - 修复 ChangeSet apply 流式读取超时
+
+- Request: 用户反馈前端点击“应用变更集”后，后台 worker 在 DashScope OpenAI-compatible 流式响应读取阶段抛出 `httpx.ReadTimeout`。
+- Actions: 检查 `apply_change_set -> DesignAssetOrchestrationService -> generate_orchestration_json -> OpenAICompatibleLLMClient.stream()` 调用链；新增 `LLM_STREAM_READ_TIMEOUT_SECONDS` 配置；让流式请求使用独立 `httpx.Timeout(read=...)`，普通请求仍保留 `LLM_TIMEOUT_SECONDS`；同步 `.env.example`、README 和技术文档；补充流式 timeout 回归测试。
+- Result: ChangeSet apply 等长生成允许更长的连续无数据读取窗口，默认 `300` 秒，降低模型长时间生成结构化 JSON 时被 worker 误判失败的概率。
+- Verification: `uv run python -m ruff check app/core/config.py app/llm/client.py tests/test_streaming_generation.py` 通过；`.venv/bin/python -m pytest tests/test_streaming_generation.py` 通过，5 个测试全部通过。`uv run pytest` 仍因本地 console script spawn 问题不可用，改用 `.venv/bin/python -m pytest`。
+
+## 2026-08-06 19:11 +08 - 加固 ChangeSet apply 断流重试与幂等续跑
+
+- Request: 用户反馈应用变更集仍会在 DashScope 流式响应中报 `RemoteProtocolError: incomplete chunked read`，要求实现修复。
+- Actions: 新增 `LLMPartialStreamError` 保存断流前已收到的文本；编排 JSON 生成在部分文本可解析为完整 JSON 时继续使用，否则保持 LLM 请求错误并进入重试；队列将直接抛出的 `LLMRequestError` 视为可重试；ChangeSet apply 按同一 `project_id + change_set_id + layer` 复用已保存资产，PromptPack 按同一 ChangeSet 复用已生成 pack；新增 layer start/generated 日志。
+- Result: 上游流式断流时，完整响应不会被浪费；不完整响应会重新排队；失败后再次点击或重试不会重复生成已保存的设计资产和 PromptPack。
+- Verification: `uv run python -m ruff check app/services/llm_generation_runtime.py app/services/llm_orchestration_runtime.py app/services/generation_queue_service.py app/services/design_asset_orchestration_service.py app/services/prompt_pack_generation_service.py tests/test_streaming_generation.py tests/test_orchestration_phase_3_4.py tests/test_generation_queue.py` 通过；`.venv/bin/python -m pytest tests/test_streaming_generation.py tests/test_orchestration_phase_3_4.py tests/test_generation_queue.py` 通过，30 个测试全部通过；`git diff --check` 通过。
+
+## 2026-08-06 22:26 +08 - 重构 LLM j2 模板为运行时来源
+
+- Request: 用户要求把后端 LLM `.j2` 模板改为可读且真实运行时来源，静态文本内移到模板，并统一 `===SYSTEM===` / `===USER===` 结构和示例。
+- Actions: 新增 `Jinja2` 依赖和 `app/prompts/renderer.py`；让 LLM client 支持字符串 user prompt；将业务故事、蓝图、API 契约、DB 模型、ChangeSet、设计资产、蓝图摘要、PromptPack、ContextPack 调用改为先渲染 `.j2`；重写 12 个 `prompt.j2`；更新模板契约、client 和编排测试。
+- Result: `.j2` 文件现在包含 SYSTEM/USER、Input、Input Descriptions、Output Descriptions 和成对 Example，可直接作为用户审阅 LLM 调用任务的主要来源；Python builder 只保留动态变量上下文和 schema 注入。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py tests/test_streaming_generation.py tests/test_business_requirement_stories.py tests/test_blueprint_generation.py tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py -q` 通过 61 个测试；`uv run python -m ruff check app tests --output-format=concise` 通过。
+
+## 2026-08-06 22:52 +08 - 总结 LLM 模板与输出检查开发规则
+
+- Request: 用户要求专业性总结当前 LLM 任务输入模板和输出结构检查的开发规则。
+- Actions: 基于当前 `.j2` 运行时模板、renderer、同级 `output_schema.py` 和契约测试，总结模板编写、变量边界、输出 schema、运行时校验和测试规则。
+- Result: 明确当前开发约定：`.j2` 为真实 prompt 来源，Python 只传动态变量和 schema，输出结构由 Pydantic schema 与服务层 validator 双重检查。
+- Verification: Not run；本次为规则总结和项目记忆更新。
+
+## 2026-08-06 22:57 +08 - 保存 LLM 模板开发规则文档
+
+- Request: 用户要求把 LLM 任务输入模板和输出结构检查开发规则保存为 Markdown 文档。
+- Actions: 新增 `docs/llm-prompt-template-development-rules.md`，并同步更新项目技术文档中的 docs 引用。
+- Result: 规则已形成独立 Markdown 文档，覆盖模板来源、固定结构、Example、Python builder、renderer、LLM client、输出 schema、输出检查、测试和新增任务 checklist。
+- Verification: Not run；本次只新增文档并更新项目记忆。
+
+## 2026-08-06 22:51 +08 - 总结 LLM 模板开发规则
+
+- Request: 用户要求总结当前 LLM 任务输入模板和输出结构检查的开发规则。
+- Actions: 查阅 `app/prompts/renderer.py`、`tests/test_prompt_template_contracts.py` 和 `app/prompts/templates/` 当前目录结构。
+- Result: 梳理出模板写法、变量注入、输出 schema、运行时渲染和测试校验五类规则。
+- Verification: Not run；本次为规则总结和文档记录，未修改业务代码。
+
+## 2026-08-06 23:38 +08 - UI 视觉设计生成契约升级
+
+- Request: 按最新 `ui_design` 字段定义升级后端 UI 视觉设计生成契约，不迁移数据库并保留历史资产读取。
+- Actions: 将 `app/prompts/templates/ui_design/output_schema.py` 和 `prompt.j2` 收敛到 `visual_system/layout_rules/component_style_rules`；更新编排测试中的 UI fixture 和新版本断言；在 `tests/test_prompt_template_contracts.py` 补充新版 UI schema 校验。
+- Result: 新生成 UI 资产必须包含视觉系统、页面布局规则和组件样式规则，旧主结构被 prompt 明确禁止；`UIDesignRead/Update` 仍保持 JSON 内容兼容。
+- Verification: `uv run python -m pytest tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py tests/test_prompt_template_contracts.py` 通过，22 个测试全部通过。

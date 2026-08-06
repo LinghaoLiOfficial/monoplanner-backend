@@ -81,6 +81,9 @@ class ProjectService:
     def get_project_config(self, project_id: UUID) -> Project:
         return self.get_project(project_id)
 
+    def get_project_configuration(self, project_id: UUID) -> Project:
+        return self.get_project(project_id)
+
     def update_project_config(self, project_id: UUID, payload: ProjectConfigUpdate) -> Project:
         project = self.get_project(project_id)
         updates = payload.model_dump(exclude_unset=True)
@@ -89,6 +92,11 @@ class ProjectService:
         self._commit_project_change()
         self.db.refresh(project)
         return project
+
+    def update_project_configuration(
+        self, project_id: UUID, payload: ProjectConfigUpdate
+    ) -> Project:
+        return self.update_project_config(project_id, payload)
 
     def _apply_project_updates(self, project: Project, updates: dict[str, Any]) -> None:
         if "name" in updates:

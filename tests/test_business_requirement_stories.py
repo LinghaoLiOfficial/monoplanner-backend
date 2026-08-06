@@ -135,6 +135,14 @@ def test_generate_list_update_and_read_business_stories(
     assert payload[0]["status"] == "draft"
     assert payload[0]["priority"] == "p1_must"
     assert payload[0]["generation_run_id"] is not None
+    assert payload[0]["requirement_name"] == payload[0]["title"]
+    assert payload[0]["impact_scope"] == {
+        "implementation_scope": payload[0]["implementation_scope"],
+        "affected_layers": payload[0]["affected_layers"],
+    }
+    assert payload[0]["included_scope"] == payload[0]["business_scope"]["included"]
+    assert payload[0]["excluded_scope"] == payload[0]["business_scope"]["excluded"]
+    assert payload[0]["execution_note"] == payload[0]["execution_notes"]
 
     run = db_session.scalar(
         select(GenerationRun).where(
@@ -180,6 +188,7 @@ def test_generate_list_update_and_read_business_stories(
     detail_response = client.get(f"/api/v1/business-stories/{story_id}")
     assert detail_response.status_code == 200
     assert detail_response.json()["title"] == "创建待办任务"
+    assert detail_response.json()["requirement_name"] == "创建待办任务"
 
 
 def test_generate_business_stories_rejects_requirement_from_other_project(

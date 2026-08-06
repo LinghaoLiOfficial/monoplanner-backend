@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 BusinessStoryPriority = Literal["p1_must", "p2_should", "p3_could", "p4_wont"]
 BusinessStoryStatus = Literal[
@@ -43,6 +43,40 @@ class BusinessRequirementStoryResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def requirement_name(self) -> str:
+        return self.title
+
+    @computed_field
+    @property
+    def impact_scope(self) -> dict[str, Any]:
+        return {
+            "implementation_scope": self.implementation_scope,
+            "affected_layers": self.affected_layers,
+        }
+
+    @computed_field
+    @property
+    def included_scope(self) -> list[Any]:
+        included = (
+            self.business_scope.get("included") if isinstance(self.business_scope, dict) else []
+        )
+        return included if isinstance(included, list) else []
+
+    @computed_field
+    @property
+    def excluded_scope(self) -> list[Any]:
+        excluded = (
+            self.business_scope.get("excluded") if isinstance(self.business_scope, dict) else []
+        )
+        return excluded if isinstance(excluded, list) else []
+
+    @computed_field
+    @property
+    def execution_note(self) -> str | None:
+        return self.execution_notes
 
 
 class BusinessRequirementStoryUpdate(BaseModel):

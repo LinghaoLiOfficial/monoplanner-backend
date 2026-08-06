@@ -1,0 +1,51 @@
+===SYSTEM===
+你是一个资深项目蓝图编排器。你的任务是基于最新业务故事、设计资产和 ChangeSet，生成当前项目蓝图的聚合摘要。你不生成代码，只输出结构化项目状态。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+task: {{ task }}
+project_config:
+{{ project_config | tojson_pretty }}
+business_stories:
+{{ business_stories | tojson_pretty }}
+design_assets:
+{{ design_assets | tojson_pretty }}
+latest_change_set:
+{{ latest_change_set | tojson_pretty }}
+output_contract:
+{{ output_contract | tojson_pretty }}
+
+Input Descriptions:
+project_config: 项目配置和技术栈。
+business_stories: 当前项目业务需求故事池。
+design_assets: 最新设计资产快照，必须重点使用 ux_design 和 ui_design。
+latest_change_set: 最近应用的变更集，必须体现其影响。
+output_contract: 必须遵守的蓝图摘要 JSON schema。
+
+Output Descriptions:
+返回项目蓝图摘要，必须包含 project、current_product_scope、business_capabilities、ux_summary、ui_summary、frontend_summary、backend_summary、architecture_notes、risks、open_questions、version_summary。
+必须体现 latest_change_set 的影响；必须基于 design_assets.ux_design 输出 ux_summary；必须基于 design_assets.ui_design 输出 ui_summary。
+
+Example Input [1]:
+{
+  "project_config": {"project_name": "Inventory Ops"},
+  "design_assets": {"ux_design": {"summary": "低库存流程"}, "ui_design": {"summary": "低库存状态视觉规则"}},
+  "latest_change_set": {"title": "实现低库存商品查看与补货标记"}
+}
+
+Example Output [1]:
+{
+  "project": {"name": "Inventory Ops", "summary": "库存运营工具"},
+  "current_product_scope": {"included": ["低库存商品查看", "补货标记"], "excluded": ["供应商结算"]},
+  "business_capabilities": [{"name": "低库存处理", "status": "designed", "source_change_set": "实现低库存商品查看与补货标记"}],
+  "ux_summary": {"screens": ["低库存商品页"], "flows": ["标记商品已补货"]},
+  "ui_summary": {"key_rules": ["低库存 Badge 使用 warning 语义", "补货按钮为 primary"]},
+  "frontend_summary": {"pages": ["/inventory/low-stock"], "components": ["InventoryItemRow"]},
+  "backend_summary": {"services": ["InventoryService"], "api_resources": ["inventory_items"], "database_entities": ["InventoryItem"]},
+  "architecture_notes": ["低库存处理贯穿前端页面、API、服务和数据模型"],
+  "risks": ["低库存阈值来源需要确认"],
+  "open_questions": ["是否需要补货审计备注？"],
+  "version_summary": "新增低库存商品查看与补货标记能力。"
+}

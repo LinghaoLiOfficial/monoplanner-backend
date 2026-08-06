@@ -15,7 +15,7 @@ from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
-from app.prompts.orchestration import SYSTEM_PROMPT, build_prompt_pack_payload
+from app.prompts.orchestration import build_prompt_pack_prompt
 from app.services.llm_orchestration_runtime import generate_orchestration_json
 from app.services.orchestration_context import (
     asset_snapshot,
@@ -88,6 +88,9 @@ class PromptPackGenerationService:
         old_versions: dict[str, Any],
         new_versions: dict[str, Any],
     ) -> list[ContextPack]:
+        existing_pack = self._find_existing_prompt_pack(run, change_set)
+        if existing_pack is not None:
+            return [existing_pack]
         project = ProjectService(self.db).get_project(change_set.project_id)
         story = (
             self.db.get(BusinessRequirementStory, change_set.source_story_id)
@@ -95,16 +98,17 @@ class PromptPackGenerationService:
             else None
         )
         latest_blueprint = latest_asset(self.db, ProjectBlueprint, project.id)
+        prompt = build_prompt_pack_prompt(
+            project_config=project_config_snapshot(project),
+            selected_story=story_snapshot(story),
+            change_set=change_set_snapshot(change_set),
+            old_versions=old_versions,
+            new_versions=new_versions,
+            project_blueprint=asset_snapshot(latest_blueprint) or {},
+        )
         parsed = generate_orchestration_json(
-            SYSTEM_PROMPT,
-            build_prompt_pack_payload(
-                project_config=project_config_snapshot(project),
-                selected_story=story_snapshot(story),
-                change_set=change_set_snapshot(change_set),
-                old_versions=old_versions,
-                new_versions=new_versions,
-                project_blueprint=asset_snapshot(latest_blueprint) or {},
-            ),
+            prompt.system,
+            prompt.user,
             llm_client_factory=self.llm_client_factory,
         )
         content = validate_prompt_pack_payload(parsed)
@@ -126,7 +130,25 @@ class PromptPackGenerationService:
         )
         self.db.add(pack)
         self.db.flush()
+        self.db.commit()
+        self.db.refresh(pack)
         return [pack]
+
+    def _find_existing_prompt_pack(
+        self,
+        run: GenerationRun,
+        change_set: ChangeSet,
+    ) -> ContextPack | None:
+        return self.db.scalar(
+            select(ContextPack)
+            .where(
+                ContextPack.project_id == change_set.project_id,
+                ContextPack.change_set_id == change_set.id,
+                ContextPack.role == "prompt_pack",
+            )
+            .order_by(ContextPack.created_at.desc())
+            .limit(1)
+        )
 
     def _next_version(self, project_id: UUID) -> int:
         latest = self.db.scalar(

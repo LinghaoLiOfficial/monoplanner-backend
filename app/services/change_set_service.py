@@ -8,6 +8,22 @@ from app.models.change_set import ChangeSet
 from app.models.user import User
 from app.schemas.change_set import ChangeSetUpdate
 from app.services.project_service import ProjectService
+from app.services.versioning import clone_versioned_row
+
+CHANGE_SET_UPDATE_FIELDS = {
+    "title",
+    "status",
+    "implementation_scope",
+    "affected_layers",
+    "impact_summary",
+    "module_changes",
+    "risks",
+    "open_questions",
+    "recommended_prompt_strategy",
+    "content",
+    "diff_from_previous",
+    "summary",
+}
 
 
 class ChangeSetService:
@@ -38,12 +54,17 @@ class ChangeSetService:
     def update_change_set(self, change_set_id: UUID, payload: ChangeSetUpdate) -> ChangeSet:
         change_set = self.get_change_set(change_set_id)
         updates = payload.model_dump(exclude_unset=True)
-        for field, value in updates.items():
-            setattr(change_set, field, value)
-        self.db.add(change_set)
+        next_change_set = ChangeSet(
+            **clone_versioned_row(
+                change_set,
+                updates,
+                allowed_fields=set(updates) | CHANGE_SET_UPDATE_FIELDS,
+            )
+        )
+        self.db.add(next_change_set)
         self.db.commit()
-        self.db.refresh(change_set)
-        return change_set
+        self.db.refresh(next_change_set)
+        return next_change_set
 
     def apply_change_set(self, change_set_id: UUID) -> ChangeSet:
         change_set = self.get_change_set(change_set_id)

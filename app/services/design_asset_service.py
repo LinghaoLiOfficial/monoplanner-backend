@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.design_asset import DesignAssetUpdate
 from app.services.project_service import ProjectService
+from app.services.versioning import clone_versioned_row
 
 
 class DesignAssetService:
@@ -45,10 +46,9 @@ class DesignAssetService:
             extra_fields or set()
         )
         updates = payload.model_dump(exclude_unset=True)
-        for field, value in updates.items():
-            if field in allowed_fields:
-                setattr(asset, field, value)
-        self.db.add(asset)
+        next_version_payload = clone_versioned_row(asset, updates, allowed_fields=allowed_fields)
+        next_asset = model(**next_version_payload)
+        self.db.add(next_asset)
         self.db.commit()
-        self.db.refresh(asset)
-        return asset
+        self.db.refresh(next_asset)
+        return next_asset

@@ -84,3 +84,6 @@ class FrontendPageStructure(Base):
     source_story: Mapped[BusinessRequirementStory | None] = relationship()
     change_set: Mapped[ChangeSet | None] = relationship()
     generation_run: Mapped[GenerationRun | None] = relationship()
+
+
+FrontendImplementation = FrontendPageStructure

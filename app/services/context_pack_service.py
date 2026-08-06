@@ -38,6 +38,7 @@ class ContextPackService:
             project_id
         )
         db_model = DbModelService(self.db, self.current_user).get_latest_db_model(project_id)
+        next_version = self._next_version(project_id)
         try:
             payloads = build_context_pack_payloads(
                 blueprint.content,
@@ -50,15 +51,17 @@ class ContextPackService:
                     blueprint_id=blueprint.id,
                     api_contract_id=api_contract.id if api_contract else None,
                     db_model_id=db_model.id if db_model else None,
+                    version=next_version + index,
                     generation_run_id=None,
                     role=payload["role"],
                     title=payload["title"],
                     summary=payload["summary"],
                     content=payload["content"],
+                    diff_from_previous=payload.get("diff_summary", {}),
                     prompt_text=payload["prompt_text"],
                     format="markdown",
                 )
-                for payload in payloads
+                for index, payload in enumerate(payloads)
             ]
             self.db.add_all(packs)
             self.db.flush()
@@ -102,6 +105,7 @@ class ContextPackService:
 
         api_contract = ApiContractService(self.db).get_latest_api_contract(project_id)
         db_model = DbModelService(self.db).get_latest_db_model(project_id)
+        next_version = self._next_version(project_id)
         run.status = "running"
         run.progress = max(run.progress, 10)
         run.message = "开始生成 Context Pack..."
@@ -130,15 +134,17 @@ class ContextPackService:
                 blueprint_id=blueprint.id,
                 api_contract_id=api_contract.id if api_contract else None,
                 db_model_id=db_model.id if db_model else None,
+                version=next_version + index,
                 generation_run_id=run.id,
                 role=payload["role"],
                 title=payload["title"],
                 summary=payload["summary"],
                 content=payload["content"],
+                diff_from_previous=payload.get("diff_summary", {}),
                 prompt_text=payload["prompt_text"],
                 format="markdown",
             )
-            for payload in payloads
+            for index, payload in enumerate(payloads)
         ]
         self.db.add_all(packs)
         self.db.flush()
@@ -202,6 +208,15 @@ class ContextPackService:
         return set(
             self.db.scalars(select(ContextPack.role).where(ContextPack.project_id == project_id))
         )
+
+    def _next_version(self, project_id: UUID) -> int:
+        latest = self.db.scalar(
+            select(ContextPack)
+            .where(ContextPack.project_id == project_id)
+            .order_by(ContextPack.version.desc(), ContextPack.created_at.desc())
+            .limit(1)
+        )
+        return 1 if latest is None else latest.version + 1
 
     def _record_failed_run(self, project_id: UUID, error_message: str) -> None:
         self.db.rollback()

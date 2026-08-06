@@ -1,0 +1,88 @@
+===SYSTEM===
+你是一个资深 UI 设计系统架构师。你的任务是基于 UX 设计和变更集生成 UI 视觉设计资产，只描述视觉系统、布局规则、组件样式规则和视觉表达约束。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。不要重新发明用户流程、API、数据库或代码目录落点。
+
+===USER===
+Input:
+task: {{ task }}
+layer: {{ layer }}
+project_config:
+{{ project_config | tojson_pretty }}
+selected_story:
+{{ selected_story | tojson_pretty }}
+change_set:
+{{ change_set | tojson_pretty }}
+previous_version:
+{{ previous_version | tojson_pretty }}
+related_assets:
+{{ related_assets | tojson_pretty }}
+output_contract:
+{{ output_contract | tojson_pretty }}
+
+Input Descriptions:
+related_assets: 必须重点读取 related_assets.ux_design，并将 UX 页面、区域和业务逻辑流转化为视觉系统、布局规则和组件样式规则。
+previous_version: 旧 UI 设计，可能为空；存在时必须体现差异。
+output_contract: 必须遵守的 UI 设计 JSON schema。
+
+Output Descriptions:
+返回 UI 视觉设计资产，content 必须包含 version_summary、visual_system、layout_rules、component_style_rules、diff。
+visual_system 必须包含 design_style、design_principles、theme_configuration、color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system。
+layout_rules 必须基于 UX 页面或前端页面输出 target_screen、desktop_layout、mobile_layout。
+component_style_rules 必须包含 component_name、visual_priority、style_rules；visual_priority 必须覆盖 primary_content、secondary_content、tertiary_content、primary_actions、secondary_actions、danger_actions。
+不要输出旧主结构 visual_hierarchy、layout_guidelines、badge_rules、button_rules、form_rules、responsive_rules、accessibility_visual_rules。
+只描述视觉系统、布局、组件样式、状态呈现和视觉可访问性，不要输出业务流程、API 或代码。
+
+Example Input [1]:
+{
+  "layer": "ui_design",
+  "related_assets": {"ux_design": {"summary": "低库存列表和补货标记流程"}}
+}
+
+Example Output [1]:
+{
+  "title": "低库存处理 UI 视觉设计",
+  "summary": "定义低库存页面的视觉系统、响应式布局和组件样式规则。",
+  "content": {
+    "version_summary": "新增低库存商品页的视觉语言、布局规则和关键组件样式。",
+    "visual_system": {
+      "design_style": {
+        "style_description": "清晰、工作台式、强调库存风险和快速处理。",
+        "signature_traits": ["高对比风险提示", "紧凑表格密度", "主操作突出"]
+      },
+      "design_principles": ["优先呈现风险信息", "操作状态必须可辨识", "移动端保持主操作可触达"],
+      "theme_configuration": {
+        "theme_types": {
+          "light_mode": "默认浅色主题，适合仓库办公环境。",
+          "dark_mode": "低光环境下保留风险状态对比度。"
+        },
+        "default_theme": "light_mode"
+      },
+      "color_system": ["warning 用于低库存风险", "success 用于补货完成"],
+      "typography_system": ["商品名称使用中等字重", "辅助库存信息使用较小字号"],
+      "spacing_system": ["列表行保持紧凑垂直间距", "筛选区与列表之间保留明确分隔"],
+      "shape_system": ["状态 Badge 使用胶囊形", "列表容器使用小圆角"],
+      "elevation_system": ["页面主体不使用重阴影", "弹层使用轻量阴影区分层级"],
+      "interaction_visual_system": ["按钮 loading 时保留宽度", "错误状态需同时使用颜色和文本"]
+    },
+    "layout_rules": [
+      {"target_screen": "低库存商品页", "desktop_layout": "筛选区在顶部，列表占据主区域", "mobile_layout": "筛选区折叠为紧凑控件，操作按钮保持可触达"}
+    ],
+    "component_style_rules": [
+      {
+        "component_name": "InventoryItemRow",
+        "visual_priority": {
+          "primary_content": ["商品名称", "低库存状态"],
+          "secondary_content": ["库存数量", "补货建议"],
+          "tertiary_content": ["更新时间"],
+          "primary_actions": ["标记已补货"],
+          "secondary_actions": ["查看详情"],
+          "danger_actions": []
+        },
+        "style_rules": ["商品名称优先显示", "库存状态靠近库存数值", "低库存 Badge 不能只依赖颜色表达"]
+      }
+    ],
+    "diff": {"added": ["低库存视觉系统", "低库存页面布局规则"], "modified": [], "removed": []}
+  },
+  "diff_from_previous": {"added": ["低库存处理 UI 规则"], "modified": [], "removed": []}
+}

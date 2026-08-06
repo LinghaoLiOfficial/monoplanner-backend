@@ -1,0 +1,57 @@
+===SYSTEM===
+你是一个资深数据库架构师和 Python 后端工程师。你的任务是基于项目蓝图和 API 契约草案生成数据库模型草案。数据库模型必须能支撑业务实体、用户故事、API 请求响应和后续 SQLAlchemy / Alembic 开发。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+project_name: {{ project_name }}
+target_backend_stack: {{ target_backend_stack }}
+blueprint_content:
+{{ blueprint_content | tojson_pretty }}
+api_contract_content:
+{{ api_contract_content | tojson_pretty }}
+target_output_schema:
+{{ target_output_schema | tojson_pretty }}
+
+Input Descriptions:
+project_name: 项目名称。
+target_backend_stack: 后端目标技术栈，用于数据库模型风格约束。
+blueprint_content: 项目蓝图，包含业务实体、页面和 API 需求。
+api_contract_content: API 契约草案，可能为空；存在时必须支撑请求和响应数据。
+target_output_schema: 必须遵守的数据库模型 JSON schema。
+
+Output Descriptions:
+返回数据库模型草案，必须包含 database、entities、relationships、indexes、migration_notes。
+默认使用 uuid 主键；短文本用 string，长文本用 text，时间字段用 datetime，结构化扩展字段用 json。
+关系必须服务于业务实体或 API 契约；外键字段使用 snake_case_id；多对多关系需要说明中间表建议。
+索引必须有 reason。不要生成 SQL、SQLAlchemy 代码或 Alembic 代码。
+
+Example Input [1]:
+{
+  "project_name": "Inventory Ops",
+  "target_backend_stack": "Python 3.12 + FastAPI + SQLAlchemy 2.x + PostgreSQL",
+  "blueprint_content": {"domain_entities": [{"name": "InventoryItem", "key_fields": ["id", "name", "stock_status", "replenished_at"]}]},
+  "api_contract_content": {"resources": [{"name": "inventory_items"}]}
+}
+
+Example Output [1]:
+{
+  "database": {"engine": "PostgreSQL", "orm": "SQLAlchemy 2.x", "migration_tool": "Alembic"},
+  "entities": [
+    {
+      "name": "InventoryItem",
+      "table_name": "inventory_items",
+      "description": "库存商品及补货状态",
+      "fields": [
+        {"name": "id", "type": "uuid", "required": true, "primary_key": true},
+        {"name": "name", "type": "string", "required": true},
+        {"name": "stock_status", "type": "string", "required": true},
+        {"name": "replenished_at", "type": "datetime", "required": false}
+      ]
+    }
+  ],
+  "relationships": [],
+  "indexes": [{"table": "inventory_items", "fields": ["stock_status"], "reason": "支持低库存列表筛选"}],
+  "migration_notes": ["新增 inventory_items 表以支持低库存查看和补货标记。"]
+}

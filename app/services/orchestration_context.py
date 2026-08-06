@@ -7,13 +7,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.api_contract import ApiContractDraft
-from app.models.backend_service_design import BackendServiceDesign
+from app.models.backend_service_design import BackendImplementation
 from app.models.backend_tooling import BackendTooling
 from app.models.blueprint import ProjectBlueprint
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.context_pack import ContextPack
 from app.models.db_model_draft import DbModelDraft
-from app.models.frontend_page_structure import FrontendPageStructure
+from app.models.frontend_page_structure import FrontendImplementation
 from app.models.frontend_tooling import FrontendTooling
 from app.models.project import Project
 from app.models.ui_design import UIDesign
@@ -22,10 +22,10 @@ from app.models.ux_design import UXDesign
 ASSET_MODELS_BY_LAYER = {
     "ux_design": UXDesign,
     "ui_design": UIDesign,
-    "frontend_pages": FrontendPageStructure,
+    "frontend_pages": FrontendImplementation,
     "frontend_tools": FrontendTooling,
     "api_contract": ApiContractDraft,
-    "backend_services": BackendServiceDesign,
+    "backend_services": BackendImplementation,
     "backend_tools": BackendTooling,
     "database_models": DbModelDraft,
 }

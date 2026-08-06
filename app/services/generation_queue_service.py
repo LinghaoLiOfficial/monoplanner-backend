@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.llm.client import REQUEST_ERROR_DETAIL
+from app.llm.client import REQUEST_ERROR_DETAIL, LLMRequestError
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
 from app.models.generation_run import GenerationRun
@@ -169,6 +169,12 @@ class GenerationQueueService:
 
     def enqueue_apply_change_set(self, change_set_id: UUID) -> GenerationRun:
         change_set = self._get_change_set_for_workflow(change_set_id)
+        existing_run = self._find_active_change_set_run(
+            change_set.id,
+            APPLY_CHANGE_SET_RUN_TYPE,
+        )
+        if existing_run is not None:
+            return existing_run
         if change_set.status not in APPLIABLE_STATUSES:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -192,6 +198,9 @@ class GenerationQueueService:
 
     def enqueue_regenerate_change_set(self, change_set_id: UUID) -> GenerationRun:
         change_set = self._get_change_set_for_workflow(change_set_id)
+        existing_run = self._find_active_change_set_run(change_set.id, CHANGE_SET_RUN_TYPE)
+        if existing_run is not None:
+            return existing_run
         if change_set.source_story_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -552,6 +561,23 @@ class GenerationQueueService:
         self._ensure_project_access(change_set.project_id)
         return change_set
 
+    def _find_active_change_set_run(
+        self,
+        change_set_id: UUID,
+        run_type: str,
+    ) -> GenerationRun | None:
+        return self.db.scalar(
+            select(GenerationRun)
+            .where(
+                GenerationRun.run_type == run_type,
+                GenerationRun.status.in_([QUEUE_STATUS, RUNNING_STATUS]),
+                GenerationRun.queue_payload["change_set_id"].as_string()
+                == str(change_set_id),
+            )
+            .order_by(GenerationRun.created_at.desc())
+            .limit(1)
+        )
+
     def _build_spec_for_run(self, run: GenerationRun):
         payload = run.queue_payload or {}
         project_id = UUID(str(payload.get("project_id") or run.project_id))
@@ -664,6 +690,8 @@ def _failure_message(run: GenerationRun) -> str:
 
 
 def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, LLMRequestError):
+        return True
     if isinstance(exc, HTTPException):
         return exc.detail == REQUEST_ERROR_DETAIL
     return False

@@ -45,3 +45,7 @@ class ContextPackUpdate(DesignAssetUpdate):
 
 class PromptPackGenerateRequest(BaseModel):
     change_set_id: UUID
+
+
+PromptPackResponse = ContextPackResponse
+PromptPackUpdate = ContextPackUpdate

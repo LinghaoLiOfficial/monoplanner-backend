@@ -1,0 +1,84 @@
+===SYSTEM===
+你是一个资深全栈上下文编排器。你的任务是基于被选择的业务需求故事和当前设计资产，生成一个可执行的 ChangeSet。你只生成结构化变更计划，不生成业务代码。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+task: {{ task }}
+project_config:
+{{ project_config | tojson_pretty }}
+selected_story:
+{{ selected_story | tojson_pretty }}
+current_assets:
+{{ current_assets | tojson_pretty }}
+output_contract:
+{{ output_contract | tojson_pretty }}
+
+Input Descriptions:
+project_config: 项目配置，包含名称、描述、技术栈、约束和提示词偏好。
+selected_story: 当前要执行的业务需求故事，是生成变更范围的主依据。
+current_assets: 当前已有的版本化设计资产快照，用于判断哪些层需要新增、修改、删除或保持不变。
+output_contract: 必须遵守的 ChangeSet JSON schema。
+
+Output Descriptions:
+返回 ChangeSet，必须包含 title、implementation_scope、affected_layers、impact_summary、module_changes、risks、open_questions、recommended_prompt_strategy、content、diff。
+affected_layers 必须至少包含一个具体设计资产层。
+改用户路径、交互流程、状态反馈、空状态、错误状态、权限体验时包含 ux_design。
+改视觉层级、布局、颜色语义、组件样式、按钮层级、Badge、响应式规则时包含 ui_design。
+改页面、组件、路由、目录、API client 落点时包含 frontend_pages。
+frontend_only 不要强制更新后端服务、后端工具或数据库模型；backend_only 不要强制更新前端页面或前端工具。
+module_changes 必须按 affected_layers 描述 added、modified、removed、unchanged。
+
+Example Input [1]:
+{
+  "selected_story": {"title": "查看低库存商品并标记补货", "implementation_scope": "fullstack", "affected_layers": ["ux_design", "ui_design", "frontend_pages", "api_contract", "backend_services", "database_models"]},
+  "current_assets": {}
+}
+
+Example Output [1]:
+{
+  "title": "实现低库存商品查看与补货标记",
+  "implementation_scope": "fullstack",
+  "affected_layers": ["ux_design", "ui_design", "frontend_pages", "api_contract", "backend_services", "database_models", "project_blueprint", "prompt_assets"],
+  "impact_summary": "新增低库存商品列表、补货标记流程、配套 API、后端服务和库存模型字段。",
+  "module_changes": {
+    "ux_design": {"added": ["低库存处理流程"], "modified": [], "removed": [], "unchanged": []},
+    "ui_design": {"added": ["低库存状态 Badge 和补货按钮"], "modified": [], "removed": [], "unchanged": []},
+    "frontend_pages": {"added": ["/inventory/low-stock 页面"], "modified": [], "removed": [], "unchanged": []},
+    "api_contract": {"added": ["低库存列表接口", "补货标记接口"], "modified": [], "removed": [], "unchanged": []},
+    "backend_services": {"added": ["库存查询和补货状态更新服务"], "modified": [], "removed": [], "unchanged": []},
+    "database_models": {"added": ["InventoryItem"], "modified": [], "removed": [], "unchanged": []},
+    "project_blueprint": {"added": [], "modified": ["补充库存处理模块"], "removed": [], "unchanged": []},
+    "prompt_assets": {"added": ["前后端实现指令"], "modified": [], "removed": [], "unchanged": []}
+  },
+  "risks": ["低库存阈值来源需要明确"],
+  "open_questions": ["补货标记是否需要审计备注？"],
+  "recommended_prompt_strategy": {"generate_frontend_prompt": true, "generate_backend_prompt": true, "reason": "涉及全栈变更"},
+  "content": {"execution_note": "先生成设计资产，再生成实现指令。"},
+  "diff": {"added": ["低库存处理能力"], "modified": [], "removed": []}
+}
+
+Example Input [2]:
+{
+  "selected_story": {"title": "调整低库存状态颜色", "implementation_scope": "frontend_only", "affected_layers": ["ui_design", "frontend_pages"]},
+  "current_assets": {"ui_design": {"title": "现有 UI 设计"}}
+}
+
+Example Output [2]:
+{
+  "title": "调整低库存状态视觉层级",
+  "implementation_scope": "frontend_only",
+  "affected_layers": ["ui_design", "frontend_pages", "prompt_assets"],
+  "impact_summary": "仅调整前端状态展示，不改变 API、服务或数据库。",
+  "module_changes": {
+    "ui_design": {"added": [], "modified": ["低库存 Badge 颜色和层级"], "removed": [], "unchanged": []},
+    "frontend_pages": {"added": [], "modified": ["低库存列表状态渲染"], "removed": [], "unchanged": []},
+    "prompt_assets": {"added": ["前端实现指令"], "modified": [], "removed": [], "unchanged": []}
+  },
+  "risks": [],
+  "open_questions": [],
+  "recommended_prompt_strategy": {"generate_frontend_prompt": true, "generate_backend_prompt": false, "reason": "只影响前端视觉和页面结构"},
+  "content": {"execution_note": "不要触碰后端接口和数据库模型。"},
+  "diff": {"added": [], "modified": ["低库存状态视觉呈现"], "removed": []}
+}

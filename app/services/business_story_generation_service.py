@@ -27,8 +27,8 @@ from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.generation_run import GenerationRun
 from app.models.requirement import Requirement
 from app.prompts.business_story_decomposer import (
-    SYSTEM_PROMPT,
     build_business_story_decomposition_payload,
+    build_business_story_decomposition_prompt,
 )
 from app.schemas.business_requirement_story import GenerateBusinessRequirementStoriesRequest
 from app.services.business_requirement_story_service import BusinessRequirementStoryService
@@ -93,7 +93,8 @@ class BusinessStoryGenerationService:
         )
         try:
             user_payload = build_business_story_decomposition_payload(project, requirement)
-            parsed = _generate_business_story_json(self.json_generator, user_payload)
+            prompt = build_business_story_decomposition_prompt(project, requirement)
+            parsed = _generate_business_story_json(self.json_generator, prompt, user_payload)
             run.progress = 60
             run.message = "正在解析业务需求故事..."
             self.db.add(run)
@@ -245,18 +246,19 @@ class BusinessStoryGenerationService:
 
 def _generate_business_story_json(
     json_generator: JsonGenerator,
+    prompt: Any,
     user_payload: dict[str, Any],
 ) -> dict[str, Any]:
     try:
         if settings.llm_use_response_format:
             return json_generator(
-                SYSTEM_PROMPT,
-                user_payload,
+                prompt.system,
+                prompt.user,
                 extra_params=JSON_OBJECT_RESPONSE_FORMAT,
             )
-        return json_generator(SYSTEM_PROMPT, user_payload)
+        return json_generator(prompt.system, prompt.user)
     except TypeError:
-        return json_generator(SYSTEM_PROMPT, user_payload)
+        return json_generator(prompt.system, prompt.user)
     except LLMJsonGenerationError as exc:
         if "not valid JSON" not in str(exc) and "does not contain a JSON object" not in str(exc):
             raise

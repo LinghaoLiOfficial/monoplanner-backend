@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.core import security
 from app.models.api_contract import ApiContractDraft
-from app.models.backend_service_design import BackendServiceDesign
+from app.models.backend_service_design import BackendImplementation, BackendServiceDesign
 from app.models.backend_tooling import BackendTooling
 from app.models.blueprint import ProjectBlueprint
 from app.models.change_set import ChangeSet
 from app.models.context_pack import ContextPack
 from app.models.db_model_draft import DbModelDraft
-from app.models.frontend_page_structure import FrontendPageStructure
+from app.models.frontend_page_structure import FrontendImplementation, FrontendPageStructure
 from app.models.frontend_tooling import FrontendTooling
 from app.models.project import Project
 from app.models.ui_design import UIDesign
@@ -23,24 +23,42 @@ def test_project_config_read_and_patch(client: TestClient) -> None:
     detail_response = client.get(f"/api/v1/projects/{project['id']}/config")
     assert detail_response.status_code == 200
     assert detail_response.json()["global_constraints"] == []
+    assert detail_response.json()["project_name"] == "Phase Config"
+    assert detail_response.json()["code_preferences"] == []
 
     update_response = client.patch(
-        f"/api/v1/projects/{project['id']}/config",
+        f"/api/v1/projects/{project['id']}/configuration",
         json={
-            "target_frontend_stack": "Next.js + Tailwind",
+            "project_name": "Phase Config Renamed",
+            "project_description": "配置重构验证",
+            "frontend_tech_stack": "Next.js + Tailwind",
+            "backend_tech_stack": "FastAPI + PostgreSQL",
             "global_constraints": ["只生成结构化资产"],
-            "coding_preferences": [{"style": "typed"}],
+            "code_preferences": [{"style": "typed"}],
             "prompt_preferences": ["简洁"],
         },
     )
 
     assert update_response.status_code == 200
     payload = update_response.json()
+    assert payload["name"] == "Phase Config Renamed"
+    assert payload["project_name"] == "Phase Config Renamed"
+    assert payload["description"] == "配置重构验证"
+    assert payload["project_description"] == "配置重构验证"
     assert payload["target_frontend_stack"] == "Next.js + Tailwind"
+    assert payload["frontend_tech_stack"] == "Next.js + Tailwind"
+    assert payload["target_backend_stack"] == "FastAPI + PostgreSQL"
+    assert payload["backend_tech_stack"] == "FastAPI + PostgreSQL"
     assert payload["target_stacks_configured"] is True
     assert payload["global_constraints"] == ["只生成结构化资产"]
     assert payload["coding_preferences"] == [{"style": "typed"}]
+    assert payload["code_preferences"] == [{"style": "typed"}]
     assert payload["prompt_preferences"] == ["简洁"]
+
+    compat_response = client.get(f"/api/v1/projects/{project['id']}/config")
+    assert compat_response.status_code == 200
+    assert compat_response.json()["frontend_tech_stack"] == "Next.js + Tailwind"
+    assert compat_response.json()["code_preferences"] == [{"style": "typed"}]
 
 
 def test_new_design_asset_modules_list_detail_and_patch(
@@ -93,7 +111,7 @@ def test_new_design_asset_modules_list_detail_and_patch(
             title=title,
             summary="初版",
             content={"items": []},
-            diff_from_previous={"added": []},
+            diff_from_previous={"added": [], "modified": [], "removed": []},
         )
         older_asset = model(
             project_id=project["id"],
@@ -101,7 +119,7 @@ def test_new_design_asset_modules_list_detail_and_patch(
             title=f"{title} older",
             summary="旧版",
             content={"items": ["old"]},
-            diff_from_previous={},
+            diff_from_previous={"added": [], "modified": [], "removed": []},
         )
         db_session.add(older_asset)
         db_session.add(asset)
@@ -112,7 +130,11 @@ def test_new_design_asset_modules_list_detail_and_patch(
         assert list_response.status_code == 200
         assert list_response.json()[0]["id"] == str(asset.id)
         assert list_response.json()[0]["version"] == 2
-        assert list_response.json()[0]["diff_from_previous"] == {"added": []}
+        assert list_response.json()[0]["diff_from_previous"] == {
+            "added": [],
+            "modified": [],
+            "removed": [],
+        }
 
         detail_response = client.get(detail_path.format(asset_id=asset.id))
         assert detail_response.status_code == 200
@@ -127,8 +149,63 @@ def test_new_design_asset_modules_list_detail_and_patch(
             },
         )
         assert patch_response.status_code == 200
+        assert patch_response.json()["id"] != str(asset.id)
+        assert patch_response.json()["version"] == 3
         assert patch_response.json()["title"] == f"{title} v2"
         assert patch_response.json()["content"] == {"items": ["updated"]}
+        assert patch_response.json()["diff_from_previous"] == {
+            "added": [],
+            "modified": ["items"],
+            "removed": [],
+        }
+
+
+def test_frontend_and_backend_implementation_alias_routes(
+    client: TestClient, db_session: Session
+) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Implementation Aliases"}).json()
+    frontend = FrontendImplementation(
+        project_id=project["id"],
+        version=1,
+        title="前端工程实现",
+        summary="初版",
+        content={"routes": ["/tasks"]},
+    )
+    backend = BackendImplementation(
+        project_id=project["id"],
+        version=1,
+        title="后端工程实现",
+        summary="初版",
+        content={"services": ["TaskService"]},
+    )
+    db_session.add_all([frontend, backend])
+    db_session.commit()
+    db_session.refresh(frontend)
+    db_session.refresh(backend)
+
+    frontend_list = client.get(f"/api/v1/projects/{project['id']}/frontend-implementations")
+    assert frontend_list.status_code == 200
+    assert frontend_list.json()[0]["id"] == str(frontend.id)
+
+    backend_list = client.get(f"/api/v1/projects/{project['id']}/backend-implementations")
+    assert backend_list.status_code == 200
+    assert backend_list.json()[0]["id"] == str(backend.id)
+
+    frontend_patch = client.patch(
+        f"/api/v1/frontend-implementations/{frontend.id}",
+        json={"content": {"routes": ["/tasks", "/tasks/new"]}},
+    )
+    assert frontend_patch.status_code == 200
+    assert frontend_patch.json()["version"] == 2
+    assert frontend_patch.json()["id"] != str(frontend.id)
+
+    backend_patch = client.patch(
+        f"/api/v1/backend-implementations/{backend.id}",
+        json={"content": {"services": ["TaskService", "TaskPolicy"]}},
+    )
+    assert backend_patch.status_code == 200
+    assert backend_patch.json()["version"] == 2
+    assert backend_patch.json()["id"] != str(backend.id)
 
 
 def test_ux_ui_designs_enforce_project_ownership(
@@ -246,13 +323,21 @@ def test_change_sets_and_existing_asset_patch_aliases(
         json={"diff_from_previous": {"modified": ["summary"]}},
     )
     assert blueprint_patch.status_code == 200
-    assert blueprint_patch.json()["diff_from_previous"] == {"modified": ["summary"]}
+    assert blueprint_patch.json()["id"] != str(blueprint.id)
+    assert blueprint_patch.json()["version"] == 2
+    assert blueprint_patch.json()["diff_from_previous"] == {
+        "added": [],
+        "modified": ["summary"],
+        "removed": [],
+    }
 
     api_patch = client.patch(
         f"/api/v1/api-contracts/{api_contract.id}",
         json={"base_path": "/api/v2", "content": {"resources": ["tasks"]}},
     )
     assert api_patch.status_code == 200
+    assert api_patch.json()["id"] != str(api_contract.id)
+    assert api_patch.json()["version"] == 2
     assert api_patch.json()["base_path"] == "/api/v2"
     assert api_patch.json()["content"] == {"resources": ["tasks"]}
 
@@ -261,6 +346,8 @@ def test_change_sets_and_existing_asset_patch_aliases(
         json={"content": {"entities": ["Task"]}},
     )
     assert db_patch.status_code == 200
+    assert db_patch.json()["id"] != str(db_model.id)
+    assert db_patch.json()["version"] == 2
     assert db_patch.json()["content"] == {"entities": ["Task"]}
 
     prompt_list = client.get(f"/api/v1/projects/{project['id']}/prompt-packs")
@@ -272,4 +359,6 @@ def test_change_sets_and_existing_asset_patch_aliases(
         json={"prompt_text": "Updated prompt"},
     )
     assert context_patch.status_code == 200
+    assert context_patch.json()["id"] != str(context_pack.id)
+    assert context_patch.json()["version"] == 2
     assert context_patch.json()["prompt_text"] == "Updated prompt"

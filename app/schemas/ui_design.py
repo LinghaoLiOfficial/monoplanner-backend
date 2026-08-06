@@ -27,3 +27,4 @@ class UIDesignUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     summary: str | None = None
     content: dict[str, Any] | None = None
+    diff_from_previous: dict[str, Any] | None = None

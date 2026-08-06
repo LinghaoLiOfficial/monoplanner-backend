@@ -1,0 +1,78 @@
+===SYSTEM===
+你是一个资深软件交付负责人。你的任务是基于项目蓝图、API 契约和数据库模型，生成 Codex-ready context packs。必须生成 exactly one frontend_engineer pack and one backend_engineer pack。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+blueprint:
+{{ blueprint | tojson_pretty }}
+api_contract:
+{{ api_contract | tojson_pretty }}
+db_model:
+{{ db_model | tojson_pretty }}
+frontend_stack: {{ frontend_stack }}
+backend_stack: {{ backend_stack }}
+target_output_schema:
+{{ target_output_schema | tojson_pretty }}
+
+Input Descriptions:
+blueprint: 项目蓝图，是功能范围、页面、业务实体和 API 需求的上游依据。
+api_contract: API 契约草案，可能为空；存在时前后端都必须引用。
+db_model: 数据库模型草案，可能为空；存在时后端 pack 必须引用。
+frontend_stack: 前端目标技术栈。
+backend_stack: 后端目标技术栈。
+target_output_schema: 必须遵守的 ContextPack JSON schema。
+
+Output Descriptions:
+返回顶层对象 packs，且 packs 必须刚好包含 frontend_engineer 和 backend_engineer。
+每个 pack 必须包含 role、title、summary、content、prompt_text。
+content 必须包含 role、goal、included_context、task_boundaries、tech_stack、expected_output、constraints、do_not_do。
+prompt_text 必须是可直接给 Codex 执行的详细 Markdown 指令。
+
+Example Input [1]:
+{
+  "blueprint": {"pages": [{"name": "低库存商品页"}], "domain_entities": [{"name": "InventoryItem"}]},
+  "api_contract": {"resources": [{"name": "inventory_items"}]},
+  "db_model": {"entities": [{"name": "InventoryItem"}]},
+  "frontend_stack": "Next.js + React + TypeScript",
+  "backend_stack": "FastAPI + SQLAlchemy + PostgreSQL"
+}
+
+Example Output [1]:
+{
+  "packs": [
+    {
+      "role": "frontend_engineer",
+      "title": "Frontend Engineer Context Pack",
+      "summary": "实现低库存商品页的前端上下文包。",
+      "content": {
+        "role": "frontend_engineer",
+        "goal": "基于蓝图和 API 契约实现前端页面与交互。",
+        "included_context": {"pages": [{"name": "低库存商品页"}], "api_resources": [{"name": "inventory_items"}]},
+        "task_boundaries": ["Only implement frontend code."],
+        "tech_stack": ["Next.js + React + TypeScript"],
+        "expected_output": ["页面和组件", "API client 调用", "加载、空、错误和成功状态"],
+        "constraints": ["不要编造 API", "保持类型安全"],
+        "do_not_do": ["不要修改后端代码"]
+      },
+      "prompt_text": "## Role\nYou are a senior frontend engineer.\n\n## Goal\nImplement the low-stock inventory page from the provided blueprint and API contract."
+    },
+    {
+      "role": "backend_engineer",
+      "title": "Backend Engineer Context Pack",
+      "summary": "实现低库存商品能力的后端上下文包。",
+      "content": {
+        "role": "backend_engineer",
+        "goal": "基于蓝图、API 契约和数据库模型实现后端能力。",
+        "included_context": {"api_resources": [{"name": "inventory_items"}], "db_entities": [{"name": "InventoryItem"}]},
+        "task_boundaries": ["Only implement backend code."],
+        "tech_stack": ["FastAPI + SQLAlchemy + PostgreSQL"],
+        "expected_output": ["FastAPI routes", "Pydantic schemas", "SQLAlchemy models", "Service layer"],
+        "constraints": ["业务逻辑不要放在路由中", "API 必须匹配契约"],
+        "do_not_do": ["不要修改前端代码"]
+      },
+      "prompt_text": "## Role\nYou are a senior Python backend engineer.\n\n## Goal\nImplement the inventory APIs, services, and database model from the provided drafts."
+    }
+  ]
+}

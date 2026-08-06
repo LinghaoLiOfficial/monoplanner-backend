@@ -12,7 +12,7 @@ dependencies = [
     "fastapi>=0.115.0,<1.0.0",
     "greenlet>=3.2.0,<4.0.0",
     "httpx>=0.28.0,<1.0.0",
-    "monobase",
+    "jinja2>=3.1.0,<4.0.0",
     "psycopg[binary]>=3.2.0,<4.0.0",
     "pydantic-settings>=2.10.0,<3.0.0",
     "python-jose[cryptography]>=3.5.0",
@@ -44,6 +44,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
-
-[tool.uv.sources]
-monobase = { path = "monobase-0.1.0-py3-none-any.whl" }

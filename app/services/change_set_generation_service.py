@@ -12,7 +12,7 @@ from app.llm.client import OpenAICompatibleLLMClient
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
 from app.models.generation_run import GenerationRun
-from app.prompts.orchestration import SYSTEM_PROMPT, build_change_set_payload
+from app.prompts.orchestration import build_change_set_prompt
 from app.services.llm_orchestration_runtime import generate_orchestration_json
 from app.services.orchestration_context import (
     latest_assets_snapshot,
@@ -53,13 +53,14 @@ class ChangeSetGenerationService:
         self.db.add(run)
         self.db.commit()
 
+        prompt = build_change_set_prompt(
+            project_config=project_config_snapshot(project),
+            selected_story=story_snapshot(story) or {},
+            current_assets=latest_assets_snapshot(self.db, project.id),
+        )
         parsed = generate_orchestration_json(
-            SYSTEM_PROMPT,
-            build_change_set_payload(
-                project_config=project_config_snapshot(project),
-                selected_story=story_snapshot(story) or {},
-                current_assets=latest_assets_snapshot(self.db, project.id),
-            ),
+            prompt.system,
+            prompt.user,
             llm_client_factory=self.llm_client_factory,
         )
         validated = validate_change_set_payload(parsed)

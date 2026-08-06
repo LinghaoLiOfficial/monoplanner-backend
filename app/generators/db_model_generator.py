@@ -1,7 +1,7 @@
 from typing import Any
 
 from app.llm.json_client import generate_json
-from app.prompts.db_model_generator import SYSTEM_PROMPT, build_db_model_generation_payload
+from app.prompts.db_model_generator import build_db_model_generation_prompt
 
 
 class DbModelValidationError(ValueError):
@@ -83,13 +83,10 @@ def build_llm_db_model_content(
     blueprint_content: dict[str, Any],
     api_contract_content: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    prompt = build_db_model_generation_prompt(project, blueprint_content, api_contract_content)
     content = generate_json(
-        system_prompt=SYSTEM_PROMPT,
-        user_payload=build_db_model_generation_payload(
-            project,
-            blueprint_content,
-            api_contract_content,
-        ),
+        system_prompt=prompt.system,
+        user_payload=prompt.user,
     )
     return validate_db_model_content(content)
 

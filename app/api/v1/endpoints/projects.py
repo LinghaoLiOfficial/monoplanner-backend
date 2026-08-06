@@ -39,8 +39,25 @@ def get_project_config(
     return ProjectService(db, current_user).get_project_config(project_id)
 
 
+@router.get("/{project_id}/configuration", response_model=ProjectConfigRead)
+def get_project_configuration(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> ProjectConfigRead:
+    return ProjectService(db, current_user).get_project_config(project_id)
+
+
 @router.patch("/{project_id}/config", response_model=ProjectConfigRead)
 def update_project_config(
+    db: DbSession,
+    current_user: CurrentUser,
+    project_id: UUID,
+    payload: ProjectConfigUpdate,
+) -> ProjectConfigRead:
+    return ProjectService(db, current_user).update_project_config(project_id, payload)
+
+
+@router.patch("/{project_id}/configuration", response_model=ProjectConfigRead)
+def update_project_configuration(
     db: DbSession,
     current_user: CurrentUser,
     project_id: UUID,

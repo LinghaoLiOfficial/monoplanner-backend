@@ -44,6 +44,7 @@ class LLMRequestMetadata:
     request_url: str
     model: str
     timeout: float
+    stream_read_timeout: float
     use_response_format: bool
     has_api_key: bool
 
@@ -55,6 +56,7 @@ class OpenAICompatibleLLMClient:
         api_key: str | None = None,
         model: str | None = None,
         timeout: float | None = None,
+        stream_read_timeout: float | None = None,
         provider: str | None = None,
         use_response_format: bool | None = None,
     ) -> None:
@@ -64,6 +66,11 @@ class OpenAICompatibleLLMClient:
         self.api_key = ((api_key if api_key is not None else settings.llm_api_key) or "").strip()
         self.model = ((model if model is not None else settings.llm_model) or "").strip()
         self.timeout = timeout if timeout is not None else settings.llm_timeout_seconds
+        self.stream_read_timeout = (
+            stream_read_timeout
+            if stream_read_timeout is not None
+            else settings.llm_stream_read_timeout_seconds
+        )
         self.use_response_format = (
             use_response_format
             if use_response_format is not None
@@ -78,6 +85,7 @@ class OpenAICompatibleLLMClient:
             request_url=build_chat_completions_url(self.base_url),
             model=self.model,
             timeout=self.timeout,
+            stream_read_timeout=self.stream_read_timeout,
             use_response_format=self.use_response_format,
             has_api_key=bool(self.api_key),
         )
@@ -85,7 +93,7 @@ class OpenAICompatibleLLMClient:
     def invoke(
         self,
         system_prompt: str,
-        user_payload: dict[str, Any],
+        user_payload: dict[str, Any] | str,
         extra_params: dict[str, Any] | None = None,
     ) -> str:
         self._validate_configuration()
@@ -146,7 +154,7 @@ class OpenAICompatibleLLMClient:
     def stream(
         self,
         system_prompt: str,
-        user_payload: dict[str, Any],
+        user_payload: dict[str, Any] | str,
         extra_params: dict[str, Any] | None = None,
     ) -> Iterator[str]:
         self._validate_configuration()
@@ -159,15 +167,17 @@ class OpenAICompatibleLLMClient:
         }
 
         logger.info(
-            "llm.stream.start provider=%s base_url=%s model=%s timeout=%s use_response_format=%s",
+            "llm.stream.start provider=%s base_url=%s model=%s timeout=%s "
+            "stream_read_timeout=%s use_response_format=%s",
             self.provider,
             self.base_url,
             self.model,
             self.timeout,
+            self.stream_read_timeout,
             self.use_response_format,
         )
         try:
-            with httpx.Client(timeout=self.timeout) as client:
+            with httpx.Client(timeout=self._stream_timeout()) as client:
                 with client.stream(
                     "POST",
                     request_url,
@@ -201,6 +211,12 @@ class OpenAICompatibleLLMClient:
             raise LLMRequestError("LLM API stream request failed.") from exc
         logger.info("llm.stream.success provider=%s model=%s", self.provider, self.model)
 
+    def _stream_timeout(self) -> httpx.Timeout:
+        return httpx.Timeout(
+            timeout=self.timeout,
+            read=self.stream_read_timeout,
+        )
+
     def _validate_configuration(self) -> None:
         missing = []
         if not self.api_key:
@@ -224,17 +240,19 @@ class OpenAICompatibleLLMClient:
     def _build_request_body(
         self,
         system_prompt: str,
-        user_payload: dict[str, Any],
+        user_payload: dict[str, Any] | str,
         extra_params: dict[str, Any] | None,
     ) -> dict[str, Any]:
+        user_content = (
+            user_payload
+            if isinstance(user_payload, str)
+            else json.dumps(user_payload, ensure_ascii=False, indent=2)
+        )
         request_body: dict[str, Any] = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {
-                    "role": "user",
-                    "content": json.dumps(user_payload, ensure_ascii=False, indent=2),
-                },
+                {"role": "user", "content": user_content},
             ],
             "temperature": DEFAULT_TEMPERATURE,
         }

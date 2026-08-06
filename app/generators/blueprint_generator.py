@@ -4,7 +4,7 @@ from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, no
 from app.llm.json_client import generate_json
 from app.models.project import Project
 from app.models.requirement import Requirement
-from app.prompts.blueprint_generator import SYSTEM_PROMPT, build_blueprint_generation_payload
+from app.prompts.blueprint_generator import build_blueprint_generation_prompt
 
 
 class BlueprintValidationError(ValueError):
@@ -16,8 +16,8 @@ def build_project_blueprint_content(
     requirement: Requirement,
     business_stories: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    payload = build_blueprint_generation_payload(project, requirement, business_stories)
-    content = generate_json(SYSTEM_PROMPT, payload)
+    prompt = build_blueprint_generation_prompt(project, requirement, business_stories)
+    content = generate_json(prompt.system, prompt.user)
     return validate_blueprint_content(content, project, business_stories)
 
 

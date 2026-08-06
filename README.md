@@ -33,6 +33,7 @@ LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 LLM_API_KEY=replace-with-your-api-key
 LLM_MODEL=qwen-plus
 LLM_TIMEOUT_SECONDS=60
+LLM_STREAM_READ_TIMEOUT_SECONDS=300
 LLM_THINKING=false
 
 # Background generation queue
@@ -49,6 +50,7 @@ LLM 配置说明：
 - `LLM_API_KEY`: 模型服务 API Key，请只放在本机 `.env` 或部署环境变量中，不要提交真实密钥。
 - `LLM_MODEL`: 文本模型名，例如 `qwen-plus`。
 - `LLM_TIMEOUT_SECONDS`: 单次请求超时时间，单位秒，默认 `60`。
+- `LLM_STREAM_READ_TIMEOUT_SECONDS`: 流式响应连续无数据读取超时时间，单位秒，默认 `300`；应用变更集等长生成建议保持高于 `LLM_TIMEOUT_SECONDS`。
 - `LLM_THINKING`: 是否启用支持思考模式的模型参数，默认 `false`。
 
 队列配置说明：
@@ -146,6 +148,10 @@ docker compose --profile local-db up -d db
 - `GET /api/v1/projects`
 - `GET /api/v1/projects/{project_id}`
 - `PATCH /api/v1/projects/{project_id}`
+- `GET /api/v1/projects/{project_id}/configuration`
+- `PATCH /api/v1/projects/{project_id}/configuration`
+- `GET /api/v1/projects/{project_id}/config`（兼容别名）
+- `PATCH /api/v1/projects/{project_id}/config`（兼容别名）
 - `DELETE /api/v1/projects/{project_id}`
 - `POST /api/v1/projects/{project_id}/requirements`
 - `GET /api/v1/projects/{project_id}/requirements`
@@ -157,6 +163,14 @@ docker compose --profile local-db up -d db
 - `GET /api/v1/business-stories/{story_id}`
 - `PATCH /api/v1/business-stories/{story_id}`
 - `DELETE /api/v1/business-stories/{story_id}`
+- `GET /api/v1/projects/{project_id}/ux-designs`
+- `GET /api/v1/projects/{project_id}/ui-designs`
+- `GET /api/v1/projects/{project_id}/frontend-implementations`
+- `GET /api/v1/frontend-implementations/{asset_id}`
+- `PATCH /api/v1/frontend-implementations/{asset_id}`
+- `GET /api/v1/projects/{project_id}/backend-implementations`
+- `GET /api/v1/backend-implementations/{asset_id}`
+- `PATCH /api/v1/backend-implementations/{asset_id}`
 - `POST /api/v1/projects/{project_id}/generate/api-contract`
 - `GET /api/v1/projects/{project_id}/api-contracts`
 - `GET /api/v1/api-contracts/{api_contract_id}`
@@ -169,6 +183,9 @@ docker compose --profile local-db up -d db
 - `GET /api/v1/projects/{project_id}/context-packs`
 - `GET /api/v1/context-packs/{context_pack_id}`
 - `POST /api/v1/context-packs/{context_pack_id}/export`
+- `GET /api/v1/projects/{project_id}/prompt-packs`
+- `GET /api/v1/prompt-packs/{context_pack_id}`
+- `POST /api/v1/projects/{project_id}/prompt-packs/generate`
 - `GET /api/v1/projects/{project_id}/consistency-check`
 
 ## 手动验证

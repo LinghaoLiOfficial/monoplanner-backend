@@ -178,8 +178,8 @@ def test_blueprint_payload_defaults_blank_project_target_stacks(db_session, test
 
     payload = build_blueprint_generation_payload(project, requirement, [])
 
-    assert payload["目标前端技术栈"] == DEFAULT_FRONTEND_STACK
-    assert payload["目标后端技术栈"] == DEFAULT_BACKEND_STACK
+    assert payload["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert payload["target_backend_stack"] == DEFAULT_BACKEND_STACK
 
 
 def test_generate_blueprint_converts_generator_error_to_readable_500(

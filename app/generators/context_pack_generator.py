@@ -1,6 +1,8 @@
 from typing import Any
 
 from app.llm.json_client import LLMJsonGenerationError, generate_json, should_use_real_llm
+from app.prompts.renderer import render_prompt_template
+from app.prompts.templates.context_pack.output_schema import ContextPackOutput
 
 FRONTEND_STACK = "Next.js + React + TypeScript + Tailwind CSS 4 + Shadcn/ui + pnpm"
 BACKEND_STACK = "Python 3.12 + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL + uv"
@@ -114,41 +116,20 @@ def build_llm_context_pack_payloads(
     api_contract_content: dict[str, Any] | None,
     db_model_content: dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
-    response = generate_json(
-        system_prompt=(
-            "You are a senior software delivery lead. Generate Codex-ready context packs as "
-            "strict JSON. Return only one JSON object, no markdown. The object must contain a "
-            "packs array with exactly one frontend_engineer pack and one backend_engineer pack. "
-            "Each pack must contain role, title, summary, content, and prompt_text. prompt_text "
-            "must be detailed Markdown instructions for that role."
-        ),
-        user_payload={
+    prompt = render_prompt_template(
+        "context_pack",
+        {
             "blueprint": blueprint_content,
             "api_contract": api_contract_content,
             "db_model": db_model_content,
             "frontend_stack": FRONTEND_STACK,
             "backend_stack": BACKEND_STACK,
-            "output_contract": {
-                "packs": [
-                    {
-                        "role": "frontend_engineer|backend_engineer",
-                        "title": "string",
-                        "summary": "string",
-                        "content": {
-                            "role": "string",
-                            "goal": "string",
-                            "included_context": {},
-                            "task_boundaries": ["string"],
-                            "tech_stack": ["string"],
-                            "expected_output": ["string"],
-                            "constraints": ["string"],
-                            "do_not_do": ["string"],
-                        },
-                        "prompt_text": "Markdown string",
-                    }
-                ]
-            },
+            "target_output_schema": ContextPackOutput.model_json_schema(),
         },
+    )
+    response = generate_json(
+        system_prompt=prompt.system,
+        user_payload=prompt.user,
     )
     packs = response.get("packs")
     if not isinstance(packs, list) or not packs:

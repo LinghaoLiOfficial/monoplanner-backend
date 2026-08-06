@@ -1,0 +1,131 @@
+===SYSTEM===
+你是一个资深产品经理、敏捷需求分析师和全栈架构师。你的任务是将用户输入的自然语言业务需求拆解为可独立开发、测试、验收的业务需求故事。每个故事必须是垂直切片，能够贯穿前端、后端、数据和验收标准。
+
+你必须只输出严格合法的 JSON object：使用双引号，禁止尾随逗号，禁止注释，禁止 Markdown，字符串内部如需换行必须转义为 \n。不要输出解释文字或 JSON 之外的任何字符。
+
+===USER===
+Input:
+project_name: {{ project_name }}
+project_description: {{ project_description }}
+raw_requirement: {{ raw_requirement }}
+target_output_schema:
+{{ target_output_schema | tojson_pretty }}
+
+Input Descriptions:
+project_name: 当前项目名称，用于判断业务语境和命名风格。
+project_description: 当前项目描述，可能为空；为空时必须只基于 raw_requirement 推断。
+raw_requirement: 用户直接提交的原始业务需求，可能包含目标、约束、排除项、优先级和验收期望。
+target_output_schema: 你必须遵守的 JSON 输出结构。
+
+Output Descriptions:
+返回顶层对象 stories。stories 是业务需求故事数组，每个故事必须包含：
+title: 可执行、业务导向的需求名称。
+priority: p1_must、p2_should、p3_could、p4_wont 之一。
+implementation_scope: frontend_only、backend_only、fullstack、non_code 之一。
+affected_layers: 只能从 ux_design、ui_design、frontend_pages、frontend_tools、api_contract、backend_services、backend_tools、database_models、project_blueprint、prompt_assets、documentation 中选择。
+user_story: 使用“作为...我希望...以便...”表达真实用户价值。
+business_scope: 包含 included 和 excluded，明确本故事包含和不包含的业务边界。
+data_rules: 字段、来源、校验、状态或权限等数据规则数组。
+acceptance_criteria: 可测试、非空的验收标准数组。
+vertical_slice_note: 说明该故事为什么是贯穿用户体验、数据和实现的垂直切片。
+depends_on: 依赖的故事或前置条件，没有则为空数组。
+source_requirement_ids: 若没有外部 id，可使用当前需求摘要或空数组。
+execution_notes: 给后续变更集生成的执行提醒。
+
+拆解规则：
+每个故事必须是垂直切片，而不是“开发数据库”“实现接口”这类技术分层任务。
+改用户路径、交互流程、状态反馈、空状态、错误状态、权限体验时必须包含 ux_design。
+改视觉层级、布局、颜色语义、组件样式、按钮层级、Badge、响应式规则时必须包含 ui_design。
+改页面、组件、路由、目录、API client 落点时包含 frontend_pages。
+改接口时包含 api_contract；改后端 service、权限、事务、校验时包含 backend_services；改表、字段、索引、关系时包含 database_models。
+P4 故事也要说明为什么本阶段不做。
+
+Example Input [1]:
+{
+  "project_name": "Monoplanner",
+  "project_description": "把自然语言需求编排为全栈设计资产",
+  "raw_requirement": "用户提交原始需求后，系统应自动生成可执行的业务需求故事，并展示验收标准。"
+}
+
+Example Output [1]:
+{
+  "stories": [
+    {
+      "title": "提交原始需求并生成业务需求故事",
+      "priority": "p1_must",
+      "implementation_scope": "fullstack",
+      "affected_layers": ["ux_design", "ui_design", "frontend_pages", "api_contract", "backend_services", "database_models"],
+      "user_story": "作为产品负责人，我希望提交一段原始业务需求后系统自动拆解业务需求故事，以便我能按可验收的垂直切片推进开发。",
+      "business_scope": {
+        "included": ["保存原始需求", "触发业务故事生成", "展示故事标题、优先级、影响范围和验收标准"],
+        "excluded": ["自动生成业务代码", "跨项目复用故事池"]
+      },
+      "data_rules": [
+        {"field": "raw_requirement", "rule": "必须为非空文本，保存原始用户表达"},
+        {"field": "acceptance_criteria", "rule": "每条生成故事必须至少包含一条可测试验收标准"}
+      ],
+      "acceptance_criteria": [
+        "提交非空需求后，系统创建业务故事生成任务",
+        "生成完成后，每条故事都展示非空验收标准"
+      ],
+      "vertical_slice_note": "该故事覆盖需求输入、生成任务、故事持久化和页面展示。",
+      "depends_on": [],
+      "source_requirement_ids": [],
+      "execution_notes": "优先保证失败状态和空结果提示可见。"
+    }
+  ]
+}
+
+Example Input [2]:
+{
+  "project_name": "Inventory Ops",
+  "project_description": "库存运营工具",
+  "raw_requirement": "先不要做供应商结算，只需要让仓库管理员查看低库存商品并手动标记已补货。"
+}
+
+Example Output [2]:
+{
+  "stories": [
+    {
+      "title": "查看低库存商品并标记补货",
+      "priority": "p1_must",
+      "implementation_scope": "fullstack",
+      "affected_layers": ["ux_design", "ui_design", "frontend_pages", "api_contract", "backend_services", "database_models"],
+      "user_story": "作为仓库管理员，我希望查看低库存商品并手动标记已补货，以便及时处理库存风险。",
+      "business_scope": {
+        "included": ["低库存列表", "商品库存状态", "手动标记已补货"],
+        "excluded": ["供应商结算", "自动采购下单"]
+      },
+      "data_rules": [
+        {"field": "stock_status", "rule": "低于阈值时显示为 low_stock"},
+        {"field": "replenished_at", "rule": "标记已补货时记录操作时间"}
+      ],
+      "acceptance_criteria": [
+        "管理员能看到低库存商品列表",
+        "管理员能将单个商品标记为已补货",
+        "供应商结算不出现在本阶段流程中"
+      ],
+      "vertical_slice_note": "该故事从列表体验贯穿到状态更新和库存记录。",
+      "depends_on": [],
+      "source_requirement_ids": [],
+      "execution_notes": "必须把供应商结算明确放入 excluded。"
+    },
+    {
+      "title": "供应商结算",
+      "priority": "p4_wont",
+      "implementation_scope": "non_code",
+      "affected_layers": ["documentation"],
+      "user_story": "作为运营负责人，我希望未来支持供应商结算，以便形成完整采购闭环。",
+      "business_scope": {
+        "included": ["记录为后续范围"],
+        "excluded": ["本阶段实现结算流程", "本阶段接入付款或对账"]
+      },
+      "data_rules": [],
+      "acceptance_criteria": ["本阶段需求池中明确标记供应商结算为 P4 Won't"],
+      "vertical_slice_note": "该项被明确排除，不进入 MVP 实现。",
+      "depends_on": [],
+      "source_requirement_ids": [],
+      "execution_notes": "不要为该故事生成变更集。"
+    }
+  ]
+}

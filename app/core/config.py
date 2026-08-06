@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     llm_api_key: str | None = Field(default=None, alias="LLM_API_KEY")
     llm_model: str | None = Field(default=None, alias="LLM_MODEL")
     llm_timeout_seconds: float = Field(default=60.0, alias="LLM_TIMEOUT_SECONDS")
+    llm_stream_read_timeout_seconds: float = Field(
+        default=300.0, alias="LLM_STREAM_READ_TIMEOUT_SECONDS"
+    )
     llm_thinking: bool = Field(default=False, alias="LLM_THINKING")
     llm_use_response_format: bool = Field(default=True, alias="LLM_USE_RESPONSE_FORMAT")
     queue_worker_concurrency: int = Field(default=1, ge=1, alias="QUEUE_WORKER_CONCURRENCY")

@@ -1,7 +1,7 @@
 from typing import Any
 
 from app.llm.json_client import generate_json
-from app.prompts.api_contract_generator import SYSTEM_PROMPT, build_api_contract_generation_payload
+from app.prompts.api_contract_generator import build_api_contract_generation_prompt
 
 VALID_METHODS = {"GET", "POST", "PATCH", "PUT", "DELETE"}
 
@@ -72,9 +72,10 @@ def build_llm_api_contract_content(
     project: Any,
     blueprint_content: dict[str, Any],
 ) -> dict[str, Any]:
+    prompt = build_api_contract_generation_prompt(project, blueprint_content)
     content = generate_json(
-        system_prompt=SYSTEM_PROMPT,
-        user_payload=build_api_contract_generation_payload(project, blueprint_content),
+        system_prompt=prompt.system,
+        user_payload=prompt.user,
     )
     return validate_api_contract_content(content)
 

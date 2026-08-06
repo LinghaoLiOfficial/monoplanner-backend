@@ -84,3 +84,6 @@ class BackendServiceDesign(Base):
     source_story: Mapped[BusinessRequirementStory | None] = relationship()
     change_set: Mapped[ChangeSet | None] = relationship()
     generation_run: Mapped[GenerationRun | None] = relationship()
+
+
+BackendImplementation = BackendServiceDesign

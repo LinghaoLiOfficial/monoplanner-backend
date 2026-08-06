@@ -14,6 +14,7 @@ from app.db.session import SessionLocal
 from app.llm.client import LLMRequestError
 from app.models.blueprint import ProjectBlueprint
 from app.models.business_requirement_story import BusinessRequirementStory
+from app.models.change_set import ChangeSet
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
 from app.models.generation_worker import GenerationWorker
@@ -93,6 +94,51 @@ def test_enqueue_returns_503_when_worker_is_offline(
     assert response.status_code == 503
     assert response.json()["detail"] == WORKER_OFFLINE_DETAIL
     assert db_session.scalars(select(GenerationRun)).all() == []
+
+
+def test_apply_change_set_reuses_existing_active_run_when_worker_heartbeat_lags(
+    client: TestClient, db_session: Session
+) -> None:
+    project = _create_project_with_requirement(client)
+    change_set = ChangeSet(
+        project_id=project["id"],
+        source_requirement_id=project["requirement_id"],
+        version=1,
+        title="已有应用任务",
+        status="ready",
+        implementation_scope="fullstack",
+        affected_layers=["ux_design"],
+    )
+    db_session.add(change_set)
+    db_session.commit()
+    db_session.refresh(change_set)
+    active_run = GenerationRun(
+        project_id=project["id"],
+        requirement_id=project["requirement_id"],
+        run_type="apply_change_set",
+        status=RUNNING_STATUS,
+        progress=20,
+        message="正在生成 UX 设计...",
+        queue_payload={
+            "project_id": project["id"],
+            "change_set_id": str(change_set.id),
+        },
+        input_snapshot={
+            "project_id": project["id"],
+            "change_set_id": str(change_set.id),
+        },
+    )
+    db_session.add(active_run)
+    db_session.query(GenerationWorker).delete()
+    db_session.commit()
+    db_session.refresh(active_run)
+
+    response = client.post(f"/api/v1/change-sets/{change_set.id}/apply")
+
+    assert response.status_code == 202
+    assert response.json()["id"] == str(active_run.id)
+    assert response.json()["status"] == RUNNING_STATUS
+    assert db_session.scalars(select(GenerationRun)).all() == [active_run]
 
 
 def test_claim_next_job_locks_oldest_run(client: TestClient, db_session: Session) -> None:

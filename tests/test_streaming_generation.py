@@ -1,9 +1,16 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.llm.client import extract_chat_completion_stream_delta
+from app.llm.client import (
+    LLMRequestError,
+    OpenAICompatibleLLMClient,
+    extract_chat_completion_stream_delta,
+)
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.generation_run import GenerationRun
+from app.services.llm_generation_runtime import LLMPartialStreamError
+from app.services.llm_orchestration_runtime import generate_orchestration_json
 from tests.llm_stream_helpers import patch_llm_stream
 from tests.queue_helpers import run_generation_job_in_new_session
 from tests.test_blueprint_generation import _mock_blueprint_content
@@ -38,6 +45,59 @@ def test_extract_chat_completion_stream_delta_parses_openai_chunks() -> None:
         'data: {"choices":[{"text":"from text"}]}'
     ) == "from text"
     assert extract_chat_completion_stream_delta("data: {bad json") is None
+
+
+def test_stream_uses_dedicated_read_timeout_for_long_running_chunks() -> None:
+    client = OpenAICompatibleLLMClient(
+        base_url="https://example.test/v1",
+        api_key="test-key",
+        model="test-model",
+        timeout=90,
+        stream_read_timeout=300,
+    )
+
+    timeout = client._stream_timeout()
+
+    assert timeout.connect == 90
+    assert timeout.write == 90
+    assert timeout.pool == 90
+    assert timeout.read == 300
+    assert client.metadata.stream_read_timeout == 300
+
+
+def test_llm_client_builds_string_and_dict_user_messages() -> None:
+    client = OpenAICompatibleLLMClient(
+        base_url="https://example.test/v1",
+        api_key="test-key",
+        model="test-model",
+    )
+
+    string_body = client._build_request_body("system", "===USER===\nhello", None)
+    dict_body = client._build_request_body("system", {"hello": "world"}, None)
+
+    assert string_body["messages"][1]["content"] == "===USER===\nhello"
+    assert dict_body["messages"][1]["content"] == '{\n  "hello": "world"\n}'
+
+
+def test_orchestration_json_salvages_complete_partial_stream(monkeypatch) -> None:
+    def stream(_self, *_args, **_kwargs):
+        yield '{"ok": true}'
+        raise LLMRequestError("incomplete chunked read")
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
+
+    assert generate_orchestration_json("system", {"task": "demo"}) == {"ok": True}
+
+
+def test_orchestration_json_retries_incomplete_partial_stream(monkeypatch) -> None:
+    def stream(_self, *_args, **_kwargs):
+        yield '{"ok"'
+        raise LLMRequestError("incomplete chunked read")
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
+
+    with pytest.raises(LLMPartialStreamError):
+        generate_orchestration_json("system", {"task": "demo"})
 
 
 def test_regular_blueprint_endpoint_enqueues_and_worker_saves_resource(

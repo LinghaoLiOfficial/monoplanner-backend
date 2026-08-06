@@ -27,7 +27,7 @@ def should_use_real_llm() -> bool:
 
 def generate_json(
     system_prompt: str,
-    user_payload: dict[str, Any],
+    user_payload: dict[str, Any] | str,
     extra_params: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     client = OpenAICompatibleLLMClient()

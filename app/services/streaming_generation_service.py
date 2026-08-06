@@ -40,28 +40,16 @@ from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from app.models.requirement import Requirement
 from app.prompts.api_contract_generator import (
-    SYSTEM_PROMPT as API_CONTRACT_SYSTEM_PROMPT,
-)
-from app.prompts.api_contract_generator import (
-    build_api_contract_generation_payload,
+    build_api_contract_generation_prompt,
 )
 from app.prompts.blueprint_generator import (
-    SYSTEM_PROMPT as BLUEPRINT_SYSTEM_PROMPT,
-)
-from app.prompts.blueprint_generator import (
-    build_blueprint_generation_payload,
+    build_blueprint_generation_prompt,
 )
 from app.prompts.business_story_decomposer import (
-    SYSTEM_PROMPT as BUSINESS_STORY_SYSTEM_PROMPT,
-)
-from app.prompts.business_story_decomposer import (
-    build_business_story_decomposition_payload,
+    build_business_story_decomposition_prompt,
 )
 from app.prompts.db_model_generator import (
-    SYSTEM_PROMPT as DB_MODEL_SYSTEM_PROMPT,
-)
-from app.prompts.db_model_generator import (
-    build_db_model_generation_payload,
+    build_db_model_generation_prompt,
 )
 from app.schemas.api_contract import ApiContractDraftResponse
 from app.schemas.blueprint import ProjectBlueprintRead
@@ -145,7 +133,7 @@ class StreamingGenerationSpec:
     module: str
     run_type: str
     system_prompt: str
-    user_payload: dict[str, Any]
+    user_payload: dict[str, Any] | str
     input_snapshot: dict[str, Any]
     parse_and_validate: Callable[[dict[str, Any]], Any]
     save: Callable[[GenerationRun, Any], Any]
@@ -423,7 +411,7 @@ class StreamingGenerationService:
                 detail=BUSINESS_STORY_EMPTY_REQUIREMENT_MESSAGE,
             )
 
-        user_payload = build_business_story_decomposition_payload(project, requirement)
+        prompt = build_business_story_decomposition_prompt(project, requirement)
         input_snapshot = build_business_story_input_snapshot(
             project,
             requirement,
@@ -474,8 +462,8 @@ class StreamingGenerationService:
             module="business_stories",
             run_type=BUSINESS_STORY_RUN_TYPE,
             requirement_id=requirement.id,
-            system_prompt=BUSINESS_STORY_SYSTEM_PROMPT,
-            user_payload=user_payload,
+            system_prompt=prompt.system,
+            user_payload=prompt.user,
             input_snapshot=input_snapshot,
             parse_and_validate=_validate_story_payloads,
             save=save,
@@ -548,16 +536,17 @@ class StreamingGenerationService:
             }
             return blueprint
 
+        prompt = build_blueprint_generation_prompt(
+            project,
+            requirement,
+            business_story_context,
+        )
         return StreamingGenerationSpec(
             project_id=project_id,
             module="blueprint",
             run_type=BLUEPRINT_RUN_TYPE,
-            system_prompt=BLUEPRINT_SYSTEM_PROMPT,
-            user_payload=build_blueprint_generation_payload(
-                project,
-                requirement,
-                business_story_context,
-            ),
+            system_prompt=prompt.system,
+            user_payload=prompt.user,
             input_snapshot=input_snapshot,
             parse_and_validate=validate,
             save=save,
@@ -599,12 +588,13 @@ class StreamingGenerationService:
             }
             return draft
 
+        prompt = build_api_contract_generation_prompt(project, blueprint.content)
         return StreamingGenerationSpec(
             project_id=project_id,
             module="api_contract",
             run_type=API_CONTRACT_RUN_TYPE,
-            system_prompt=API_CONTRACT_SYSTEM_PROMPT,
-            user_payload=build_api_contract_generation_payload(project, blueprint.content),
+            system_prompt=prompt.system,
+            user_payload=prompt.user,
             input_snapshot={
                 "project_id": str(project_id),
                 "source": "project + latest_blueprint",
@@ -652,16 +642,17 @@ class StreamingGenerationService:
             }
             return draft
 
+        prompt = build_db_model_generation_prompt(
+            project,
+            blueprint.content,
+            api_contract_content,
+        )
         return StreamingGenerationSpec(
             project_id=project_id,
             module="db_model",
             run_type=DB_MODEL_RUN_TYPE,
-            system_prompt=DB_MODEL_SYSTEM_PROMPT,
-            user_payload=build_db_model_generation_payload(
-                project,
-                blueprint.content,
-                api_contract_content,
-            ),
+            system_prompt=prompt.system,
+            user_payload=prompt.user,
             input_snapshot={
                 "project_id": str(project_id),
                 "source": "project + latest_blueprint + optional_latest_api_contract",

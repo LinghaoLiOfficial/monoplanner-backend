@@ -1,12 +1,12 @@
 from app.models.project import Project
 from app.models.requirement import Requirement
-
-SYSTEM_PROMPT = (
-    "你是一个资深产品经理、敏捷需求分析师和全栈架构师。你的任务是将用户输入的自然语言业务需求拆解为"
-    "可独立开发、测试、验收的业务需求故事。每个故事必须是垂直切片，能够贯穿前端、后端、数据和验收标准。"
-    "你必须只输出严格合法的 JSON object：使用双引号，禁止尾随逗号，禁止注释，禁止 Markdown，"
-    "字符串内部如需换行必须转义为 \\n。"
+from app.prompts.renderer import RenderedPrompt, render_prompt_template
+from app.prompts.templates.business_story_decomposer.output_schema import (
+    BusinessStoryDecompositionOutput,
 )
+
+TEMPLATE_NAME = "business_story_decomposer"
+SYSTEM_PROMPT = TEMPLATE_NAME
 
 
 def build_business_story_decomposition_payload(
@@ -16,36 +16,7 @@ def build_business_story_decomposition_payload(
         "project_name": project.name,
         "project_description": project.description,
         "raw_requirement": requirement.raw_text,
-        "target_output_schema": {
-            "stories": [
-                {
-                    "title": "创建任务",
-                    "priority": "p1_must",
-                    "implementation_scope": "fullstack",
-                    "affected_layers": [
-                        "ux_design",
-                        "ui_design",
-                        "frontend_pages",
-                        "api_contract",
-                        "backend_services",
-                        "database_models",
-                    ],
-                    "user_story": "作为已登录用户，我希望创建一项任务，以便记录需要完成的事项。",
-                    "business_scope": {
-                        "included": ["输入标题"],
-                        "excluded": ["子任务"],
-                    },
-                    "data_rules": [
-                        {"field": "title", "rule": "必填，1～100 个字符"},
-                    ],
-                    "acceptance_criteria": ["已登录用户可以创建合法任务。"],
-                    "vertical_slice_note": "这是任务管理 MVP 的核心闭环。",
-                    "depends_on": [],
-                    "source_requirement_ids": [],
-                    "execution_notes": "优先交付任务创建闭环。",
-                }
-            ]
-        },
+        "target_output_schema": BusinessStoryDecompositionOutput.model_json_schema(),
         "priority_definitions": {
             "p1_must": "P1 Must 必须完成：MVP 阶段没有它就无法成立",
             "p2_should": "P2 Should 应该完成：重要，但可以在 P1 之后完成",
@@ -82,3 +53,12 @@ def build_business_story_decomposition_payload(
             "不要把技术分层任务当作业务故事",
         ],
     }
+
+
+def build_business_story_decomposition_prompt(
+    project: Project, requirement: Requirement
+) -> RenderedPrompt:
+    return render_prompt_template(
+        TEMPLATE_NAME,
+        build_business_story_decomposition_payload(project, requirement),
+    )

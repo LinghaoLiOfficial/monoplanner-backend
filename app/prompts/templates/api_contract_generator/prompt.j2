@@ -1,0 +1,76 @@
+===SYSTEM===
+你是一个资深 API 架构师和全栈后端工程师。你的任务是基于项目蓝图生成前后端可联调的 API 契约草案。API 契约必须服务于页面、用户故事和业务实体，不要生成无来源的接口。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+project_name: {{ project_name }}
+target_base_path: {{ target_base_path }}
+blueprint_content:
+{{ blueprint_content | tojson_pretty }}
+target_output_schema:
+{{ target_output_schema | tojson_pretty }}
+
+Input Descriptions:
+project_name: 项目名称，用于 API 资源命名语境。
+target_base_path: API 根路径，默认应作为输出 base_path。
+blueprint_content: 项目蓝图，包含页面、业务实体、用户故事引用和 API 需求。
+target_output_schema: 必须遵守的 API 契约 JSON schema。
+
+Output Descriptions:
+返回 API 契约草案，必须包含 base_path、resources、schemas、error_model、notes。
+每个 resource 必须能追溯到页面、业务故事或业务实体。
+每个 endpoint 需要 method、path、operation_id、purpose、request_body、response_body、status_codes 等契约信息。
+request_body 和 response_body 必须引用 schemas 或说明为空。
+错误状态码要合理，缺省错误模型命名为 ApiError，至少包含 code 和 message，可选 details。
+不要生成 FastAPI 代码、数据库字段或 OpenAPI 文档。
+
+Example Input [1]:
+{
+  "project_name": "Inventory Ops",
+  "target_base_path": "/api/v1",
+  "blueprint_content": {
+    "pages": [{"name": "低库存商品页", "route": "/inventory/low-stock"}],
+    "domain_entities": [{"name": "InventoryItem", "key_fields": ["id", "name", "stock_status"]}],
+    "api_needs": [{"resource": "inventory_items", "operations": ["list_low_stock", "mark_replenished"]}]
+  }
+}
+
+Example Output [1]:
+{
+  "base_path": "/api/v1",
+  "resources": [
+    {
+      "name": "inventory_items",
+      "description": "库存商品读取与补货状态更新",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/inventory-items/low-stock",
+          "operation_id": "list_low_stock_inventory_items",
+          "purpose": "返回低库存商品列表",
+          "request_body": null,
+          "response_body": "InventoryItemListResponse",
+          "status_codes": [{"code": 200, "description": "返回低库存商品列表"}]
+        },
+        {
+          "method": "PATCH",
+          "path": "/inventory-items/{item_id}/replenished",
+          "operation_id": "mark_inventory_item_replenished",
+          "purpose": "将指定商品标记为已补货",
+          "request_body": "MarkReplenishedRequest",
+          "response_body": "InventoryItemResponse",
+          "status_codes": [{"code": 200, "description": "状态已更新"}, {"code": 404, "description": "商品不存在"}]
+        }
+      ]
+    }
+  ],
+  "schemas": [
+    {"name": "InventoryItemResponse", "fields": [{"name": "id", "type": "uuid", "required": true}, {"name": "name", "type": "string", "required": true}, {"name": "stock_status", "type": "string", "required": true}]},
+    {"name": "InventoryItemListResponse", "fields": [{"name": "items", "type": "array<InventoryItemResponse>", "required": true}]},
+    {"name": "MarkReplenishedRequest", "fields": [{"name": "note", "type": "string", "required": false}]}
+  ],
+  "error_model": {"name": "ApiError", "fields": [{"name": "code", "type": "string", "required": true}, {"name": "message", "type": "string", "required": true}]},
+  "notes": ["接口只覆盖低库存查看和补货标记，不包含供应商结算。"]
+}

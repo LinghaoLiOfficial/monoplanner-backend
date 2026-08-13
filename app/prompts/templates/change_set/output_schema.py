@@ -6,13 +6,9 @@ ORDERED_AFFECTED_LAYERS = [
     "ux_design",
     "ui_design",
     "frontend_pages",
-    "frontend_tools",
     "api_contract",
     "backend_services",
-    "backend_tools",
     "database_models",
-    "project_blueprint",
-    "prompt_assets",
 ]
 
 

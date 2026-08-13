@@ -32,12 +32,14 @@ def list_project_business_stories(
     priority: Annotated[BusinessStoryPriority | None, Query()] = None,
     status: Annotated[BusinessStoryStatus | None, Query()] = None,
     q: Annotated[str | None, Query()] = None,
+    include_history: Annotated[bool, Query()] = False,
 ) -> list[BusinessRequirementStoryResponse]:
     return BusinessRequirementStoryService(db, current_user).list_project_stories(
         project_id=project_id,
         priority=priority,
         status_filter=status,
         q=q,
+        include_history=include_history,
     )
 
 

@@ -12,6 +12,8 @@ from app.services.versioning import clone_versioned_row
 
 CHANGE_SET_UPDATE_FIELDS = {
     "title",
+    "layer",
+    "batch_id",
     "status",
     "implementation_scope",
     "affected_layers",
@@ -23,6 +25,8 @@ CHANGE_SET_UPDATE_FIELDS = {
     "content",
     "diff_from_previous",
     "summary",
+    "is_current",
+    "applied_at",
 }
 
 

@@ -1,7 +1,9 @@
+import re
 from typing import Any
 
 from app.llm.json_client import generate_json
 from app.prompts.api_contract_generator import build_api_contract_generation_prompt
+from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
 
 VALID_METHODS = {"GET", "POST", "PATCH", "PUT", "DELETE"}
 
@@ -76,64 +78,47 @@ def build_llm_api_contract_content(
     content = generate_json(
         system_prompt=prompt.system,
         user_payload=prompt.user,
+        response_model=ApiContractOutput,
     )
     return validate_api_contract_content(content)
 
 
 def validate_api_contract_content(content: dict[str, Any]) -> dict[str, Any]:
-    base_path = content.get("base_path")
+    base_path = content.get("api_base_path") or content.get("base_path")
     if not isinstance(base_path, str) or not base_path.startswith("/"):
-        raise ApiContractValidationError("API contract base_path is required.")
-    resources = content.get("resources")
-    if not isinstance(resources, list):
-        raise ApiContractValidationError("API contract resources must be a list.")
-    schemas = content.get("schemas")
-    if not isinstance(schemas, list):
-        raise ApiContractValidationError("API contract schemas must be a list.")
+        raise ApiContractValidationError("API contract api_base_path is required.")
 
-    normalized_resources = []
-    for resource in resources:
-        if not isinstance(resource, dict):
-            raise ApiContractValidationError("API contract resource must be an object.")
-        endpoints = resource.get("endpoints")
+    resource_groups = content.get("api_resource_groups")
+    if resource_groups is None and isinstance(content.get("resources"), list):
+        resource_groups = _legacy_resources_to_resource_groups(content["resources"])
+    if not isinstance(resource_groups, list):
+        raise ApiContractValidationError("API contract api_resource_groups must be a list.")
+
+    normalized_groups = []
+    for group in resource_groups:
+        if not isinstance(group, dict):
+            raise ApiContractValidationError("API contract resource group must be an object.")
+        endpoints = group.get("endpoints")
         if not isinstance(endpoints, list):
-            raise ApiContractValidationError("API contract resource endpoints must be a list.")
+            raise ApiContractValidationError(
+                "API contract resource group endpoints must be a list."
+            )
         normalized_endpoints = [_normalize_endpoint(endpoint) for endpoint in endpoints]
-        normalized_resources.append(
+        normalized_groups.append(
             {
-                "name": _require_string(resource.get("name"), "resources.name"),
-                "description": _string_or_default(resource.get("description"), ""),
+                "group_name": _require_string(
+                    group.get("group_name") or group.get("name"), "api_resource_groups.group_name"
+                ),
+                "group_purpose": _string_or_default(
+                    group.get("group_purpose") or group.get("description"), ""
+                ),
                 "endpoints": normalized_endpoints,
             }
         )
 
-    normalized_schemas = []
-    for schema in schemas:
-        if not isinstance(schema, dict):
-            raise ApiContractValidationError("API contract schema must be an object.")
-        normalized_schemas.append(
-            {
-                "name": _require_string(schema.get("name"), "schemas.name"),
-                "fields": _normalize_schema_fields(schema.get("fields")),
-            }
-        )
-
-    error_model = content.get("error_model")
-    if not isinstance(error_model, dict):
-        error_model = {
-            "name": "ApiError",
-            "fields": [
-                {"name": "code", "type": "string", "required": True},
-                {"name": "message", "type": "string", "required": True},
-                {"name": "details", "type": "object", "required": False},
-            ],
-        }
-
     return {
-        "base_path": base_path.rstrip("/") if base_path != "/" else base_path,
-        "resources": normalized_resources,
-        "schemas": normalized_schemas,
-        "error_model": error_model,
+        "api_base_path": base_path.rstrip("/") if base_path != "/" else base_path,
+        "api_resource_groups": normalized_groups,
         "notes": _string_list(content.get("notes")),
     }
 
@@ -141,37 +126,91 @@ def validate_api_contract_content(content: dict[str, Any]) -> dict[str, Any]:
 def _normalize_endpoint(endpoint: Any) -> dict[str, Any]:
     if not isinstance(endpoint, dict):
         raise ApiContractValidationError("API contract endpoint must be an object.")
-    method = _require_string(endpoint.get("method"), "endpoints.method").upper()
+    method = _require_string(
+        endpoint.get("http_method") or endpoint.get("method"), "endpoints.http_method"
+    ).upper()
     if method not in VALID_METHODS:
         raise ApiContractValidationError("API contract endpoint method is invalid.")
     return {
-        "method": method,
-        "path": _require_string(endpoint.get("path"), "endpoints.path"),
-        "operation_id": _string_or_default(endpoint.get("operation_id"), ""),
-        "purpose": _require_string(endpoint.get("purpose"), "endpoints.purpose"),
-        "request_body": endpoint.get("request_body"),
-        "response_body": endpoint.get("response_body"),
-        "auth_required": bool(endpoint.get("auth_required", True)),
-        "errors": _string_list(endpoint.get("errors")),
+        "http_method": method,
+        "endpoint_path": _require_string(
+            endpoint.get("endpoint_path") or endpoint.get("path"), "endpoints.endpoint_path"
+        ),
+        "endpoint_purpose": _require_string(
+            endpoint.get("endpoint_purpose") or endpoint.get("purpose"),
+            "endpoints.endpoint_purpose",
+        ),
+        "requires_auth": bool(endpoint.get("requires_auth", endpoint.get("auth_required", True))),
+        "request_schema": _dict_or_empty(
+            endpoint.get("request_schema")
+            if "request_schema" in endpoint
+            else _legacy_schema_ref(endpoint.get("request_body"))
+        ),
+        "response_schema": _dict_or_empty(
+            endpoint.get("response_schema")
+            if "response_schema" in endpoint
+            else _legacy_schema_ref(endpoint.get("response_body"))
+        ),
+        "error_model": _normalize_error_model(endpoint.get("error_model"), endpoint.get("errors")),
     }
 
 
-def _normalize_schema_fields(fields: Any) -> list[dict[str, Any]]:
-    if not isinstance(fields, list):
-        return []
+def _normalize_error_model(value: Any, legacy_errors: Any = None) -> list[dict[str, Any]]:
+    if isinstance(value, list):
+        return [_normalize_error_case(item) for item in value]
+    errors = _string_list(legacy_errors)
     normalized = []
-    for field in fields:
-        if not isinstance(field, dict):
-            raise ApiContractValidationError("API contract schema field must be an object.")
+    for error in errors:
         normalized.append(
             {
-                "name": _require_string(field.get("name"), "schemas.fields.name"),
-                "type": _string_or_default(field.get("type"), "string"),
-                "required": bool(field.get("required", False)),
-                "description": _string_or_default(field.get("description"), ""),
+                "status_code": _status_code_from_error(error),
+                "error_code": error.upper().replace(" ", "_"),
+                "error_message": error,
+                "recovery_suggestion": "",
             }
         )
     return normalized
+
+
+def _normalize_error_case(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ApiContractValidationError("API contract error_case must be an object.")
+    status_code = value.get("status_code")
+    if not isinstance(status_code, int):
+        raise ApiContractValidationError("API contract error_case status_code must be an integer.")
+    return {
+        "status_code": status_code,
+        "error_code": _require_string(value.get("error_code"), "error_case.error_code"),
+        "error_message": _require_string(value.get("error_message"), "error_case.error_message"),
+        "recovery_suggestion": _string_or_default(value.get("recovery_suggestion"), ""),
+    }
+
+
+def _legacy_resources_to_resource_groups(resources: list[Any]) -> list[dict[str, Any]]:
+    groups = []
+    for resource in resources:
+        if isinstance(resource, dict):
+            groups.append(
+                {
+                    "group_name": resource.get("name"),
+                    "group_purpose": resource.get("description"),
+                    "endpoints": resource.get("endpoints", []),
+                }
+            )
+    return groups
+
+
+def _legacy_schema_ref(value: Any) -> dict[str, Any]:
+    if isinstance(value, str) and value.strip():
+        return {"schema_ref": value.strip()}
+    return {}
+
+
+def _status_code_from_error(value: str) -> int:
+    match = re.search(r"\b([1-5][0-9]{2})\b", value)
+    if match:
+        return int(match.group(1))
+    return 400
 
 
 def _build_rule_based_api_contract_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
@@ -272,6 +311,10 @@ def _string_or_default(value: Any, default: str) -> str:
     if isinstance(value, str) and value.strip():
         return value.strip()
     return default
+
+
+def _dict_or_empty(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
 
 
 def _string_list(value: Any) -> list[str]:

@@ -2,6 +2,7 @@ from typing import Any
 
 from app.llm.json_client import generate_json
 from app.prompts.db_model_generator import build_db_model_generation_prompt
+from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 
 
 class DbModelValidationError(ValueError):
@@ -51,18 +52,29 @@ def _normalize_fields(raw_fields: Any) -> list[dict[str, Any]]:
                 {
                     "name": name,
                     "type": field_type,
+                    "required": not nullable,
                     "primary_key": name == "id",
                     "nullable": nullable,
                 }
             )
     if "id" not in seen:
-        fields.insert(0, {"name": "id", "type": "uuid", "primary_key": True, "nullable": False})
+        fields.insert(
+            0,
+            {
+                "name": "id",
+                "type": "uuid",
+                "required": True,
+                "primary_key": True,
+                "nullable": False,
+            },
+        )
     for audit_field in ("created_at", "updated_at"):
         if audit_field not in seen:
             fields.append(
                 {
                     "name": audit_field,
                     "type": "datetime",
+                    "required": True,
                     "primary_key": False,
                     "nullable": False,
                 }
@@ -87,6 +99,7 @@ def build_llm_db_model_content(
     content = generate_json(
         system_prompt=prompt.system,
         user_payload=prompt.user,
+        response_model=DbModelOutput,
     )
     return validate_db_model_content(content)
 
@@ -95,29 +108,39 @@ def validate_db_model_content(content: dict[str, Any]) -> dict[str, Any]:
     database = content.get("database")
     if not isinstance(database, dict):
         raise DbModelValidationError("DB model database is required.")
-    entities = content.get("entities")
-    if not isinstance(entities, list):
-        raise DbModelValidationError("DB model entities must be a list.")
+    tables = content.get("database_tables")
+    if not isinstance(tables, list):
+        legacy_entities = content.get("entities")
+        if isinstance(legacy_entities, list):
+            tables = legacy_entities
+        else:
+            raise DbModelValidationError("DB model database_tables must be a list.")
 
-    normalized_entities = []
-    for entity in entities:
-        if not isinstance(entity, dict):
-            raise DbModelValidationError("DB model entity must be an object.")
-        fields = entity.get("fields")
+    normalized_tables = []
+    for table in tables:
+        if not isinstance(table, dict):
+            raise DbModelValidationError("DB model database_table must be an object.")
+        fields = table.get("fields")
         if not isinstance(fields, list):
-            raise DbModelValidationError("DB model entity fields must be a list.")
-        normalized_entities.append(
+            raise DbModelValidationError("DB model database_table fields must be a list.")
+        table_name_source = _require_string(
+            table.get("name") or table.get("table_name"),
+            "database_tables.name",
+        )
+        normalized_tables.append(
             {
-                "name": _require_string(entity.get("name"), "entities.name"),
+                "name": table_name_source,
                 "table_name": _string_or_default(
-                    entity.get("table_name"),
-                    _to_table_name(_require_string(entity.get("name"), "entities.name")),
+                    table.get("table_name"),
+                    _to_table_name(table_name_source),
                 ),
-                "description": _string_or_default(entity.get("description"), ""),
+                "description": _string_or_default(table.get("description"), ""),
                 "fields": _normalize_model_fields(fields),
-                "relationships": entity.get("relationships")
-                if isinstance(entity.get("relationships"), list)
+                "relationships": table.get("relationships")
+                if isinstance(table.get("relationships"), list)
                 else [],
+                "indexes": _normalize_indexes(table.get("indexes")),
+                "migration_notes": _string_list(table.get("migration_notes")),
             }
         )
 
@@ -127,7 +150,7 @@ def validate_db_model_content(content: dict[str, Any]) -> dict[str, Any]:
             "orm": _string_or_default(database.get("orm"), "SQLAlchemy 2.x"),
             "migration_tool": _string_or_default(database.get("migration_tool"), "Alembic"),
         },
-        "entities": normalized_entities,
+        "database_tables": normalized_tables,
         "relationships": content.get("relationships")
         if isinstance(content.get("relationships"), list)
         else [],
@@ -148,6 +171,9 @@ def _normalize_model_fields(fields: list[Any]) -> list[dict[str, Any]]:
             {
                 "name": name,
                 "type": _require_string(field.get("type"), "entities.fields.type"),
+                "required": bool(
+                    field.get("required", not bool(field.get("nullable", name != "id")))
+                ),
                 "primary_key": bool(field.get("primary_key", name == "id")),
                 "nullable": bool(field.get("nullable", name != "id")),
                 "description": _string_or_default(field.get("description"), ""),
@@ -159,6 +185,7 @@ def _normalize_model_fields(fields: list[Any]) -> list[dict[str, Any]]:
             {
                 "name": "id",
                 "type": "uuid",
+                "required": True,
                 "primary_key": True,
                 "nullable": False,
                 "description": "Primary key",
@@ -170,6 +197,7 @@ def _normalize_model_fields(fields: list[Any]) -> list[dict[str, Any]]:
                 {
                     "name": audit_field,
                     "type": "datetime",
+                    "required": True,
                     "primary_key": False,
                     "nullable": False,
                     "description": f"{audit_field} audit timestamp",
@@ -197,7 +225,7 @@ def _normalize_indexes(indexes: Any) -> list[dict[str, Any]]:
 
 def _build_rule_based_db_model_content(blueprint_content: dict[str, Any]) -> dict[str, Any]:
     domain_entities = blueprint_content.get("domain_entities")
-    entities: list[dict[str, Any]] = []
+    tables: list[dict[str, Any]] = []
     relationships: list[dict[str, str]] = []
     indexes: list[dict[str, Any]] = []
 
@@ -238,13 +266,17 @@ def _build_rule_based_db_model_content(blueprint_content: dict[str, Any]) -> dic
                             "reason": f"Speed up lookup by {field_name}.",
                         }
                     )
-            entities.append(
+            tables.append(
                 {
                     "name": name,
                     "table_name": table_name,
                     "description": entity.get("description") or f"{name} domain entity",
                     "fields": fields,
                     "relationships": entity_relationships,
+                    "indexes": [
+                        index for index in indexes if index.get("table") == table_name
+                    ],
+                    "migration_notes": [],
                 }
             )
 
@@ -254,7 +286,7 @@ def _build_rule_based_db_model_content(blueprint_content: dict[str, Any]) -> dic
             "orm": "SQLAlchemy 2.x",
             "migration_tool": "Alembic",
         },
-        "entities": entities,
+        "database_tables": tables,
         "relationships": relationships,
         "indexes": indexes,
         "migration_notes": [

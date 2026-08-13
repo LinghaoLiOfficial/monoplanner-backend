@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from json_repair import loads as repair_json_loads
 
 from app.core.config import settings
 from app.llm.client import (
@@ -15,6 +17,9 @@ from app.llm.client import (
 )
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 
 class LLMJsonGenerationError(LLMResponseFormatError):
@@ -29,7 +34,16 @@ def generate_json(
     system_prompt: str,
     user_payload: dict[str, Any] | str,
     extra_params: dict[str, Any] | None = None,
+    response_model: type[BaseModel] | None = None,
 ) -> dict[str, Any]:
+    if response_model is not None:
+        from app.llm.structured_client import generate_structured_json
+
+        return generate_structured_json(
+            system_prompt,
+            user_payload,
+            response_model=response_model,
+        )
     client = OpenAICompatibleLLMClient()
     raw = client.invoke(system_prompt, user_payload, extra_params=extra_params)
     return parse_json_object(raw)
@@ -42,14 +56,14 @@ def parse_json_object(raw: str) -> dict[str, Any]:
 
     start = content.find("{")
     end = content.rfind("}")
-    if start == -1 or end == -1 or end <= start:
+    if start == -1:
         logger.warning(
             "llm.response.invalid reason=no_json_object content_excerpt=%s",
             _excerpt(content, 1000),
         )
         raise LLMJsonGenerationError("LLM output does not contain a JSON object.")
 
-    candidate = content[start : end + 1]
+    candidate = content[start : end + 1] if end > start else content[start:]
     try:
         parsed = json.loads(candidate)
     except json.JSONDecodeError as exc:
@@ -59,9 +73,21 @@ def parse_json_object(raw: str) -> dict[str, Any]:
             exc.pos,
             _excerpt(candidate, 1000),
         )
-        raise LLMJsonGenerationError(
-            f"LLM output is not valid JSON: {exc.msg} at char {exc.pos}."
-        ) from exc
+        try:
+            parsed = repair_json_loads(candidate)
+        except Exception as repair_exc:
+            logger.warning(
+                "llm.response.invalid reason=json_repair_failed error=%s content_excerpt=%s",
+                _excerpt(str(repair_exc), 500),
+                _excerpt(candidate, 1000),
+            )
+            raise LLMJsonGenerationError(
+                f"LLM output is not valid JSON: {exc.msg} at char {exc.pos}."
+            ) from exc
+        logger.info(
+            "llm.response.json_repaired content_excerpt=%s",
+            _excerpt(candidate, 500),
+        )
     if not isinstance(parsed, dict):
         logger.warning("llm.response.invalid reason=json_not_object")
         raise LLMJsonGenerationError("LLM output JSON must be an object.")

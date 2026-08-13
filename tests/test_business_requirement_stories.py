@@ -235,7 +235,7 @@ def test_failed_business_story_generation_status_is_persisted(
     assert run.status == "failed"
     assert str(run.requirement_id) == requirement["id"]
     assert run.message == "业务需求故事更新失败"
-    assert "missing required field" in (run.error_message or "")
+    assert "structured output failed schema validation" in (run.error_message or "")
 
     status_response = client.get(
         f"/api/v1/requirements/{requirement['id']}/business-story-generation"
@@ -420,7 +420,7 @@ def test_generate_business_stories_returns_502_for_invalid_json_output(
     )
     assert run is not None
     assert run.status == "failed"
-    assert run.output_snapshot["failure_stage"] == "parse"
+    assert run.output_snapshot["failure_stage"] == "parse_json_failed"
 
 
 def test_generate_business_stories_validates_llm_output(
@@ -470,7 +470,7 @@ def test_generate_business_stories_fails_when_no_valid_story(
     assert db_session.scalars(select(BusinessRequirementStory)).all() == []
 
 
-def test_generate_business_stories_overwrite_false_appends_existing(
+def test_generate_business_stories_reuses_active_run_for_same_requirement(
     client: TestClient, db_session, monkeypatch
 ) -> None:
     project, requirement = _create_project_with_requirement(client)
@@ -487,15 +487,16 @@ def test_generate_business_stories_overwrite_false_appends_existing(
 
     assert first.status_code == 202
     assert second.status_code == 202
+    assert second.json()["id"] == first.json()["id"]
     run_generation_job_in_new_session(first.json()["id"])
-    run_generation_job_in_new_session(second.json()["id"])
     stories = db_session.scalars(select(BusinessRequirementStory)).all()
-    assert len(stories) == 4
+    assert len(stories) == 2
+    assert all(story.is_current for story in stories)
     assert {str(story.requirement_id) for story in stories} == {requirement["id"]}
 
     list_response = client.get(f"/api/v1/projects/{project['id']}/business-stories")
     assert list_response.status_code == 200
-    assert len(list_response.json()) == 4
+    assert len(list_response.json()) == 2
 
 
 def test_generate_business_stories_overwrite_replaces_existing(
@@ -597,7 +598,12 @@ def test_blueprint_includes_business_stories_when_available(
             ],
             "api_needs": [{"resource": "tasks", "operations": ["list"], "consumers": []}],
             "business_requirement_stories": [],
-            "non_functional_requirements": {},
+            "non_functional_requirements": {
+                "auth": "仅登录用户可访问",
+                "performance": "列表应快速加载",
+                "security": "基础权限校验",
+                "observability": "记录关键生成日志",
+            },
             "assumptions": [],
             "open_questions": [],
         },

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.generators.db_model_generator import validate_db_model_content
 from app.prompts.api_contract_generator import build_api_contract_generation_payload
 from app.prompts.blueprint_generator import build_blueprint_generation_payload
 from app.prompts.business_story_decomposer import build_business_story_decomposition_payload
@@ -21,6 +22,9 @@ from app.prompts.renderer import (
 )
 from app.prompts.template_registry import PROMPT_TEMPLATE_CONTRACTS
 from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
+from app.prompts.templates.backend_implementation.output_schema import (
+    BackendImplementationOutput,
+)
 from app.prompts.templates.blueprint_generator.output_schema import ProjectBlueprintOutput
 from app.prompts.templates.blueprint_summary.output_schema import BlueprintSummaryOutput
 from app.prompts.templates.business_story_decomposer.output_schema import (
@@ -37,6 +41,12 @@ from app.prompts.templates.ux_design.output_schema import UXDesignOutput
 
 REQUIRED_USER_SECTIONS = (
     "Input:",
+    "Input Fields:",
+    "Output Fields:",
+    "Output Rules:",
+)
+
+FORBIDDEN_USER_SECTIONS = (
     "Input Descriptions:",
     "Output Descriptions:",
 )
@@ -45,6 +55,22 @@ EXPECTED_EXAMPLE_COUNTS = {
     "business_story_decomposer": 2,
     "change_set": 2,
     "prompt_pack": 2,
+}
+
+EXPECTED_RESPONSE_MODELS = {
+    "business_story_decomposer": BusinessStoryDecompositionOutput,
+    "blueprint_generator": ProjectBlueprintOutput,
+    "api_contract_generator": ApiContractOutput,
+    "backend_implementation": BackendImplementationOutput,
+    "db_model_generator": DbModelOutput,
+    "change_set": ChangeSetOutput,
+    "design_asset": DesignAssetOutput,
+    "ux_design": UXDesignOutput,
+    "ui_design": UIDesignOutput,
+    "frontend_pages": FrontendPagesOutput,
+    "blueprint_summary": BlueprintSummaryOutput,
+    "prompt_pack": PromptPackOutput,
+    "context_pack": ContextPackOutput,
 }
 
 
@@ -59,6 +85,8 @@ def test_prompt_template_files_exist_and_follow_runtime_structure() -> None:
         assert template_text.find("===SYSTEM===") < template_text.find("===USER===")
         for section in REQUIRED_USER_SECTIONS:
             assert section in template_text
+        for section in FORBIDDEN_USER_SECTIONS:
+            assert section not in template_text
         expected_count = EXPECTED_EXAMPLE_COUNTS.get(contract.name, 1)
         input_examples = re.findall(r"Example Input \[(\d+)\]:", template_text)
         output_examples = re.findall(r"Example Output \[(\d+)\]:", template_text)
@@ -72,19 +100,26 @@ def test_registered_templates_render_to_non_empty_system_and_user() -> None:
         assert rendered.system
         assert rendered.user
         assert "Input:" in rendered.user
-        assert "Output Descriptions:" in rendered.user
+        assert "Input Fields:" in rendered.user
+        assert "Output Fields:" in rendered.user
+        assert "Output Rules:" in rendered.user
 
 
-def test_business_story_payload_uses_schema_model() -> None:
+def test_registered_templates_keep_runtime_response_models() -> None:
+    for contract in PROMPT_TEMPLATE_CONTRACTS:
+        assert contract.response_model is EXPECTED_RESPONSE_MODELS[contract.name]
+
+
+def test_business_story_payload_does_not_inject_schema() -> None:
     project = SimpleNamespace(name="Demo", description="Demo project")
     requirement = SimpleNamespace(raw_text="Create tasks")
 
     payload = build_business_story_decomposition_payload(project, requirement)
 
-    assert payload["target_output_schema"] == BusinessStoryDecompositionOutput.model_json_schema()
+    assert "target_output_schema" not in payload
 
 
-def test_core_prompt_payloads_use_their_matching_schema_models() -> None:
+def test_core_prompt_payloads_do_not_inject_schema() -> None:
     project = SimpleNamespace(
         name="Demo",
         description="Demo project",
@@ -104,75 +139,75 @@ def test_core_prompt_payloads_use_their_matching_schema_models() -> None:
     api_payload = build_api_contract_generation_payload(project, blueprint_content)
     db_payload = build_db_model_generation_payload(project, blueprint_content, api_contract_content)
 
-    assert blueprint_payload["target_output_schema"] == ProjectBlueprintOutput.model_json_schema()
-    assert api_payload["target_output_schema"] == ApiContractOutput.model_json_schema()
-    assert db_payload["target_output_schema"] == DbModelOutput.model_json_schema()
+    assert "target_output_schema" not in blueprint_payload
+    assert "target_output_schema" not in api_payload
+    assert "target_output_schema" not in db_payload
 
 
-def test_orchestration_payloads_use_schema_models() -> None:
+def test_orchestration_payloads_do_not_inject_schema() -> None:
     project_config = {"prompt_preferences": []}
     selected_story = {"title": "Story"}
     current_assets = {"ux_design": {}}
     design_assets = {"ux_design": {}}
     change_set = {"affected_layers": ["ux_design"]}
 
-    assert build_change_set_payload(
+    assert "output_contract" not in build_change_set_payload(
         project_config=project_config,
         selected_story=selected_story,
         current_assets=current_assets,
-    )["output_contract"] == ChangeSetOutput.model_json_schema()
+    )
 
-    assert build_design_asset_payload(
+    assert "output_contract" not in build_design_asset_payload(
         layer="ux_design",
         project_config=project_config,
         selected_story=selected_story,
         change_set=change_set,
         previous_version=None,
         related_assets={},
-    )["output_contract"] == UXDesignOutput.model_json_schema()
+    )
 
-    assert build_design_asset_payload(
+    assert "output_contract" not in build_design_asset_payload(
         layer="ui_design",
         project_config=project_config,
         selected_story=selected_story,
         change_set=change_set,
         previous_version=None,
         related_assets={},
-    )["output_contract"] == UIDesignOutput.model_json_schema()
+    )
 
-    assert build_design_asset_payload(
+    assert "output_contract" not in build_design_asset_payload(
         layer="frontend_pages",
         project_config=project_config,
         selected_story=selected_story,
         change_set=change_set,
         previous_version=None,
         related_assets={},
-    )["output_contract"] == FrontendPagesOutput.model_json_schema()
+    )
 
-    assert build_design_asset_payload(
+    assert "output_contract" not in build_design_asset_payload(
         layer="backend_services",
         project_config=project_config,
         selected_story=selected_story,
         change_set=change_set,
         previous_version=None,
         related_assets={},
-    )["output_contract"] == DesignAssetOutput.model_json_schema()
+    )
 
-    assert build_blueprint_summary_payload(
+    assert "output_contract" not in build_blueprint_summary_payload(
         project_config=project_config,
         business_stories=[],
         design_assets=design_assets,
         latest_change_set=change_set,
-    )["output_contract"] == BlueprintSummaryOutput.model_json_schema()
+    )
 
-    assert build_prompt_pack_payload(
+    assert "output_contract" not in build_prompt_pack_payload(
         project_config=project_config,
         selected_story=selected_story,
         change_set=change_set,
         old_versions={},
         new_versions={},
         project_blueprint={},
-    )["output_contract"] == PromptPackOutput.model_json_schema()
+    )
 
 
 def test_context_pack_schema_shape() -> None:
@@ -246,6 +281,265 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
     assert output.content.component_style_rules[0].style_rules == ["错误消息就近展示"]
 
 
+def test_frontend_pages_output_accepts_frontend_implementation_contract() -> None:
+    output = FrontendPagesOutput.model_validate(
+        {
+            "title": "任务创建前端工程实现",
+            "summary": "定义任务创建页的前端工程实现规划。",
+            "content": {
+                "version_summary": "新增任务创建前端工程实现。",
+                "route_definitions": [
+                    {
+                        "path": "/tasks/new",
+                        "page_name": "任务创建页",
+                        "dynamic_params": [],
+                        "permission_requirement": "已登录用户",
+                    }
+                ],
+                "directory_structure": [
+                    {"path": "app/tasks/new/page.tsx", "purpose": "页面入口"},
+                    {"path": "components/tasks/TaskForm.tsx", "purpose": "任务表单"},
+                ],
+                "code_logic": [
+                    {
+                        "target": "TaskForm",
+                        "state_management": ["保存标题、描述、提交状态和错误信息"],
+                        "events": ["提交表单"],
+                        "data_flow": ["TaskForm -> POST /tasks"],
+                        "error_handling": ["失败时展示错误并允许重试"],
+                    }
+                ],
+                "environment_variables": [
+                    {
+                        "name": "NEXT_PUBLIC_API_BASE_URL",
+                        "purpose": "后端 API 基础地址",
+                        "required": True,
+                    }
+                ],
+                "design_theme": ["primary token 用于主按钮"],
+                "dependencies": [
+                    {
+                        "package_name": "lucide-react",
+                        "purpose": "表单操作图标",
+                        "required": False,
+                    }
+                ],
+                "diff": {"added": ["任务创建前端工程实现"], "modified": [], "removed": []},
+            },
+            "diff_from_previous": {
+                "added": ["任务创建前端工程实现"],
+                "modified": [],
+                "removed": [],
+            },
+        }
+    )
+
+    content = output.content
+    assert content.route_definitions[0].path == "/tasks/new"
+    assert content.directory_structure[0].path == "app/tasks/new/page.tsx"
+    assert content.code_logic[0].target == "TaskForm"
+    assert content.environment_variables[0].name == "NEXT_PUBLIC_API_BASE_URL"
+    assert content.design_theme == ["primary token 用于主按钮"]
+    assert content.dependencies[0].package_name == "lucide-react"
+
+
+def test_backend_implementation_output_accepts_backend_implementation_contract() -> None:
+    output = BackendImplementationOutput.model_validate(
+        {
+            "title": "任务创建后端工程实现",
+            "summary": "定义任务创建接口、服务、工具、LLM 模板、环境变量和依赖。",
+            "content": {
+                "version_summary": "新增任务创建后端工程实现。",
+                "directory_structure": [
+                    {"path": "app/api/v1/endpoints/tasks.py", "purpose": "任务接口路由"},
+                    {"path": "app/services/task_service.py", "purpose": "任务创建业务逻辑"},
+                ],
+                "code_logic": [
+                    {
+                        "target": "TaskService.create_task",
+                        "service_flow": ["读取当前用户", "创建任务", "返回任务详情"],
+                        "validation_logic": ["标题必填"],
+                        "transaction_handling": ["创建任务和审计记录使用同一事务"],
+                        "error_handling": ["校验失败返回 400"],
+                    }
+                ],
+                "utility_classes": [
+                    {
+                        "name": "TaskTitleNormalizer",
+                        "purpose": "规范化任务标题",
+                        "usage": ["创建任务前 trim 标题"],
+                    }
+                ],
+                "llm_interaction_templates": [
+                    {
+                        "template_name": "task_summary",
+                        "input_structure": ["任务标题", "任务描述"],
+                        "output_structure": ["summary"],
+                        "parsing_rules": ["只接受 JSON object"],
+                    }
+                ],
+                "environment_variables": [
+                    {
+                        "name": "DATABASE_URL",
+                        "purpose": "连接 PostgreSQL 数据库",
+                        "required": True,
+                    }
+                ],
+                "dependencies": [
+                    {
+                        "package_name": "SQLAlchemy",
+                        "purpose": "ORM 和事务处理",
+                        "required": True,
+                    }
+                ],
+                "diff": {"added": ["任务创建后端工程实现"], "modified": [], "removed": []},
+            },
+            "diff_from_previous": {
+                "added": ["任务创建后端工程实现"],
+                "modified": [],
+                "removed": [],
+            },
+        }
+    )
+
+    content = output.content
+    assert content.directory_structure[0].path == "app/api/v1/endpoints/tasks.py"
+    assert content.code_logic[0].target == "TaskService.create_task"
+    assert content.utility_classes[0].name == "TaskTitleNormalizer"
+    assert content.llm_interaction_templates[0].template_name == "task_summary"
+    assert content.environment_variables[0].name == "DATABASE_URL"
+    assert content.dependencies[0].package_name == "SQLAlchemy"
+
+
+def test_api_contract_output_accepts_new_contract_shape() -> None:
+    output = ApiContractOutput.model_validate(
+        {
+            "api_base_path": "/api/v1",
+            "api_resource_groups": [
+                {
+                    "group_name": "tasks",
+                    "group_purpose": "任务创建与读取",
+                    "endpoints": [
+                        {
+                            "http_method": "POST",
+                            "endpoint_path": "/tasks",
+                            "endpoint_purpose": "创建任务",
+                            "requires_auth": True,
+                            "request_schema": {
+                                "body": [
+                                    {
+                                        "name": "title",
+                                        "type": "string",
+                                        "required": True,
+                                    }
+                                ]
+                            },
+                            "response_schema": {"body": "TaskResponse"},
+                            "error_model": [
+                                {
+                                    "status_code": 400,
+                                    "error_code": "TASK_TITLE_REQUIRED",
+                                    "error_message": "任务标题不能为空",
+                                    "recovery_suggestion": "填写任务标题后重试",
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ],
+            "notes": ["只覆盖任务创建。"],
+        }
+    )
+
+    group = output.api_resource_groups[0]
+    endpoint = group.endpoints[0]
+    assert output.api_base_path == "/api/v1"
+    assert group.group_name == "tasks"
+    assert endpoint.http_method == "POST"
+    assert endpoint.endpoint_path == "/tasks"
+    assert endpoint.request_schema["body"][0]["name"] == "title"
+    assert endpoint.response_schema["body"] == "TaskResponse"
+    assert endpoint.error_model[0].error_code == "TASK_TITLE_REQUIRED"
+
+
+def test_db_model_output_accepts_database_model_contract() -> None:
+    output = DbModelOutput.model_validate(
+        {
+            "database": {
+                "engine": "PostgreSQL",
+                "orm": "SQLAlchemy 2.x",
+                "migration_tool": "Alembic",
+            },
+            "database_tables": [
+                {
+                    "name": "Task",
+                    "table_name": "tasks",
+                    "description": "任务表",
+                    "fields": [
+                        {
+                            "name": "id",
+                            "type": "uuid",
+                            "required": True,
+                            "primary_key": True,
+                            "nullable": False,
+                            "description": "主键",
+                        },
+                        {
+                            "name": "title",
+                            "type": "string",
+                            "required": True,
+                            "nullable": False,
+                            "description": "任务标题",
+                        },
+                    ],
+                    "relationships": [],
+                    "indexes": [
+                        {
+                            "table": "tasks",
+                            "fields": ["title"],
+                            "reason": "按标题检索任务",
+                        }
+                    ],
+                    "migration_notes": ["新增 tasks 表。"],
+                }
+            ],
+            "relationships": [],
+            "indexes": [],
+            "migration_notes": ["使用 Alembic 迁移。"],
+        }
+    )
+
+    table = output.database_tables[0]
+    field = table.fields[0]
+    assert table.table_name == "tasks"
+    assert field.name == "id"
+    assert field.required is True
+    assert field.primary_key is True
+    assert table.indexes[0].fields == ["title"]
+
+
+def test_db_model_validator_maps_legacy_entities_to_database_tables() -> None:
+    normalized = validate_db_model_content(
+        {
+            "database": {"engine": "PostgreSQL"},
+            "entities": [
+                {
+                    "name": "Task",
+                    "table_name": "tasks",
+                    "fields": [{"name": "title", "type": "string", "nullable": False}],
+                }
+            ],
+        }
+    )
+
+    table = normalized["database_tables"][0]
+    title_field = next(field for field in table["fields"] if field["name"] == "title")
+    assert table["name"] == "Task"
+    assert table["table_name"] == "tasks"
+    assert table["fields"][0]["name"] == "id"
+    assert title_field["required"] is True
+
+
 def test_prompt_renderer_rejects_missing_or_duplicate_markers() -> None:
     with pytest.raises(PromptTemplateRenderError):
         split_rendered_prompt("===SYSTEM===\nOnly system")
@@ -271,7 +565,7 @@ def _template_variables(name: str) -> dict[str, object]:
         source_type="manual",
     )
     blueprint_content = {"project": {}, "domain_entities": [], "pages": [], "api_needs": []}
-    api_contract_content = {"base_path": "/api/v1", "resources": [], "schemas": []}
+    api_contract_content = {"api_base_path": "/api/v1", "api_resource_groups": []}
     project_config = {"project_name": "Demo", "prompt_preferences": []}
     selected_story = {"title": "Story"}
     change_set = {"title": "Change", "affected_layers": ["ux_design"]}
@@ -295,8 +589,18 @@ def _template_variables(name: str) -> dict[str, object]:
             selected_story=selected_story,
             current_assets=design_assets,
         )
-    if name in {"design_asset", "ux_design", "ui_design", "frontend_pages"}:
-        layer = name if name != "design_asset" else "backend_services"
+    if name in {
+        "design_asset",
+        "ux_design",
+        "ui_design",
+        "frontend_pages",
+        "backend_implementation",
+    }:
+        layer = (
+            "backend_services"
+            if name in {"design_asset", "backend_implementation"}
+            else name
+        )
         return build_design_asset_payload(
             layer=layer,
             project_config=project_config,
@@ -328,6 +632,5 @@ def _template_variables(name: str) -> dict[str, object]:
             "db_model": {"entities": []},
             "frontend_stack": "Frontend",
             "backend_stack": "Backend",
-            "target_output_schema": ContextPackOutput.model_json_schema(),
         }
     raise AssertionError(f"Unhandled template: {name}")

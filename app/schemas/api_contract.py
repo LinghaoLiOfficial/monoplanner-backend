@@ -10,7 +10,7 @@ from app.schemas.design_asset import DesignAssetUpdate
 class ApiContractDraftResponse(BaseModel):
     id: UUID
     project_id: UUID
-    blueprint_id: UUID
+    blueprint_id: UUID | None = None
     version: int
     source_requirement_id: UUID | None = None
     source_story_id: UUID | None = None

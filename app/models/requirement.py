@@ -29,6 +29,10 @@ class Requirement(Base):
     raw_text: Mapped[str] = mapped_column(Text(), nullable=False)
     language: Mapped[str] = mapped_column(String(20), nullable=False, default="zh-CN")
     source_type: Mapped[str] = mapped_column(String(50), nullable=False, default="manual")
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="pending", server_default="pending", index=True
+    )
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

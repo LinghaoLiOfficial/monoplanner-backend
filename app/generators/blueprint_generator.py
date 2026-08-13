@@ -5,6 +5,7 @@ from app.llm.json_client import generate_json
 from app.models.project import Project
 from app.models.requirement import Requirement
 from app.prompts.blueprint_generator import build_blueprint_generation_prompt
+from app.prompts.templates.blueprint_generator.output_schema import ProjectBlueprintOutput
 
 
 class BlueprintValidationError(ValueError):
@@ -17,7 +18,11 @@ def build_project_blueprint_content(
     business_stories: list[dict[str, Any]],
 ) -> dict[str, Any]:
     prompt = build_blueprint_generation_prompt(project, requirement, business_stories)
-    content = generate_json(prompt.system, prompt.user)
+    content = generate_json(
+        prompt.system,
+        prompt.user,
+        response_model=ProjectBlueprintOutput,
+    )
     return validate_blueprint_content(content, project, business_stories)
 
 

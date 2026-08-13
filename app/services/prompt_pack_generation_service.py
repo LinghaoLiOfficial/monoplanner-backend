@@ -10,17 +10,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.llm.client import OpenAICompatibleLLMClient
-from app.models.blueprint import ProjectBlueprint
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
 from app.prompts.orchestration import build_prompt_pack_prompt
+from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.services.llm_orchestration_runtime import generate_orchestration_json
 from app.services.orchestration_context import (
-    asset_snapshot,
     change_set_snapshot,
-    latest_asset,
     latest_assets_snapshot,
     project_config_snapshot,
     story_snapshot,
@@ -60,9 +58,11 @@ class PromptPackGenerationService:
         run.started_at = run.started_at or datetime.now(UTC)
         self.db.add(run)
         self.db.commit()
-        packs = self.generate_for_change_set(
+        change_sets = self._batch_change_sets(change_set)
+        packs = self.generate_for_change_set_batch(
             run,
             change_set,
+            change_sets=change_sets,
             old_versions={},
             new_versions=latest_assets_snapshot(self.db, change_set.project_id),
         )
@@ -88,6 +88,23 @@ class PromptPackGenerationService:
         old_versions: dict[str, Any],
         new_versions: dict[str, Any],
     ) -> list[ContextPack]:
+        return self.generate_for_change_set_batch(
+            run,
+            change_set,
+            change_sets=[change_set],
+            old_versions=old_versions,
+            new_versions=new_versions,
+        )
+
+    def generate_for_change_set_batch(
+        self,
+        run: GenerationRun,
+        change_set: ChangeSet,
+        *,
+        change_sets: list[ChangeSet],
+        old_versions: dict[str, Any],
+        new_versions: dict[str, Any],
+    ) -> list[ContextPack]:
         existing_pack = self._find_existing_prompt_pack(run, change_set)
         if existing_pack is not None:
             return [existing_pack]
@@ -97,24 +114,25 @@ class PromptPackGenerationService:
             if change_set.source_story_id
             else None
         )
-        latest_blueprint = latest_asset(self.db, ProjectBlueprint, project.id)
         prompt = build_prompt_pack_prompt(
             project_config=project_config_snapshot(project),
             selected_story=story_snapshot(story),
             change_set=change_set_snapshot(change_set),
+            change_sets=[change_set_snapshot(item) for item in change_sets],
             old_versions=old_versions,
             new_versions=new_versions,
-            project_blueprint=asset_snapshot(latest_blueprint) or {},
+            project_blueprint={},
         )
         parsed = generate_orchestration_json(
             prompt.system,
             prompt.user,
+            response_model=PromptPackOutput,
             llm_client_factory=self.llm_client_factory,
         )
         content = validate_prompt_pack_payload(parsed)
         pack = ContextPack(
             project_id=project.id,
-            blueprint_id=latest_blueprint.id if latest_blueprint else None,
+            blueprint_id=None,
             version=self._next_version(project.id),
             source_requirement_id=change_set.source_requirement_id,
             source_story_id=change_set.source_story_id,
@@ -148,6 +166,20 @@ class PromptPackGenerationService:
             )
             .order_by(ContextPack.created_at.desc())
             .limit(1)
+        )
+
+    def _batch_change_sets(self, change_set: ChangeSet) -> list[ChangeSet]:
+        if change_set.batch_id is None:
+            return [change_set]
+        return list(
+            self.db.scalars(
+                select(ChangeSet)
+                .where(
+                    ChangeSet.project_id == change_set.project_id,
+                    ChangeSet.batch_id == change_set.batch_id,
+                )
+                .order_by(ChangeSet.created_at.asc())
+            )
         )
 
     def _next_version(self, project_id: UUID) -> int:

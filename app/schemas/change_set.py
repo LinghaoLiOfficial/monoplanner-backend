@@ -12,6 +12,8 @@ class ChangeSetRead(BaseModel):
     id: UUID
     project_id: UUID
     version: int
+    layer: str | None = None
+    batch_id: UUID | None = None
     title: str
     status: ChangeSetStatus
     implementation_scope: ImplementationScope
@@ -27,6 +29,8 @@ class ChangeSetRead(BaseModel):
     source_requirement_id: UUID | None = None
     source_story_id: UUID | None = None
     generation_run_id: UUID | None = None
+    is_current: bool = True
+    applied_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -36,6 +40,8 @@ class ChangeSetRead(BaseModel):
 class ChangeSetUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     status: ChangeSetStatus | None = None
+    layer: str | None = None
+    batch_id: UUID | None = None
     implementation_scope: ImplementationScope | None = None
     affected_layers: list[str] | None = None
     impact_summary: str | None = None

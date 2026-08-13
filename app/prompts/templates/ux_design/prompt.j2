@@ -5,36 +5,53 @@
 
 ===USER===
 Input:
-task: {{ task }}
-layer: {{ layer }}
-project_config:
-{{ project_config | tojson_pretty }}
-selected_story:
-{{ selected_story | tojson_pretty }}
-change_set:
-{{ change_set | tojson_pretty }}
-previous_version:
-{{ previous_version | tojson_pretty }}
-related_assets:
-{{ related_assets | tojson_pretty }}
-output_contract:
-{{ output_contract | tojson_pretty }}
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - change_set:
+  - {{ change_set | tojson_pretty }}
+  - previous_version:
+  - {{ previous_version | tojson_pretty }}
+  - related_assets:
+  - {{ related_assets | tojson_pretty }}
 
-Input Descriptions:
-selected_story: 当前 UX 设计要服务的业务需求故事。
-change_set: 已确定的变更范围和影响层。
-previous_version: 旧 UX 资产，可能为空；存在时必须体现差异。
-related_assets: 其他层资产上下文，仅用于保持一致，不要复制其内容。
-output_contract: 必须遵守的 UX 设计 JSON schema。
+Input Fields:
+  - task: string，固定任务名 generate_design_asset。
+  - layer: string，固定为 ux_design。
+  - project_config: object，项目配置和产品约束。
+  - selected_story: object 或 null，当前 UX 设计要服务的业务需求故事。
+  - change_set: object，已确定的变更范围和影响层。
+  - previous_version: object 或 null，旧 UX 资产；存在时必须体现差异。
+  - related_assets: object，其他层资产上下文，仅用于保持一致，不要复制其内容。
 
-Output Descriptions:
-返回 UX 设计资产，content 必须包含 version_summary、low_fidelity_screen_structure、business_flows、diff。
-low_fidelity_screen_structure 的每个页面必须包含 screen_name、screen_purpose、information_priority、interaction_regions。
-interaction_regions 的每个区域必须包含 region_name、region_purpose、content_elements。
-business_flows 的每个流程必须包含 flow_name、flow_goal、primary_actor、preconditions、steps、ux_notes。
-steps 的每步必须包含 step_order、involved_elements、user_action、system_feedback、branches。
-branch_status 只能是 success、error、blocked、empty、next_action。
-不要输出旧结构 user_goals、user_flows、interaction_states、empty_states、error_states、permission_experience、accessibility_requirements。
+Output Fields:
+  - title: string，UX 设计资产标题。
+  - summary: string，UX 设计摘要。
+  - content.version_summary: string，本版本 UX 设计摘要。
+  - content.low_fidelity_screen_structure: array，页面低保真结构列表。
+  - content.low_fidelity_screen_structure[].screen_name: string，页面名称。
+  - content.low_fidelity_screen_structure[].screen_purpose: string，页面目标。
+  - content.low_fidelity_screen_structure[].information_priority: array[string]，页面信息优先级。
+  - content.low_fidelity_screen_structure[].interaction_regions: array，页面区域；每项包含 region_name、region_purpose、content_elements。
+  - content.business_flows: array，业务逻辑流列表。
+  - content.business_flows[].flow_name: string，流程名称。
+  - content.business_flows[].flow_goal: string，流程目标。
+  - content.business_flows[].primary_actor: string，主要参与者。
+  - content.business_flows[].preconditions: array[string]，流程前置条件。
+  - content.business_flows[].steps: array，流程步骤；每步包含 step_order、involved_elements、user_action、system_feedback、branches。
+  - content.business_flows[].steps[].branches[].branch_status: enum，只能是 success、error、blocked、empty、next_action。
+  - content.business_flows[].ux_notes: array[string]，体验注意事项。
+  - content.diff: object，必须包含 added、modified、removed。
+  - diff_from_previous: object，相对 previous_version 的 added、modified、removed。
+
+Output Rules:
+  - 只描述用户如何完成任务，包括页面低保真结构、业务逻辑流、页面区域、流程步骤、结果分支和体验注意事项。
+  - 不要输出视觉样式、组件外观或代码目录落点。
+  - 不要输出旧结构 user_goals、user_flows、interaction_states、empty_states、error_states、permission_experience、accessibility_requirements。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

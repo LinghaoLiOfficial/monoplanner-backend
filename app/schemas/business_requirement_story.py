@@ -39,6 +39,7 @@ class BusinessRequirementStoryResponse(BaseModel):
     execution_notes: str | None = None
     source_requirement_excerpt: str | None
     sort_order: int
+    is_current: bool = True
     created_at: datetime
     updated_at: datetime
 

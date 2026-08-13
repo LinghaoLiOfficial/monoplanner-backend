@@ -20,8 +20,11 @@ from tests.queue_helpers import run_generation_job_in_new_session
 
 def _prompt_layer(prompt_text: str) -> str | None:
     for line in prompt_text.splitlines():
-        if line.startswith("layer: "):
-            return line.removeprefix("layer: ").strip()
+        stripped = line.strip()
+        if stripped.startswith("layer: "):
+            return stripped.removeprefix("layer: ").strip()
+        if stripped.startswith("- layer: "):
+            return stripped.removeprefix("- layer: ").strip()
     return None
 
 
@@ -96,10 +99,17 @@ def _change_set_payload(*, layers: list[str] | None = None) -> dict:
 
 
 def _asset_payload(title: str, content: dict | None = None) -> dict:
+    payload_content = content or {}
+    if "version_summary" not in payload_content:
+        payload_content = {
+            "version_summary": f"{title} 更新",
+            "diff": {"added": [title]},
+            **payload_content,
+        }
     return {
         "title": title,
         "summary": f"{title} 更新",
-        "content": content or {"version_summary": f"{title} 更新", "diff": {"added": [title]}},
+        "content": payload_content,
         "diff_from_previous": {"added": [title]},
     }
 
@@ -210,23 +220,93 @@ def _ui_design_payload() -> dict:
 
 def _frontend_pages_payload() -> dict:
     return _asset_payload(
-        "前端页面结构",
+        "前端工程实现",
         {
-            "version_summary": "新增任务页面结构",
-            "pages": [{"route_path": "/tasks", "name": "任务页"}],
-            "components": [
+            "version_summary": "新增任务创建前端工程实现",
+            "route_definitions": [
                 {
-                    "component_id": "task-form",
-                    "name": "TaskForm",
-                    "purpose": "创建任务",
-                    "used_by_pages": ["/tasks"],
-                    "ux_refs": ["task-create-flow"],
-                    "ui_refs": ["TaskForm rules"],
+                    "path": "/tasks/new",
+                    "page_name": "任务创建页",
+                    "dynamic_params": [],
+                    "permission_requirement": "已登录用户",
                 }
             ],
-            "directory_structure": ["app/tasks/page.tsx"],
-            "data_flow": ["TaskForm -> POST /tasks"],
+            "directory_structure": [
+                {"path": "app/tasks/new/page.tsx", "purpose": "任务创建页面入口"},
+                {"path": "components/tasks/TaskForm.tsx", "purpose": "任务表单组件"},
+                {"path": "lib/api/tasks.ts", "purpose": "任务 API client"},
+            ],
+            "code_logic": [
+                {
+                    "target": "TaskForm",
+                    "state_management": ["保存标题、描述、提交状态和错误信息"],
+                    "events": ["提交表单时调用创建任务 API"],
+                    "data_flow": ["TaskForm -> POST /tasks"],
+                    "error_handling": ["接口失败时展示错误并允许重试"],
+                }
+            ],
+            "environment_variables": [
+                {
+                    "name": "NEXT_PUBLIC_API_BASE_URL",
+                    "purpose": "后端 API 基础地址",
+                    "required": True,
+                }
+            ],
+            "design_theme": ["primary token 用于创建任务主按钮"],
+            "dependencies": [
+                {
+                    "package_name": "lucide-react",
+                    "purpose": "表单操作图标",
+                    "required": False,
+                }
+            ],
             "diff": {"added": ["task-form"]},
+        },
+    )
+
+
+def _backend_implementation_payload() -> dict:
+    return _asset_payload(
+        "后端工程实现",
+        {
+            "version_summary": "新增任务创建后端工程实现",
+            "directory_structure": [
+                {"path": "app/api/v1/endpoints/tasks.py", "purpose": "任务接口路由"},
+                {"path": "app/services/task_service.py", "purpose": "任务创建服务"},
+                {"path": "app/schemas/task.py", "purpose": "任务请求和响应 schema"},
+            ],
+            "code_logic": [
+                {
+                    "target": "TaskService.create_task",
+                    "service_flow": ["读取当前用户", "创建任务", "返回任务详情"],
+                    "validation_logic": ["标题必填"],
+                    "transaction_handling": ["任务创建和审计记录使用同一事务"],
+                    "error_handling": ["标题为空返回 400"],
+                }
+            ],
+            "utility_classes": [
+                {
+                    "name": "TaskTitleNormalizer",
+                    "purpose": "规范化任务标题",
+                    "usage": ["创建任务前 trim 标题"],
+                }
+            ],
+            "llm_interaction_templates": [],
+            "environment_variables": [
+                {
+                    "name": "DATABASE_URL",
+                    "purpose": "连接 PostgreSQL 数据库",
+                    "required": True,
+                }
+            ],
+            "dependencies": [
+                {
+                    "package_name": "SQLAlchemy",
+                    "purpose": "ORM 和事务处理",
+                    "required": True,
+                }
+            ],
+            "diff": {"added": ["task-service"]},
         },
     )
 
@@ -298,17 +378,26 @@ def test_story_execute_generates_change_set(
     assert run.status == "completed"
 
     db_session.expire_all()
-    change_set = db_session.scalar(select(ChangeSet))
-    assert change_set is not None
-    assert change_set.title == "创建任务变更集"
-    assert change_set.source_story_id == story.id
-    assert change_set.status == "ready"
-    assert "ux_design" in change_set.affected_layers
-    assert "ui_design" in change_set.affected_layers
-    assert change_set.module_changes["ux_design"]["added"]
+    change_sets = db_session.scalars(select(ChangeSet).order_by(ChangeSet.created_at.asc())).all()
+    assert len(change_sets) == 6
+    assert {item.layer for item in change_sets} == {
+        "ux_design",
+        "ui_design",
+        "frontend_pages",
+        "api_contract",
+        "backend_services",
+        "database_models",
+    }
+    assert len({item.batch_id for item in change_sets}) == 1
+    ux_change_set = next(item for item in change_sets if item.layer == "ux_design")
+    assert ux_change_set.title == "创建任务变更集"
+    assert ux_change_set.source_story_id == story.id
+    assert ux_change_set.status == "ready"
+    assert ux_change_set.affected_layers == ["ux_design"]
+    assert ux_change_set.module_changes["ux_design"]["added"]
 
 
-def test_change_set_apply_generates_assets_blueprint_and_prompt_pack(
+def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     client: TestClient, db_session: Session, monkeypatch
 ) -> None:
     project, requirement, story = _create_project_requirement_and_story(client, db_session)
@@ -352,19 +441,49 @@ def test_change_set_apply_generates_assets_blueprint_and_prompt_pack(
         _asset_payload(
             "API 契约",
             {
-                "base_path": "/api/v1",
-                "resources": [],
-                "schemas": [],
-                "error_model": {},
+                "api_base_path": "/api/v1",
+                "api_resource_groups": [
+                    {
+                        "group_name": "tasks",
+                        "group_purpose": "任务创建接口",
+                        "endpoints": [
+                            {
+                                "http_method": "POST",
+                                "endpoint_path": "/tasks",
+                                "endpoint_purpose": "创建任务",
+                                "requires_auth": True,
+                                "request_schema": {
+                                    "body": [
+                                        {"name": "title", "type": "string", "required": True}
+                                    ]
+                                },
+                                "response_schema": {"body": "TaskResponse"},
+                                "error_model": [
+                                    {
+                                        "status_code": 400,
+                                        "error_code": "TASK_TITLE_REQUIRED",
+                                        "error_message": "任务标题不能为空",
+                                        "recovery_suggestion": "填写任务标题后重试",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
                 "diff": {"added": ["tasks"]},
             },
         ),
-        _asset_payload("后端服务设计"),
+        _backend_implementation_payload(),
         _asset_payload(
             "数据库模型",
-            {"database": {}, "entities": [], "indexes": [], "migration_notes": [], "diff": {}},
+            {
+                "database": {},
+                "database_tables": [],
+                "indexes": [],
+                "migration_notes": [],
+                "diff": {},
+            },
         ),
-        _blueprint_summary_payload(),
         _prompt_pack_payload(),
     ]
 
@@ -395,9 +514,18 @@ def test_change_set_apply_generates_assets_blueprint_and_prompt_pack(
     assert '"visual_system": {' in captured_payloads[2]
     assert '"layout_rules": [' in captured_payloads[2]
     assert '"component_style_rules": [' in captured_payloads[2]
+    assert '"route_definitions": [' in captured_payloads[3]
+    assert '"code_logic": [' in captured_payloads[3]
+    assert '"environment_variables": [' in captured_payloads[3]
+    assert '"design_theme": [' in captured_payloads[3]
+    assert '"dependencies": [' in captured_payloads[3]
+    assert "related_assets.api_contract" in captured_payloads[4]
+    assert "content.directory_structure" in captured_payloads[4]
+    assert "content.llm_interaction_templates" in captured_payloads[4]
     assert '"new_versions":' in captured_payloads[-1]
     assert '"business_flows": [' in captured_payloads[-1]
     assert '"visual_system": {' in captured_payloads[-1]
+    assert '"route_definitions": [' in captured_payloads[-1]
 
     db_session.expire_all()
     refreshed_change_set = db_session.get(ChangeSet, change_set.id)
@@ -408,10 +536,17 @@ def test_change_set_apply_generates_assets_blueprint_and_prompt_pack(
     assert len(db_session.scalars(select(ApiContractDraft)).all()) == 1
     assert len(db_session.scalars(select(BackendServiceDesign)).all()) == 1
     assert len(db_session.scalars(select(DbModelDraft)).all()) == 1
-    assert len(db_session.scalars(select(ProjectBlueprint)).all()) == 1
-    blueprint = db_session.scalar(select(ProjectBlueprint))
-    assert blueprint.content["ux_summary"]["core_user_flows"] == ["创建任务"]
-    assert blueprint.content["ui_summary"]["design_principles"] == ["主操作突出"]
+    backend_asset = db_session.scalar(select(BackendServiceDesign))
+    assert (
+        backend_asset.content["directory_structure"][0]["path"]
+        == "app/api/v1/endpoints/tasks.py"
+    )
+    assert backend_asset.content["code_logic"][0]["target"] == "TaskService.create_task"
+    assert backend_asset.content["utility_classes"][0]["name"] == "TaskTitleNormalizer"
+    assert backend_asset.content["llm_interaction_templates"] == []
+    assert backend_asset.content["environment_variables"][0]["name"] == "DATABASE_URL"
+    assert backend_asset.content["dependencies"][0]["package_name"] == "SQLAlchemy"
+    assert len(db_session.scalars(select(ProjectBlueprint)).all()) == 0
     prompt_pack = db_session.scalar(select(ContextPack).where(ContextPack.role == "prompt_pack"))
     assert prompt_pack is not None
     assert prompt_pack.change_set_id == change_set.id
@@ -473,7 +608,7 @@ def test_change_set_apply_reuses_assets_already_created_by_same_run(
     db_session.add(existing_ux)
     db_session.commit()
     captured_payloads: list[dict] = []
-    mocked_outputs = [_ui_design_payload(), _blueprint_summary_payload()]
+    mocked_outputs = [_ui_design_payload(), _prompt_pack_payload()]
 
     def stream(_self, _system_prompt, user_payload, **_kwargs):
         captured_payloads.append(user_payload)
@@ -489,7 +624,7 @@ def test_change_set_apply_reuses_assets_already_created_by_same_run(
     db_session.expire_all()
     assert len(db_session.scalars(select(UXDesign)).all()) == 1
     assert len(db_session.scalars(select(UIDesign)).all()) == 1
-    assert len(db_session.scalars(select(ProjectBlueprint)).all()) == 1
+    assert len(db_session.scalars(select(ProjectBlueprint)).all()) == 0
     assert [_prompt_layer(payload) for payload in captured_payloads] == ["ui_design", None]
     assert f'"id": "{existing_ux.id}"' in captured_payloads[0]
 
@@ -546,7 +681,7 @@ def test_change_set_apply_reuses_assets_created_by_previous_failed_run(
     db_session.add(existing_ux)
     db_session.commit()
     captured_payloads: list[dict] = []
-    mocked_outputs = [_ui_design_payload(), _blueprint_summary_payload()]
+    mocked_outputs = [_ui_design_payload(), _prompt_pack_payload()]
 
     def stream(_self, _system_prompt, user_payload, **_kwargs):
         captured_payloads.append(user_payload)
@@ -566,6 +701,7 @@ def test_change_set_apply_reuses_assets_created_by_previous_failed_run(
     assert len(ux_assets) == 1
     assert ux_assets[0].generation_run_id == failed_run.id
     assert len(db_session.scalars(select(UIDesign)).all()) == 1
+    assert len(db_session.scalars(select(ProjectBlueprint)).all()) == 0
     assert [_prompt_layer(payload) for payload in captured_payloads] == ["ui_design", None]
     assert f'"id": "{existing_ux.id}"' in captured_payloads[0]
 

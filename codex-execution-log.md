@@ -1,4 +1,44 @@
 
+## 2026-08-13 14:28 +08 - 阐述 LLM 模板调用顺序
+
+- Request: 用户要求阐述当前 `app/prompts/templates` 中所有提示词任务模板的先后调用业务顺序逻辑。
+- Actions: 核查 `app/prompts/templates` 模板清单、`app/prompts/template_registry.py`、`app/prompts/orchestration.py`、业务故事、ChangeSet、设计资产、PromptPack、StreamingGeneration 和 ContextPack 相关 service。
+- Result: 明确当前默认主链路为 business_story_decomposer -> change_set -> 分层资产模板 -> prompt_pack；blueprint_generator、api_contract_generator、db_model_generator、context_pack 和 blueprint_summary 属于兼容/显式/未进入默认主链路的能力。
+- Verification: Not run；本次为静态代码阅读和业务顺序说明，未修改业务代码。
+- Follow-ups: 后续可清理技术文档中仍提到 apply 后生成 ProjectBlueprint 的陈旧描述。
+
+## 2026-08-08 12:02 +08 - 梳理后端 LLM 任务数据流
+
+- Request: 用户想弄清当前后端 LLM 的逻辑，尤其是各个 `prompt.j2` 的输入输出字段，以及相邻任务之间哪些字段会传递。
+- Actions: 阅读 `app/prompts/`、`app/services/`、`app/generators/`、`app/api/v1/endpoints/generation.py`、`app/services/generation_queue_service.py`、`app/services/streaming_generation_service.py`、`app/services/design_asset_orchestration_service.py` 和相关 `output_schema.py`，整理业务故事、变更集、设计资产、蓝图和 PromptPack 的上下游字段关系。
+- Result: 明确当前后端 LLM 不是单一链路，而是“业务故事 -> ChangeSet -> 设计资产/蓝图/PromptPack”的分阶段编排；`backend_services` 语义在 prompt 层对应 `backend_implementation`，上下文快照会把上一步产物的结构化 JSON 传给下一步。
+- Verification: 仅做静态阅读和路径追踪，未运行测试。
+- Follow-ups: 无。
+
+## 2026-08-08 15:31 +08 - 去蓝图化 LLM 编排重构
+
+- Request: 用户要求专业评估并实现去蓝图化后的 LLM 编排重构，改成业务故事池 -> 分层变更集 -> 分层版本资产 -> 前后端提示词。
+- Actions: 调整业务故事生成、分层 ChangeSet 生成、设计资产编排和 PromptPack 生成路径；将 `ProjectBlueprint` 移出主链路并保留历史兼容；补充迁移、模型、schema、prompt 模板和测试夹具，修正旧 `entities` DB mock 为新版 `database_tables`。
+- Result: 主链路改为按故事池维护、按层生成一次性变更集、按层生成新版本资产，再汇总生成前后端提示词；蓝图仅作为兼容历史数据的只读能力保留。
+- Verification: `uv run python -m pytest -q` 通过，131 个测试全部通过；`uv run python -m ruff check app tests alembic --output-format=concise` 通过。
+- Follow-ups: 无。
+
+## 2026-08-07 12:42 +08 - 新增 LLM 结构化输出工具链单句总结
+
+- Request: 用户要求用一句话总结当前后端 LLM 任务结构化输出的工具类构建，并保存为 Markdown 文档。
+- Actions: 新增 `llm-structured-output-toolchain-summary.md`，用单句说明 Instructor typed `response_model`、`json-repair` 兜底和 service validator 的职责边界；同步更新项目技术文档索引。
+- Result: 项目根目录已有可直接查看的 LLM 结构化输出工具链单句总结。
+- Verification: 文档创建完成；未运行测试，因为本次只新增 Markdown 文档。
+- Follow-ups: 无。
+
+## 2026-08-07 11:51 +08 - 落地 Instructor + jsonrepair 提升结构化输出可靠性
+
+- Request: 用户要求移除 prompt 中的 schema 注入，落地 Instructor + jsonrepair，并提升 LLM 结构化输出可靠性。
+- Actions: 新增/接入 `app/llm/structured_client.py` 作为 typed structured generation 主路径；将 JSON 解析补上 `json-repair` 兜底；清理所有 prompt builder 和 `prompt.j2` 中的 `target_output_schema` / `output_contract` 注入；把 business stories、blueprint、API contract、DB model、ChangeSet、设计资产、PromptPack、ContextPack 的结构化生成统一切到 `response_model`；更新 LLM 模板开发规则文档。
+- Result: 结构化输出现在以 `response_model` 为运行时契约，不再靠 prompt 里塞 schema 约束；JSON 语法问题可有限修复，schema 校验失败会映射为现有 LLM 错误语义。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py tests/test_streaming_generation.py tests/test_generation_queue.py tests/test_orchestration_phase_3_4.py -q` 通过，42 个测试全部通过；`uv run python -m ruff check app tests --output-format=concise` 通过。
+- Follow-ups: 暂无。
+
 ## 2026-08-02 10:41 +08 - 增加 worker 控制台运行状态日志
 
 - Request: 用户要求 workers 运行时在控制台打印相关运行状态信息。
@@ -510,6 +550,20 @@
 - Result: 规则已形成独立 Markdown 文档，覆盖模板来源、固定结构、Example、Python builder、renderer、LLM client、输出 schema、输出检查、测试和新增任务 checklist。
 - Verification: Not run；本次只新增文档并更新项目记忆。
 
+## 2026-08-07 00:32 +08 - 调整 LLM 模板 USER 目录树前缀
+
+- Request: 用户要求为所有输入 j2 模板的 `===USER===` 下 `Input`、`Input Descriptions`、`Output Descriptions` 添加 `-` 前缀，并同步修改 Markdown 规则文档。
+- Actions: 批量更新 `app/prompts/templates/*/prompt.j2` 的 USER 结构为树状前缀格式；同步更新模板契约测试、`docs/llm-prompt-template-development-rules.md` 和项目技术文档。
+- Result: 所有 LLM 输入模板的 USER 区 now 使用 `- Input:` / `- Input Descriptions:` / `- Output Descriptions:` 的目录树样式，规则文档和技术文档一致反映新约定。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py -q` 通过 10 个测试；`uv run python -m ruff check app tests --output-format=concise` 通过。
+
+## 2026-08-07 00:37 +08 - 取消 LLM 模板标题的树状前缀
+
+- Request: 用户要求把 `Input:`、`Input Descriptions:`、`Output Descriptions:` 自身前面的 `-` 去掉，使其与 `Example Input/Output` 处于同级。
+- Actions: 批量更新全部 `app/prompts/templates/*/prompt.j2` 的 USER 标题行；同步调整 `docs/llm-prompt-template-development-rules.md`、`codex-project-tech-doc.md` 和模板契约测试。
+- Result: 所有 LLM 输入模板现在采用“标题同级、子项缩进”的结构，标题行不再带 `-`，但其下内容仍保留树状前缀。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py -q` 通过 10 个测试；`uv run python -m ruff check tests/test_prompt_template_contracts.py --output-format=concise` 通过。
+
 ## 2026-08-06 22:51 +08 - 总结 LLM 模板开发规则
 
 - Request: 用户要求总结当前 LLM 任务输入模板和输出结构检查的开发规则。
@@ -523,3 +577,92 @@
 - Actions: 将 `app/prompts/templates/ui_design/output_schema.py` 和 `prompt.j2` 收敛到 `visual_system/layout_rules/component_style_rules`；更新编排测试中的 UI fixture 和新版本断言；在 `tests/test_prompt_template_contracts.py` 补充新版 UI schema 校验。
 - Result: 新生成 UI 资产必须包含视觉系统、页面布局规则和组件样式规则，旧主结构被 prompt 明确禁止；`UIDesignRead/Update` 仍保持 JSON 内容兼容。
 - Verification: `uv run python -m pytest tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py tests/test_prompt_template_contracts.py` 通过，22 个测试全部通过。
+
+## 2026-08-07 00:09 +08 - 前端工程实现生成契约升级
+
+- Request: 按最新 `frontend_implementation` 字段定义升级后端前端工程实现生成契约，不迁移数据库并保留历史资产读取。
+- Actions: 将 `app/prompts/templates/frontend_pages/output_schema.py` 和 `prompt.j2` 从旧 `pages/components/data_flow` 收敛到 `route_definitions/directory_structure/code_logic/environment_variables/design_theme/dependencies`；更新编排测试 fixture、上下文断言和 prompt schema 校验；同步前端资产进度/默认标题文案。
+- Result: 新生成的 `FrontendPageStructure` 内容承载单一前端工程实现契约，`frontend_pages` 仅作为内部兼容 layer/API 名称保留，用户可见语义改为“前端工程实现”。
+- Verification: `uv run python -m pytest tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py tests/test_prompt_template_contracts.py` 通过，23 个测试全部通过。
+
+## 2026-08-07 13:41 +08 - API 契约生成契约升级
+
+- Request: 按最新 `api_contract` 字段定义升级后端 API 契约生成契约，不迁移数据库并保留历史资产读取。
+- Actions: 将 `app/prompts/templates/api_contract_generator/output_schema.py` 和 `prompt.j2` 从旧 `base_path/resources/schemas` 收敛到 `api_base_path/api_resource_groups/endpoints/error_model`；更新 API 契约 validator、保存路径、计数逻辑和测试 fixture；补充新版 schema 校验。
+- Result: 新生成 API 契约内容使用新版字段，`ApiContractDraft.base_path` 列仍从 `api_base_path` 镜像保存，历史旧内容继续兼容读取。
+- Verification: `uv run python -m pytest tests/test_structured_drafts.py tests/test_orchestration_phase_3_4.py tests/test_prompt_template_contracts.py` 通过，29 个测试全部通过。
+
+## 2026-08-07 00:24 +08 - 说明原始需求到敏捷业务需求 LLM 契约
+
+- Request: 用户要求说明当前 LLM 任务“原始用户需求→敏捷业务需求”的输入模板和输出结构检查。
+- Actions: 查阅 `business_story_decomposer/prompt.j2`、同级 `output_schema.py`、payload builder、`BusinessStoryGenerationService` 校验函数和相关测试。
+- Result: 确认该任务使用 `.j2` 运行时模板，输出以 `stories` 数组为顶层结构，并通过 JSON 解析、schema 注入、服务层字段校验/归一化和 `GenerationRun` 状态记录共同约束。
+- Verification: Not run；本次为只读分析和说明。
+
+## 2026-08-07 21:10 +08 - 保存 workers 单独运行总结文档
+
+- Request: 用户要求将当前后端 workers 单独运行的工具类构建一句话总结保存为 Markdown 文档。
+- Actions: 新增 `workers-standalone-summary.md`，写入标题和一句话总结；同步更新项目技术文档中的关键文件说明。
+- Result: 根目录已有可直接查阅的 workers 单独运行总结文档。
+- Verification: Not run；本次只新增说明文档，未修改业务代码。
+
+## 2026-08-07 10:34 +08 - 检查 API 契约 prompt.j2 标红
+
+- Request: 用户反馈 `app/prompts/templates/api_contract_generator/prompt.j2` 语法标红，要求检查是否需要修复。
+- Actions: 查看该模板、renderer、prompt builder、模板开发规则和当前 diff；使用 Jinja2 编译全部 `prompt.j2` 并渲染 `api_contract_generator` 示例变量；运行模板契约测试。
+- Result: 未发现运行时 Jinja 语法错误，`tojson_pretty` 自定义 filter 可正常注册和渲染；当前标红更可能是编辑器对 `.j2` 中多行 JSON 插值或自定义 filter 的静态解析误报。
+- Verification: `uv run python - <<'PY' ...` 编译全部 prompt 模板并渲染 API 契约模板通过；`uv run python -m pytest tests/test_prompt_template_contracts.py` 通过，10 个测试全部通过。
+
+## 2026-08-07 10:54 +08 - 核查 LLM 结构化输出修复逻辑
+
+- Request: 用户询问当前后端在 LLM 输出结构化 JSON 字符串不符合结构检查时是否会自动修复。
+- Actions: 查阅 `app/llm/json_client.py`、`app/services/streaming_generation_service.py`、`app/services/business_story_generation_service.py`、编排生成服务、worker 重试分类和相关测试。
+- Result: 确认当前队列化/流式主生成链路不会对结构校验失败做自动修复；解析或结构校验失败会标记 `GenerationRun` failed。旧同步业务故事路径仅对非法 JSON/无 JSON object 做一次再生成式修复，不覆盖 schema/业务结构校验失败。
+- Verification: Not run；本次为只读代码核查。
+
+## 2026-08-07 10:54 +08 - 评估 Instructor 与 jsonrepair 使用情况
+
+- Request: 用户询问当前后端是否很好利用了 `Instructor+jsonrepair` 这套技术。
+- Actions: 搜索依赖和代码引用，检查 `pyproject.toml`、`uv.lock`、LLM client、JSON 解析、prompt schema registry、队列化流式生成和 worker 失败重试逻辑。
+- Result: 确认项目当前没有引入或调用 `Instructor`、`jsonrepair/json-repair`；已有 Pydantic 输出 schema、模板 registry 和服务层校验为后续接入打好了基础，但真实运行时仍是自写 JSON 解析、`response_format=json_object` 和失败记录。
+- Verification: Not run；本次为只读代码核查。
+
+## 2026-08-07 10:55 +08 - 升级 LLM prompt.j2 USER 结构
+
+- Request: 用户要求把 12 个 LLM `prompt.j2` 模板的 USER 区升级为 `Input`、`Input Fields`、`Output Fields`、`Output Rules` 和成对 Example，并补齐输出字段取值说明。
+- Actions: 批量更新 `app/prompts/templates/*/prompt.j2`，把旧 `Input Descriptions` / `Output Descriptions` 拆分为新章节；更新 `tests/test_prompt_template_contracts.py`、`docs/llm-prompt-template-development-rules.md` 和 `codex-project-tech-doc.md` 中的模板契约说明。
+- Result: 所有模板标题保持同级且不带 `-`，标题下子项继续使用 `  - ` 形成从属结构；`Output Fields` 描述字段类型、枚举、布尔、数组/object、可空/default 和业务语义，`Output Rules` 承载 JSON-only、业务约束和禁止事项。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py -q` 通过，10 个测试全部通过且有 1 个上游 deprecation warning；`uv run python -m ruff check tests/test_prompt_template_contracts.py --output-format=concise` 通过；`uv run python -m ruff check app tests --output-format=concise` 通过。
+
+## 2026-08-07 11:42 +08 - 落地 Instructor 与 jsonrepair
+
+- Request: 用户要求移除 prompt 中的 schema 注入，并将 `Instructor+jsonrepair` 落地以提升 LLM 结构化输出可靠性。
+- Actions: 新增 `app/llm/structured_client.py`，升级 `app/llm/json_client.py` 以支持 `json-repair`；把业务故事、蓝图、API contract、DB model、ChangeSet、设计资产、PromptPack、ContextPack 的生成路径切到 typed response model；同步删除所有 prompt 模板和 builder 的 schema 注入；更新测试与项目记忆。
+- Result: schema 不再注入到 `.j2` prompt，改由 Pydantic `response_model` 在 LLM runtime 层约束；结构化输出失败会通过 typed validation、json repair 和现有 worker/HTTP 错误语义处理，主路径可靠性提升。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py tests/test_streaming_generation.py tests/test_generation_queue.py tests/test_orchestration_phase_3_4.py -q` 通过，42 个测试全部通过；`uv run python -m pytest tests/test_business_requirement_stories.py tests/test_generation_queue.py -q` 通过，38 个测试全部通过；`uv run python -m ruff check app tests --output-format=concise` 通过。
+## 2026-08-07 14:12 +08 - 后端工程实现生成契约升级
+
+- Request: 按最新 `backend_implementation` 字段定义升级后端工程实现生成契约，不迁移数据库并保留历史资产读取。
+- Actions: 新增 `app/prompts/templates/backend_implementation/` 专用 prompt 和 Pydantic schema；让 `backend_services` layer 使用新版模板和 `BackendImplementationOutput`；更新编排标签、测试 fixture 和模板契约测试。
+- Result: 新生成后端工程实现内容使用 `directory_structure/code_logic/utility_classes/llm_interaction_templates/environment_variables/dependencies` 主字段，`backend_service_designs.content` 仍保持 JSONB。
+- Verification: `uv run python -m pytest tests/test_prompt_template_contracts.py tests/test_orchestration_phase_3_4.py tests/test_design_assets_phase_1_2.py` 通过，26 个测试全部通过，另有 1 个既有上游 deprecation warning。
+## 2026-08-07 14:34 +08 - 数据库模型生成契约升级
+
+- Request: 按最新 `database_model` 字段定义升级数据库模型生成契约，不迁移数据库并保留历史内容兼容。
+- Actions: 将 `db_model_generator` schema、prompt 和 validator 从旧 `entities` 主结构收敛到 `database_tables`；保留旧 `entities` 输入映射；更新计数逻辑、fixture 和 schema 测试。
+- Result: 新生成数据库模型内容使用 `database_tables` 主字段，每个表包含 `fields` 字段集合；`db_model_drafts.content` 仍保持 JSONB，旧内容继续可读。
+- Verification: `uv run python -m pytest tests/test_structured_drafts.py tests/test_generation_queue.py tests/test_orchestration_phase_3_4.py tests/test_prompt_template_contracts.py` 通过，47 个测试全部通过，另有 1 个既有上游 deprecation warning。
+
+## 2026-08-07 15:05 +08 - 后端 LLM 任务全链路解析文档
+
+- Request: 用户要求详细解析当前后端各个 LLM 任务的所有特征输入、输出和逻辑链，并保存为 Markdown 文档。
+- Actions: 新增 `docs/backend_llm_tasks_analysis.md`，按真实 LLM 任务逐项梳理输入特征、输出字段、prompt/schema/runtime/service 逻辑链、失败路径和 `ContextPack` 边界。
+- Result: 形成一份中文 Markdown 参考文档，覆盖业务故事、蓝图、API 契约、数据库模型、ChangeSet、设计资产、蓝图摘要和 PromptPack 的端到端解析。
+- Verification: Not run；本次仅新增文档和项目记忆，不改业务代码。
+
+## 2026-08-07 15:16 +08 - 调整 LLM 分析单位
+
+- Request: 用户明确要求 LLM 分析目标应以 `prompt.j2` + `output_schema.py` 模板对为单位。
+- Actions: 更新 `docs/backend_llm_tasks_analysis.md` 的标题、范围和总览表述，并同步补充项目技术文档中的分析单位说明。
+- Result: 文档现已按模板对而非纯任务名视角组织，更贴合后续逐模板审查和维护。
+- Verification: Not run；仅更新文档与项目记忆。

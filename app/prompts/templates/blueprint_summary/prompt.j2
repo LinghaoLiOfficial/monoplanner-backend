@@ -5,28 +5,41 @@
 
 ===USER===
 Input:
-task: {{ task }}
-project_config:
-{{ project_config | tojson_pretty }}
-business_stories:
-{{ business_stories | tojson_pretty }}
-design_assets:
-{{ design_assets | tojson_pretty }}
-latest_change_set:
-{{ latest_change_set | tojson_pretty }}
-output_contract:
-{{ output_contract | tojson_pretty }}
+  - task: {{ task }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - business_stories:
+  - {{ business_stories | tojson_pretty }}
+  - design_assets:
+  - {{ design_assets | tojson_pretty }}
+  - latest_change_set:
+  - {{ latest_change_set | tojson_pretty }}
 
-Input Descriptions:
-project_config: 项目配置和技术栈。
-business_stories: 当前项目业务需求故事池。
-design_assets: 最新设计资产快照，必须重点使用 ux_design 和 ui_design。
-latest_change_set: 最近应用的变更集，必须体现其影响。
-output_contract: 必须遵守的蓝图摘要 JSON schema。
+Input Fields:
+  - task: string，固定任务名 summarize_project_blueprint。
+  - project_config: object，项目配置、技术栈和偏好。
+  - business_stories: array，当前项目业务需求故事池。
+  - design_assets: object，最新设计资产快照，重点读取 ux_design、ui_design、frontend_pages、api_contract、backend_services、database_models。
+  - latest_change_set: object，最近应用的变更集，必须体现其影响。
 
-Output Descriptions:
-返回项目蓝图摘要，必须包含 project、current_product_scope、business_capabilities、ux_summary、ui_summary、frontend_summary、backend_summary、architecture_notes、risks、open_questions、version_summary。
-必须体现 latest_change_set 的影响；必须基于 design_assets.ux_design 输出 ux_summary；必须基于 design_assets.ui_design 输出 ui_summary。
+Output Fields:
+  - project: object，当前项目基本摘要，可包含 name、summary、tech_stack。
+  - current_product_scope: object，当前产品范围；included 表示已纳入能力，excluded 表示明确不做或未纳入能力。
+  - business_capabilities: array，当前业务能力列表；每项可包含 name、status、source_change_set。
+  - ux_summary: object，UX 摘要，必须基于 ux_design，包含关键页面、流程、体验注意事项。
+  - ui_summary: object，UI 摘要，必须基于 ui_design，包含视觉系统、布局和组件规则要点。
+  - frontend_summary: object，前端工程摘要，包含路由、目录、状态/数据流、依赖等要点。
+  - backend_summary: object，后端摘要，包含 API、服务、数据库实体和事务边界。
+  - architecture_notes: array，跨层架构说明、依赖关系或实现顺序建议。
+  - risks: array，当前蓝图风险。
+  - open_questions: array，仍需确认的问题。
+  - version_summary: string，本次蓝图版本摘要，必须体现 latest_change_set 的影响。
+
+Output Rules:
+  - 必须体现 latest_change_set 对当前蓝图的新增、修改或删除影响。
+  - 必须基于 design_assets.ux_design 输出 ux_summary，基于 design_assets.ui_design 输出 ui_summary。
+  - 返回聚合摘要，不要生成代码、迁移、API 实现或前端组件。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

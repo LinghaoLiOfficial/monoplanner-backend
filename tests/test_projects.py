@@ -46,27 +46,34 @@ def _patch_generation_json(monkeypatch) -> None:
             ],
             "api_needs": [{"resource": "projects", "operations": ["list"], "consumers": []}],
             "business_requirement_stories": [],
-            "non_functional_requirements": {},
+            "non_functional_requirements": {
+                "auth": "Cookie/JWT 登录",
+                "performance": "常规页面响应",
+                "security": "用户只能访问自己的项目",
+                "observability": "记录生成任务状态",
+            },
             "assumptions": [],
             "open_questions": [],
         },
         {
-            "base_path": "/api/v1",
-            "resources": [
+            "api_base_path": "/api/v1",
+            "api_resource_groups": [
                 {
-                    "name": "projects",
-                    "description": "Manage projects",
+                    "group_name": "projects",
+                    "group_purpose": "Manage projects",
                     "endpoints": [
                         {
-                            "method": "GET",
-                            "path": "/projects",
-                            "purpose": "List projects",
+                            "http_method": "GET",
+                            "endpoint_path": "/projects",
+                            "endpoint_purpose": "List projects",
+                            "requires_auth": True,
+                            "request_schema": {},
+                            "response_schema": {"body": "ProjectResponse"},
+                            "error_model": [],
                         }
                     ],
                 }
             ],
-            "schemas": [{"name": "ProjectResponse", "fields": []}],
-            "error_model": {"name": "ApiError", "fields": []},
             "notes": [],
         },
         {
@@ -75,11 +82,32 @@ def _patch_generation_json(monkeypatch) -> None:
                 "orm": "SQLAlchemy 2.x",
                 "migration_tool": "Alembic",
             },
-            "entities": [
+            "database_tables": [
                 {
                     "name": "Project",
                     "table_name": "projects",
-                    "fields": [{"name": "name", "type": "string"}],
+                    "description": "Project table",
+                    "fields": [
+                        {
+                            "name": "id",
+                            "type": "uuid",
+                            "required": True,
+                            "primary_key": True,
+                            "nullable": False,
+                            "description": "Primary key",
+                        },
+                        {
+                            "name": "name",
+                            "type": "string",
+                            "required": True,
+                            "primary_key": False,
+                            "nullable": False,
+                            "description": "Project name",
+                        },
+                    ],
+                    "relationships": [],
+                    "indexes": [],
+                    "migration_notes": [],
                 }
             ],
             "relationships": [],

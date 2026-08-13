@@ -74,6 +74,13 @@ class GenerationQueueService:
         self._ensure_project_access(project_id)
         service = StreamingGenerationService(self.db)
         spec = service.build_business_stories_spec(project_id, payload)
+        existing_run = self._find_active_requirement_run(
+            project_id,
+            spec.requirement_id,
+            spec.run_type,
+        )
+        if existing_run is not None:
+            return existing_run
         return self._enqueue(
             project_id=project_id,
             requirement_id=spec.requirement_id,
@@ -573,6 +580,26 @@ class GenerationQueueService:
                 GenerationRun.status.in_([QUEUE_STATUS, RUNNING_STATUS]),
                 GenerationRun.queue_payload["change_set_id"].as_string()
                 == str(change_set_id),
+            )
+            .order_by(GenerationRun.created_at.desc())
+            .limit(1)
+        )
+
+    def _find_active_requirement_run(
+        self,
+        project_id: UUID,
+        requirement_id: UUID | None,
+        run_type: str,
+    ) -> GenerationRun | None:
+        if requirement_id is None:
+            return None
+        return self.db.scalar(
+            select(GenerationRun)
+            .where(
+                GenerationRun.project_id == project_id,
+                GenerationRun.requirement_id == requirement_id,
+                GenerationRun.run_type == run_type,
+                GenerationRun.status.in_({QUEUE_STATUS, RUNNING_STATUS}),
             )
             .order_by(GenerationRun.created_at.desc())
             .limit(1)

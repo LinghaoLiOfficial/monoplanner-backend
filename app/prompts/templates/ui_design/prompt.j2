@@ -5,33 +5,49 @@
 
 ===USER===
 Input:
-task: {{ task }}
-layer: {{ layer }}
-project_config:
-{{ project_config | tojson_pretty }}
-selected_story:
-{{ selected_story | tojson_pretty }}
-change_set:
-{{ change_set | tojson_pretty }}
-previous_version:
-{{ previous_version | tojson_pretty }}
-related_assets:
-{{ related_assets | tojson_pretty }}
-output_contract:
-{{ output_contract | tojson_pretty }}
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - change_set:
+  - {{ change_set | tojson_pretty }}
+  - previous_version:
+  - {{ previous_version | tojson_pretty }}
+  - related_assets:
+  - {{ related_assets | tojson_pretty }}
 
-Input Descriptions:
-related_assets: 必须重点读取 related_assets.ux_design，并将 UX 页面、区域和业务逻辑流转化为视觉系统、布局规则和组件样式规则。
-previous_version: 旧 UI 设计，可能为空；存在时必须体现差异。
-output_contract: 必须遵守的 UI 设计 JSON schema。
+Input Fields:
+  - task: string，固定任务名 generate_design_asset。
+  - layer: string，固定为 ui_design。
+  - project_config: object，项目配置和前端设计约束。
+  - selected_story: object 或 null，触发本次变更的业务需求故事。
+  - change_set: object，已确定的变更范围和模块影响。
+  - previous_version: object 或 null，旧 UI 视觉设计；存在时必须体现差异。
+  - related_assets: object，必须重点读取 ux_design，并将 UX 页面、区域和业务逻辑流转化为视觉系统、布局规则和组件样式规则。
 
-Output Descriptions:
-返回 UI 视觉设计资产，content 必须包含 version_summary、visual_system、layout_rules、component_style_rules、diff。
-visual_system 必须包含 design_style、design_principles、theme_configuration、color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system。
-layout_rules 必须基于 UX 页面或前端页面输出 target_screen、desktop_layout、mobile_layout。
-component_style_rules 必须包含 component_name、visual_priority、style_rules；visual_priority 必须覆盖 primary_content、secondary_content、tertiary_content、primary_actions、secondary_actions、danger_actions。
-不要输出旧主结构 visual_hierarchy、layout_guidelines、badge_rules、button_rules、form_rules、responsive_rules、accessibility_visual_rules。
-只描述视觉系统、布局、组件样式、状态呈现和视觉可访问性，不要输出业务流程、API 或代码。
+Output Fields:
+  - title: string，UI 视觉设计资产标题。
+  - summary: string，UI 视觉设计摘要。
+  - content.version_summary: string，本版本 UI 视觉设计摘要。
+  - content.visual_system: object，视觉系统，必须包含 design_style、design_principles、theme_configuration、color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system。
+  - content.visual_system.design_style.style_description: string，整体视觉风格描述。
+  - content.visual_system.design_style.signature_traits: array[string]，标志性视觉特征。
+  - content.visual_system.theme_configuration.theme_types.light_mode: string，浅色主题说明。
+  - content.visual_system.theme_configuration.theme_types.dark_mode: string，深色主题说明。
+  - content.visual_system.theme_configuration.default_theme: string，默认主题，通常为 light_mode 或 dark_mode。
+  - content.layout_rules: array，每项包含 target_screen、desktop_layout、mobile_layout。
+  - content.component_style_rules: array，每项包含 component_name、visual_priority、style_rules。
+  - content.component_style_rules[].visual_priority: object，必须覆盖 primary_content、secondary_content、tertiary_content、primary_actions、secondary_actions、danger_actions 六组数组。
+  - content.diff: object，必须包含 added、modified、removed。
+  - diff_from_previous: object，相对 previous_version 的 added、modified、removed。
+
+Output Rules:
+  - 只描述视觉系统、布局、组件样式、状态呈现和视觉可访问性。
+  - 不要重新发明用户流程、API、数据库或代码目录落点。
+  - 不要输出旧主结构 visual_hierarchy、layout_guidelines、badge_rules、button_rules、form_rules、responsive_rules、accessibility_visual_rules。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

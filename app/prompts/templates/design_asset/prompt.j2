@@ -5,35 +5,43 @@
 
 ===USER===
 Input:
-task: {{ task }}
-layer: {{ layer }}
-project_config:
-{{ project_config | tojson_pretty }}
-selected_story:
-{{ selected_story | tojson_pretty }}
-change_set:
-{{ change_set | tojson_pretty }}
-previous_version:
-{{ previous_version | tojson_pretty }}
-related_assets:
-{{ related_assets | tojson_pretty }}
-output_contract:
-{{ output_contract | tojson_pretty }}
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - change_set:
+  - {{ change_set | tojson_pretty }}
+  - previous_version:
+  - {{ previous_version | tojson_pretty }}
+  - related_assets:
+  - {{ related_assets | tojson_pretty }}
 
-Input Descriptions:
-layer: 当前要生成的设计资产层，例如 frontend_tools、api_contract、backend_services、backend_tools、database_models。
-project_config: 项目配置和技术栈。
-selected_story: 触发本次变更的业务需求故事，可能为空。
-change_set: 已确定的变更范围和模块影响。
-previous_version: 当前 layer 的上一版本资产，可能为空；存在时必须说明差异。
-related_assets: 已生成或已有的相关层资产，用于保持跨层一致。
-output_contract: 必须遵守的设计资产 JSON schema。
+Input Fields:
+  - task: string，固定任务名 generate_design_asset。
+  - layer: string，当前要生成的设计资产层，例如 frontend_tools、api_contract、backend_services、backend_tools、database_models。
+  - project_config: object，项目配置和技术栈。
+  - selected_story: object 或 null，触发本次变更的业务需求故事。
+  - change_set: object，已确定的变更范围和模块影响。
+  - previous_version: object 或 null，当前 layer 的上一版本资产；存在时必须说明差异。
+  - related_assets: object，已生成或已有的相关层资产，用于保持跨层一致。
 
-Output Descriptions:
-返回指定 layer 的设计资产，必须包含 title、summary、content、diff_from_previous。
-content 必须是 JSON object，至少包含 version_summary 和 diff。
-diff_from_previous 必须总结相对 previous_version 的 added、modified、removed。
-只生成当前 layer 的结构化资产，不要混入其他 layer 的完整设计，不要生成业务代码。
+Output Fields:
+  - title: string，当前 layer 设计资产标题。
+  - summary: string，当前资产版本的简短摘要。
+  - content: object，当前 layer 的结构化设计内容，必须包含 version_summary 和 diff。
+  - content.version_summary: string，本版本设计内容摘要。
+  - content.diff: object，内容内部差异，必须包含 added、modified、removed 三个数组。
+  - diff_from_previous: object，相对 previous_version 的差异，必须包含 added、modified、removed 三个数组。
+  - content 的其他字段: object/array/string，按 layer 语义组织，例如 services、tools、entities、transactions、dependencies 等。
+
+Output Rules:
+  - 只生成当前 layer 的结构化资产，不要混入其他 layer 的完整设计。
+  - previous_version 存在时，diff_from_previous 必须真实反映新增、修改、删除。
+  - related_assets 只用于一致性参考，不要无意义复制。
+  - 不要生成业务代码。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.generation_run import BusinessStoryGenerationStatus
 
 RequirementProgressStatus = Literal["in_progress", "success", "failed"]
+RequirementStatus = Literal["pending", "applied", "superseded"]
 
 
 class RequirementCreate(BaseModel):
@@ -21,6 +22,8 @@ class RequirementRead(BaseModel):
     raw_text: str
     language: str
     source_type: str
+    status: RequirementStatus = "pending"
+    applied_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     progress_status: RequirementProgressStatus = "success"

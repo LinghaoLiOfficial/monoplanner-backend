@@ -5,50 +5,72 @@
 
 ===USER===
 Input:
-project_name: {{ project_name }}
-target_backend_stack: {{ target_backend_stack }}
-blueprint_content:
-{{ blueprint_content | tojson_pretty }}
-api_contract_content:
-{{ api_contract_content | tojson_pretty }}
-target_output_schema:
-{{ target_output_schema | tojson_pretty }}
+  - project_name: {{ project_name }}
+  - target_backend_stack: {{ target_backend_stack }}
+  - blueprint_content:
+  - {{ blueprint_content | tojson_pretty }}
+  - api_contract_content:
+  - {{ api_contract_content | tojson_pretty }}
 
-Input Descriptions:
-project_name: 项目名称。
-target_backend_stack: 后端目标技术栈，用于数据库模型风格约束。
-blueprint_content: 项目蓝图，包含业务实体、页面和 API 需求。
-api_contract_content: API 契约草案，可能为空；存在时必须支撑请求和响应数据。
-target_output_schema: 必须遵守的数据库模型 JSON schema。
+Input Fields:
+  - project_name: string，项目名称。
+  - target_backend_stack: string，后端目标技术栈，用于数据库模型风格约束。
+  - blueprint_content: object，项目蓝图，包含业务实体、页面和 API 需求。
+  - api_contract_content: object 或 null，API 契约草案；存在时必须支撑请求和响应数据。
 
-Output Descriptions:
-返回数据库模型草案，必须包含 database、entities、relationships、indexes、migration_notes。
-默认使用 uuid 主键；短文本用 string，长文本用 text，时间字段用 datetime，结构化扩展字段用 json。
-关系必须服务于业务实体或 API 契约；外键字段使用 snake_case_id；多对多关系需要说明中间表建议。
-索引必须有 reason。不要生成 SQL、SQLAlchemy 代码或 Alembic 代码。
+Output Fields:
+  - database: object，数据库技术摘要，通常包含 engine、orm、migration_tool。
+  - database_tables: array，数据库中的业务表集合；每项是一个 database_table。
+  - database_tables[].name: string，表对应的数据实体或业务对象名称。
+  - database_tables[].table_name: string，数据库表名，使用 snake_case 复数形式。
+  - database_tables[].description: string，表的业务用途说明。
+  - database_tables[].fields: array，该数据表中的字段集合；每项是一个 field。
+  - database_tables[].fields[].name: string，字段名，使用 snake_case。
+  - database_tables[].fields[].type: string，字段类型；常见值包括 uuid、string、text、datetime、boolean、integer、json。
+  - database_tables[].fields[].required: boolean，字段是否必填。
+  - database_tables[].fields[].primary_key: boolean，可选；主键字段设置为 true。
+  - database_tables[].fields[].nullable: boolean，字段是否允许数据库空值。
+  - database_tables[].fields[].description: string，字段业务含义。
+  - database_tables[].relationships: array，表级关系说明，描述一对多、多对多、归属关系和外键建议。
+  - database_tables[].indexes: array，表级索引建议；每项包含 table、fields、reason。
+  - database_tables[].migration_notes: array[string]，表级迁移注意事项、回填策略或兼容风险。
+  - relationships: array，模型级关系补充；用于跨表关系汇总。
+  - indexes: array，模型级索引补充；每项包含 table、fields、reason。
+  - migration_notes: array[string]，模型级迁移注意事项、回填策略或兼容风险。
+
+Output Rules:
+  - 默认使用 uuid 主键；短文本用 string，长文本用 text，时间字段用 datetime，结构化扩展字段用 json。
+  - 关系必须服务于业务实体或 API 契约；外键字段使用 snake_case_id。
+  - 多对多关系需要说明中间表建议。
+  - 索引必须有 reason。
+  - 不要生成 SQL、SQLAlchemy 代码或 Alembic 代码。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {
   "project_name": "Inventory Ops",
   "target_backend_stack": "Python 3.12 + FastAPI + SQLAlchemy 2.x + PostgreSQL",
   "blueprint_content": {"domain_entities": [{"name": "InventoryItem", "key_fields": ["id", "name", "stock_status", "replenished_at"]}]},
-  "api_contract_content": {"resources": [{"name": "inventory_items"}]}
+  "api_contract_content": {"api_resource_groups": [{"group_name": "inventory_items"}]}
 }
 
 Example Output [1]:
 {
   "database": {"engine": "PostgreSQL", "orm": "SQLAlchemy 2.x", "migration_tool": "Alembic"},
-  "entities": [
+  "database_tables": [
     {
       "name": "InventoryItem",
       "table_name": "inventory_items",
       "description": "库存商品及补货状态",
       "fields": [
-        {"name": "id", "type": "uuid", "required": true, "primary_key": true},
-        {"name": "name", "type": "string", "required": true},
-        {"name": "stock_status", "type": "string", "required": true},
-        {"name": "replenished_at", "type": "datetime", "required": false}
-      ]
+        {"name": "id", "type": "uuid", "required": true, "primary_key": true, "nullable": false, "description": "主键"},
+        {"name": "name", "type": "string", "required": true, "nullable": false, "description": "商品名称"},
+        {"name": "stock_status", "type": "string", "required": true, "nullable": false, "description": "库存状态"},
+        {"name": "replenished_at", "type": "datetime", "required": false, "nullable": true, "description": "补货完成时间"}
+      ],
+      "relationships": [],
+      "indexes": [{"table": "inventory_items", "fields": ["stock_status"], "reason": "支持低库存列表筛选"}],
+      "migration_notes": ["新增 inventory_items 表以支持低库存查看和补货标记。"]
     }
   ],
   "relationships": [],

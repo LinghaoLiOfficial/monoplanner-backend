@@ -5,30 +5,42 @@
 
 ===USER===
 Input:
-blueprint:
-{{ blueprint | tojson_pretty }}
-api_contract:
-{{ api_contract | tojson_pretty }}
-db_model:
-{{ db_model | tojson_pretty }}
-frontend_stack: {{ frontend_stack }}
-backend_stack: {{ backend_stack }}
-target_output_schema:
-{{ target_output_schema | tojson_pretty }}
+  - blueprint:
+  - {{ blueprint | tojson_pretty }}
+  - api_contract:
+  - {{ api_contract | tojson_pretty }}
+  - db_model:
+  - {{ db_model | tojson_pretty }}
+  - frontend_stack: {{ frontend_stack }}
+  - backend_stack: {{ backend_stack }}
 
-Input Descriptions:
-blueprint: 项目蓝图，是功能范围、页面、业务实体和 API 需求的上游依据。
-api_contract: API 契约草案，可能为空；存在时前后端都必须引用。
-db_model: 数据库模型草案，可能为空；存在时后端 pack 必须引用。
-frontend_stack: 前端目标技术栈。
-backend_stack: 后端目标技术栈。
-target_output_schema: 必须遵守的 ContextPack JSON schema。
+Input Fields:
+  - blueprint: object，项目蓝图，是功能范围、页面、业务实体和 API 需求的上游依据。
+  - api_contract: object 或 null，API 契约草案；存在时前后端 pack 都必须引用。
+  - db_model: object 或 null，数据库模型草案；存在时后端 pack 必须引用。
+  - frontend_stack: string，前端目标技术栈。
+  - backend_stack: string，后端目标技术栈。
 
-Output Descriptions:
-返回顶层对象 packs，且 packs 必须刚好包含 frontend_engineer 和 backend_engineer。
-每个 pack 必须包含 role、title、summary、content、prompt_text。
-content 必须包含 role、goal、included_context、task_boundaries、tech_stack、expected_output、constraints、do_not_do。
-prompt_text 必须是可直接给 Codex 执行的详细 Markdown 指令。
+Output Fields:
+  - packs: array，必须刚好包含两个元素：frontend_engineer 和 backend_engineer。
+  - packs[].role: enum，只能是 frontend_engineer 或 backend_engineer。
+  - packs[].title: string，面向执行者的上下文包标题。
+  - packs[].summary: string，概括该上下文包目标和范围。
+  - packs[].content: object，结构化上下文，必须包含 role、goal、included_context、task_boundaries、tech_stack、expected_output、constraints、do_not_do。
+  - packs[].content.included_context: object，精选蓝图、API、数据库等相关上下文，不要无差别复制全部输入。
+  - packs[].content.task_boundaries: array[string]，说明该角色只做什么、不做什么。
+  - packs[].content.tech_stack: array[string]，该角色应遵守的技术栈。
+  - packs[].content.expected_output: array[string]，期望交付物。
+  - packs[].content.constraints: array[string]，实现约束。
+  - packs[].content.do_not_do: array[string]，明确禁止事项。
+  - packs[].prompt_text: string，可直接给 Codex 执行的详细 Markdown 指令。
+
+Output Rules:
+  - packs 必须 exactly one frontend_engineer pack and one backend_engineer pack。
+  - frontend_engineer 不应要求修改后端代码；backend_engineer 不应要求修改前端代码。
+  - prompt_text 必须足够具体，包含角色、目标、上下文、边界、期望输出和验证建议。
+  - 不要生成业务代码，只生成上下文包。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

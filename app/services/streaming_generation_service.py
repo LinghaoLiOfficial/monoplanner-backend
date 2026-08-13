@@ -32,7 +32,8 @@ from app.llm.client import (
     LLMResponseFormatError,
     OpenAICompatibleLLMClient,
 )
-from app.llm.json_client import LLMJsonGenerationError, parse_json_object
+from app.llm.json_client import LLMJsonGenerationError
+from app.llm.structured_client import generate_structured_json
 from app.models.api_contract import ApiContractDraft
 from app.models.blueprint import ProjectBlueprint
 from app.models.business_requirement_story import BusinessRequirementStory
@@ -51,6 +52,12 @@ from app.prompts.business_story_decomposer import (
 from app.prompts.db_model_generator import (
     build_db_model_generation_prompt,
 )
+from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
+from app.prompts.templates.blueprint_generator.output_schema import ProjectBlueprintOutput
+from app.prompts.templates.business_story_decomposer.output_schema import (
+    BusinessStoryDecompositionOutput,
+)
+from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 from app.schemas.api_contract import ApiContractDraftResponse
 from app.schemas.blueprint import ProjectBlueprintRead
 from app.schemas.business_requirement_story import (
@@ -70,8 +77,10 @@ from app.services.business_story_generation_service import (
     BUSINESS_STORY_RUNNING_MESSAGE,
     BUSINESS_STORY_SUCCEEDED_MESSAGE,
     JSON_OBJECT_RESPONSE_FORMAT,
+    REQUIREMENT_ALREADY_APPLIED_MESSAGE,
     REQUIREMENT_NOT_FOUND_MESSAGE,
     _count_priority_payloads,
+    _current_story_snapshots,
     _validate_story_payloads,
 )
 from app.services.business_story_generation_service import (
@@ -101,7 +110,6 @@ from app.services.generation_service import (
 from app.services.generation_service import (
     _count_blueprint_content,
 )
-from app.services.llm_generation_runtime import collect_llm_stream_text
 from app.services.project_service import ProjectService
 from app.services.requirement_service import RequirementService
 
@@ -138,6 +146,7 @@ class StreamingGenerationSpec:
     parse_and_validate: Callable[[dict[str, Any]], Any]
     save: Callable[[GenerationRun, Any], Any]
     serialize_resource: Callable[[Any], dict[str, Any]]
+    response_model: type[BaseModel]
     requirement_id: UUID | None = None
     extra_params: dict[str, Any] | None = None
 
@@ -149,7 +158,7 @@ class StreamingGenerationService:
         llm_client_factory: Callable[[], OpenAICompatibleLLMClient] | None = None,
     ) -> None:
         self.db = db
-        self.llm_client_factory = llm_client_factory or OpenAICompatibleLLMClient
+        self.llm_client_factory = llm_client_factory
 
     def generate(self, spec: StreamingGenerationSpec) -> Any:
         run = GenerationRun(
@@ -186,29 +195,36 @@ class StreamingGenerationService:
         try:
             _update_run_progress(self.db, run, 10, _progress_message(spec.module, 10))
             _log_stage(spec, run, "llm_start", started_at)
-            raw = collect_llm_stream_text(
-                spec.system_prompt,
-                spec.user_payload,
-                llm_client_factory=self.llm_client_factory,
-                extra_params=spec.extra_params,
-            )
-            raw_text_length = len(raw)
-            if not raw.strip():
-                raise LLMEmptyResponseError("LLM stream content is empty.")
-
-            _update_run_progress(self.db, run, 60, _progress_message(spec.module, 60))
-            _log_stage(spec, run, "raw_complete", started_at)
             try:
-                parsed = parse_json_object(raw)
+                parsed = generate_structured_json(
+                    spec.system_prompt,
+                    spec.user_payload,
+                    response_model=spec.response_model,
+                    llm_client_factory=self.llm_client_factory,
+                    extra_params=spec.extra_params,
+                )
             except LLMJsonGenerationError as exc:
                 self._mark_run_failed(
                     run,
                     exc,
-                    failure_stage="parse",
+                    failure_stage="parse_json_failed",
                     raw_text_length=raw_text_length,
                 )
                 raise
+            except LLMResponseFormatError as exc:
+                self._mark_run_failed(
+                    run,
+                    exc,
+                    failure_stage="schema_validation_failed",
+                    raw_text_length=raw_text_length,
+                )
+                raise
+            raw_text_length = len(json.dumps(parsed, ensure_ascii=False))
+            if not parsed:
+                raise LLMEmptyResponseError("LLM structured content is empty.")
 
+            _update_run_progress(self.db, run, 60, _progress_message(spec.module, 60))
+            _log_stage(spec, run, "structured_complete", started_at)
             try:
                 resource_input = spec.parse_and_validate(parsed)
             except (
@@ -410,22 +426,30 @@ class StreamingGenerationService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=BUSINESS_STORY_EMPTY_REQUIREMENT_MESSAGE,
             )
+        if requirement.status == "applied":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=REQUIREMENT_ALREADY_APPLIED_MESSAGE,
+            )
 
-        prompt = build_business_story_decomposition_prompt(project, requirement)
+        current_business_stories = _current_story_snapshots(self.db, project_id)
+        prompt = build_business_story_decomposition_prompt(
+            project,
+            requirement,
+            current_business_stories,
+        )
         input_snapshot = build_business_story_input_snapshot(
             project,
             requirement,
             payload.overwrite,
+            current_business_stories=current_business_stories,
         )
 
         def save(
             run: GenerationRun,
             story_payloads: list[dict[str, Any]],
         ) -> list[BusinessRequirementStory]:
-            if payload.overwrite:
-                BusinessRequirementStoryService(self.db).delete_existing_for_requirement(
-                    project_id, requirement.id
-                )
+            BusinessRequirementStoryService(self.db).mark_current_pool_inactive(project_id)
             stories = [
                 BusinessRequirementStory(
                     project_id=project_id,
@@ -446,11 +470,15 @@ class StreamingGenerationService:
                     execution_notes=story_payload.get("execution_notes"),
                     source_requirement_excerpt=requirement.raw_text[:500],
                     sort_order=index,
+                    is_current=True,
                 )
                 for index, story_payload in enumerate(story_payloads, start=1)
             ]
             for story in stories:
                 self.db.add(story)
+            requirement.status = "applied"
+            requirement.applied_at = datetime.now(UTC)
+            self.db.add(requirement)
             run.output_snapshot = {
                 "story_count": len(stories),
                 "priority_counts": _count_priority_payloads(story_payloads),
@@ -472,6 +500,7 @@ class StreamingGenerationService:
                     _model_to_dict(BusinessRequirementStoryResponse, story) for story in stories
                 ]
             },
+            response_model=BusinessStoryDecompositionOutput,
             extra_params=JSON_OBJECT_RESPONSE_FORMAT,
         )
 
@@ -551,6 +580,7 @@ class StreamingGenerationService:
             parse_and_validate=validate,
             save=save,
             serialize_resource=lambda blueprint: _model_to_dict(ProjectBlueprintRead, blueprint),
+            response_model=ProjectBlueprintOutput,
         )
 
     def build_api_contract_spec(self, project_id: UUID) -> StreamingGenerationSpec:
@@ -575,7 +605,7 @@ class StreamingGenerationService:
                 generation_run_id=run.id,
                 title="API 契约草案",
                 summary="基于项目蓝图生成的 API 契约草案。",
-                base_path=content["base_path"],
+                base_path=content.get("api_base_path") or content.get("base_path", "/api/v1"),
                 content=content,
             )
             self.db.add(draft)
@@ -604,6 +634,7 @@ class StreamingGenerationService:
             parse_and_validate=validate_api_contract_content,
             save=save,
             serialize_resource=lambda draft: _model_to_dict(ApiContractDraftResponse, draft),
+            response_model=ApiContractOutput,
         )
 
     def build_db_model_spec(self, project_id: UUID) -> StreamingGenerationSpec:
@@ -664,6 +695,7 @@ class StreamingGenerationService:
             parse_and_validate=validate_db_model_content,
             save=save,
             serialize_resource=lambda draft: _model_to_dict(DbModelDraftResponse, draft),
+            response_model=DbModelOutput,
         )
 
     def _resolve_requirement(

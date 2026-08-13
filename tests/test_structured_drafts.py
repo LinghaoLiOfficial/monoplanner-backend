@@ -50,7 +50,12 @@ def _mock_blueprint_content() -> dict:
             {"resource": "projects", "operations": ["create", "read", "list"], "consumers": []}
         ],
         "business_requirement_stories": [],
-        "non_functional_requirements": {},
+        "non_functional_requirements": {
+            "auth": "所有业务接口需要登录态。",
+            "performance": "列表接口应支持分页。",
+            "security": "用户只能访问自己的项目数据。",
+            "observability": "生成任务需记录状态和错误信息。",
+        },
         "assumptions": [],
         "open_questions": [],
     }
@@ -58,45 +63,40 @@ def _mock_blueprint_content() -> dict:
 
 def _mock_api_contract_content() -> dict:
     return {
-        "base_path": "/api/v1",
-        "resources": [
+        "api_base_path": "/api/v1",
+        "api_resource_groups": [
             {
-                "name": "projects",
-                "description": "Manage projects",
+                "group_name": "projects",
+                "group_purpose": "Manage projects",
                 "endpoints": [
                     {
-                        "method": "POST",
-                        "path": "/projects",
-                        "operation_id": "create_project",
-                        "purpose": "Create project",
-                        "request_body": "CreateProjectRequest",
-                        "response_body": "ProjectResponse",
-                        "auth_required": True,
-                        "errors": ["400", "401", "409", "500"],
+                        "http_method": "POST",
+                        "endpoint_path": "/projects",
+                        "endpoint_purpose": "Create project",
+                        "requires_auth": True,
+                        "request_schema": {
+                            "body": [
+                                {
+                                    "name": "name",
+                                    "type": "string",
+                                    "required": True,
+                                    "description": "Project name",
+                                }
+                            ]
+                        },
+                        "response_schema": {"body": "ProjectResponse"},
+                        "error_model": [
+                            {
+                                "status_code": 409,
+                                "error_code": "PROJECT_NAME_CONFLICT",
+                                "error_message": "Project name already exists.",
+                                "recovery_suggestion": "Choose a different project name.",
+                            }
+                        ],
                     }
                 ],
             }
         ],
-        "schemas": [
-            {
-                "name": "CreateProjectRequest",
-                "fields": [
-                    {
-                        "name": "name",
-                        "type": "string",
-                        "required": True,
-                        "description": "Project name",
-                    }
-                ],
-            }
-        ],
-        "error_model": {
-            "name": "ApiError",
-            "fields": [
-                {"name": "code", "type": "string", "required": True},
-                {"name": "message", "type": "string", "required": True},
-            ],
-        },
         "notes": ["Generated from blueprint"],
     }
 
@@ -108,7 +108,7 @@ def _mock_db_model_content() -> dict:
             "orm": "SQLAlchemy 2.x",
             "migration_tool": "Alembic",
         },
-        "entities": [
+        "database_tables": [
             {
                 "name": "Project",
                 "table_name": "projects",
@@ -117,6 +117,7 @@ def _mock_db_model_content() -> dict:
                     {
                         "name": "name",
                         "type": "string",
+                        "required": True,
                         "primary_key": False,
                         "nullable": False,
                         "description": "Project name",
@@ -171,8 +172,8 @@ def test_generate_list_and_read_api_contract(client: TestClient, monkeypatch) ->
     assert draft["project_id"] == project["id"]
     assert draft["version"] == 1
     assert draft["base_path"] == "/api/v1"
-    assert draft["content"]["resources"][0]["name"] == "projects"
-    assert draft["content"]["resources"][0]["endpoints"][0]["method"] == "POST"
+    assert draft["content"]["api_resource_groups"][0]["group_name"] == "projects"
+    assert draft["content"]["api_resource_groups"][0]["endpoints"][0]["http_method"] == "POST"
 
     list_response = client.get(f"/api/v1/projects/{project['id']}/api-contracts")
     assert list_response.status_code == 200
@@ -195,8 +196,8 @@ def test_generate_list_and_read_db_model(client: TestClient, monkeypatch) -> Non
     assert draft["project_id"] == project["id"]
     assert draft["version"] == 1
     assert draft["content"]["database"]["engine"] == "PostgreSQL"
-    assert draft["content"]["entities"][0]["name"] == "Project"
-    assert draft["content"]["entities"][0]["fields"][0]["name"] == "id"
+    assert draft["content"]["database_tables"][0]["name"] == "Project"
+    assert draft["content"]["database_tables"][0]["fields"][0]["name"] == "id"
 
     list_response = client.get(f"/api/v1/projects/{project['id']}/db-models")
     assert list_response.status_code == 200

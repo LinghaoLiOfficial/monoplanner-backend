@@ -6,6 +6,9 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
+from app.prompts.templates.backend_implementation.output_schema import (
+    BackendImplementationOutput,
+)
 from app.prompts.templates.blueprint_generator.output_schema import ProjectBlueprintOutput
 from app.prompts.templates.blueprint_summary.output_schema import BlueprintSummaryOutput
 from app.prompts.templates.business_story_decomposer.output_schema import (
@@ -49,6 +52,12 @@ PROMPT_TEMPLATE_CONTRACTS: tuple[PromptTemplateContract, ...] = (
         template_path=TEMPLATE_ROOT / "api_contract_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "api_contract_generator" / "output_schema.py",
         response_model=ApiContractOutput,
+    ),
+    PromptTemplateContract(
+        name="backend_implementation",
+        template_path=TEMPLATE_ROOT / "backend_implementation" / "prompt.j2",
+        schema_path=TEMPLATE_ROOT / "backend_implementation" / "output_schema.py",
+        response_model=BackendImplementationOutput,
     ),
     PromptTemplateContract(
         name="db_model_generator",

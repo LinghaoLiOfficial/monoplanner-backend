@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON, Uuid
@@ -49,6 +49,8 @@ class ChangeSet(Base):
         index=True,
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    layer: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    batch_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft", index=True)
     implementation_scope: Mapped[str] = mapped_column(
@@ -77,6 +79,10 @@ class ChangeSet(Base):
         json_type, nullable=False, default=dict, server_default="{}"
     )
     summary: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    is_current: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True, server_default="true", index=True
+    )
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

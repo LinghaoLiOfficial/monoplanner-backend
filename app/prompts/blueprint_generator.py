@@ -4,7 +4,6 @@ from typing import Any
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
-from app.prompts.templates.blueprint_generator.output_schema import ProjectBlueprintOutput
 
 TEMPLATE_NAME = "blueprint_generator"
 SYSTEM_PROMPT = TEMPLATE_NAME
@@ -35,7 +34,6 @@ def build_blueprint_generation_payload(
             "source_type": requirement.source_type,
         },
         "business_stories": business_stories,
-        "target_output_schema": ProjectBlueprintOutput.model_json_schema(),
     }
 
 

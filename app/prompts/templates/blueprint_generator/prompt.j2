@@ -5,30 +5,43 @@
 
 ===USER===
 Input:
-project_name: {{ project_name }}
-project_description: {{ project_description }}
-target_frontend_stack: {{ target_frontend_stack }}
-target_backend_stack: {{ target_backend_stack }}
-latest_requirement:
-{{ latest_requirement | tojson_pretty }}
-business_stories:
-{{ business_stories | tojson_pretty }}
-target_output_schema:
-{{ target_output_schema | tojson_pretty }}
+  - project_name: {{ project_name }}
+  - project_description: {{ project_description }}
+  - target_frontend_stack: {{ target_frontend_stack }}
+  - target_backend_stack: {{ target_backend_stack }}
+  - latest_requirement:
+  - {{ latest_requirement | tojson_pretty }}
+  - business_stories:
+  - {{ business_stories | tojson_pretty }}
 
-Input Descriptions:
-project_name: 项目名称。
-project_description: 项目描述，可能为空。
-target_frontend_stack: 用户配置的目标前端技术栈。
-target_backend_stack: 用户配置的目标后端技术栈。
-latest_requirement: 最新原始用户需求，包含 raw_text、language、source_type。
-business_stories: 已拆解的业务需求故事列表，包含优先级、状态和用户故事。
-target_output_schema: 必须遵守的项目蓝图 JSON schema。
+Input Fields:
+  - project_name: string，项目名称。
+  - project_description: string，可为空；为空时仅基于 latest_requirement 和 business_stories 推断。
+  - target_frontend_stack: string，目标前端技术栈，必须写入 tech_stack.frontend。
+  - target_backend_stack: string，目标后端技术栈，必须写入 tech_stack.backend。
+  - latest_requirement: object，最新原始需求，包含 id、raw_text、language、source_type。
+  - business_stories: array，已拆解业务故事，通常包含 id、title、priority、status、user_story。
 
-Output Descriptions:
-返回结构化项目蓝图，必须包含 project、tech_stack、product_goals、user_roles、core_modules、domain_entities、pages、api_needs、business_requirement_stories、non_functional_requirements、assumptions、open_questions。
-pages 必须来自真实业务流程，api_needs 必须能支撑 pages，domain_entities 必须能支撑业务故事。
-不要生成代码、OpenAPI 文档或与需求无关的模块。P4 Won't 的故事可以进入 open_questions 或 assumptions，不要作为 MVP 必做功能。
+Output Fields:
+  - project: object，项目摘要；name 为项目名，one_liner 为一句话定位，target_users 为目标用户数组，business_goal 为业务目标，tech_stack 为前后端技术栈对象。
+  - tech_stack: object，必须包含 frontend 和 backend，值与目标技术栈保持一致。
+  - product_goals: array，每项包含 goal 和 priority；priority 可使用 must_have、should_have、could_have 等业务优先级语义。
+  - user_roles: array，用户角色列表；每项包含 name 和 description。
+  - core_modules: array，核心业务模块；每项包含 name、description，可补充 responsibilities。
+  - domain_entities: array，业务实体；每项包含 name、description、key_fields。
+  - pages: array，前端页面/视图；每项包含 name、route、description、primary_actions。
+  - api_needs: array，API 需求；每项包含 resource、operations、reason，用于后续 API 契约生成。
+  - business_requirement_stories: array，业务故事引用；保留故事 id、title、priority 等关键字段。
+  - non_functional_requirements: object，安全、性能、可用性、审计等非功能要求。
+  - assumptions: array[string]，当前设计成立的假设。
+  - open_questions: array[string]，需要用户或后续设计确认的问题。
+
+Output Rules:
+  - pages 必须来自真实业务流程，api_needs 必须能支撑 pages。
+  - domain_entities 必须能支撑业务故事和 API 需求。
+  - P4 Won't 的故事可以进入 open_questions 或 assumptions，不要作为 MVP 必做功能。
+  - 不要生成代码、OpenAPI 文档或与需求无关的模块。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {

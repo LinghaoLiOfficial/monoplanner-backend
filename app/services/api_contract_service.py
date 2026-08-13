@@ -81,7 +81,7 @@ class ApiContractService:
                 version=self.get_next_version(project_id),
                 title="API 契约草案",
                 summary="基于项目蓝图生成的 API 契约草案。",
-                base_path=content["base_path"],
+                base_path=content["api_base_path"],
                 content=content,
             )
             self.db.add(draft)
@@ -220,6 +220,15 @@ class ApiContractService:
 
 
 def _count_api_contract_content(content: dict[str, Any]) -> dict[str, int]:
+    if "api_resource_groups" in content:
+        groups = content.get("api_resource_groups", [])
+        return {
+            "resources": len(groups),
+            "endpoints": sum(
+                len(group.get("endpoints", [])) for group in groups if isinstance(group, dict)
+            ),
+            "schemas": 0,
+        }
     return {
         "resources": len(content.get("resources", [])),
         "endpoints": sum(

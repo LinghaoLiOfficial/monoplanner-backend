@@ -10,6 +10,7 @@ class DatabaseInfo(BaseModel):
 class DbModelField(BaseModel):
     name: str
     type: str
+    required: bool = False
     primary_key: bool = False
     nullable: bool = True
     description: str = ""
@@ -21,23 +22,25 @@ class DbModelRelationship(BaseModel):
     type: str
 
 
-class DbModelEntity(BaseModel):
-    name: str
-    table_name: str
-    description: str = ""
-    fields: list[DbModelField]
-    relationships: list[DbModelRelationship] = Field(default_factory=list)
-
-
 class DbModelIndex(BaseModel):
     table: str
     fields: list[str]
     reason: str
 
 
+class DbModelTable(BaseModel):
+    name: str
+    table_name: str
+    description: str = ""
+    fields: list[DbModelField]
+    relationships: list[DbModelRelationship] = Field(default_factory=list)
+    indexes: list[DbModelIndex] = Field(default_factory=list)
+    migration_notes: list[str] = Field(default_factory=list)
+
+
 class DbModelOutput(BaseModel):
     database: DatabaseInfo
-    entities: list[DbModelEntity]
+    database_tables: list[DbModelTable]
     relationships: list[DbModelRelationship] = Field(default_factory=list)
     indexes: list[DbModelIndex] = Field(default_factory=list)
     migration_notes: list[str] = Field(default_factory=list)

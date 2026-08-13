@@ -124,12 +124,12 @@ def build_llm_context_pack_payloads(
             "db_model": db_model_content,
             "frontend_stack": FRONTEND_STACK,
             "backend_stack": BACKEND_STACK,
-            "target_output_schema": ContextPackOutput.model_json_schema(),
         },
     )
     response = generate_json(
         system_prompt=prompt.system,
         user_payload=prompt.user,
+        response_model=ContextPackOutput,
     )
     packs = response.get("packs")
     if not isinstance(packs, list) or not packs:

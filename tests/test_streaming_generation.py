@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.llm.client import (
@@ -15,6 +16,10 @@ from tests.llm_stream_helpers import patch_llm_stream
 from tests.queue_helpers import run_generation_job_in_new_session
 from tests.test_blueprint_generation import _mock_blueprint_content
 from tests.test_business_requirement_stories import VALID_LLM_OUTPUT_DICT
+
+
+class OkOutput(BaseModel):
+    ok: bool
 
 
 def _create_project_with_requirement(client: TestClient) -> dict:
@@ -86,7 +91,11 @@ def test_orchestration_json_salvages_complete_partial_stream(monkeypatch) -> Non
 
     monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
 
-    assert generate_orchestration_json("system", {"task": "demo"}) == {"ok": True}
+    assert generate_orchestration_json(
+        "system",
+        {"task": "demo"},
+        response_model=OkOutput,
+    ) == {"ok": True}
 
 
 def test_orchestration_json_retries_incomplete_partial_stream(monkeypatch) -> None:
@@ -97,7 +106,7 @@ def test_orchestration_json_retries_incomplete_partial_stream(monkeypatch) -> No
     monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
 
     with pytest.raises(LLMPartialStreamError):
-        generate_orchestration_json("system", {"task": "demo"})
+        generate_orchestration_json("system", {"task": "demo"}, response_model=OkOutput)
 
 
 def test_regular_blueprint_endpoint_enqueues_and_worker_saves_resource(

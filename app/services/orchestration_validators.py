@@ -8,13 +8,9 @@ VALID_AFFECTED_LAYERS = {
     "ux_design",
     "ui_design",
     "frontend_pages",
-    "frontend_tools",
     "api_contract",
     "backend_services",
-    "backend_tools",
     "database_models",
-    "project_blueprint",
-    "prompt_assets",
 }
 
 
@@ -22,7 +18,11 @@ class OrchestrationValidationError(ValueError):
     """Raised when an orchestration LLM output cannot be used safely."""
 
 
-def validate_change_set_payload(parsed: dict[str, Any]) -> dict[str, Any]:
+def validate_change_set_payload(
+    parsed: dict[str, Any],
+    *,
+    expected_layer: str | None = None,
+) -> dict[str, Any]:
     title = _require_string(parsed.get("title"), "title")
     scope = _require_enum(
         parsed.get("implementation_scope"),
@@ -37,10 +37,17 @@ def validate_change_set_payload(parsed: dict[str, Any]) -> dict[str, Any]:
         raise OrchestrationValidationError(
             f"ChangeSet affected_layers contains invalid layers: {invalid_layers}."
         )
+    if expected_layer is not None and layers != [expected_layer]:
+        raise OrchestrationValidationError(
+            f"ChangeSet affected_layers must equal [{expected_layer!r}]."
+        )
     module_changes = parsed.get("module_changes")
     if not isinstance(module_changes, dict):
         raise OrchestrationValidationError("ChangeSet module_changes must be an object.")
     module_changes = _normalize_module_changes(module_changes, layers)
+    content = _dict_or_empty(parsed.get("content"))
+    if expected_layer is not None:
+        content["layer"] = expected_layer
     return {
         "title": title,
         "status": _normalize_status(parsed.get("status")),
@@ -53,7 +60,7 @@ def validate_change_set_payload(parsed: dict[str, Any]) -> dict[str, Any]:
         "recommended_prompt_strategy": _dict_or_empty(
             parsed.get("recommended_prompt_strategy")
         ),
-        "content": _dict_or_empty(parsed.get("content")),
+        "content": content,
         "diff_from_previous": _dict_or_empty(
             parsed.get("diff_from_previous") or parsed.get("diff")
         ),
@@ -143,11 +150,11 @@ def _default_asset_title(layer: str) -> str:
     return {
         "ux_design": "UX 设计",
         "ui_design": "UI 设计",
-        "frontend_pages": "前端页面结构",
-        "frontend_tools": "前端依赖与工具",
+        "frontend_pages": "前端工程实现",
+        "frontend_tools": "前端工程实现扩展",
         "api_contract": "API 契约",
-        "backend_services": "后端服务设计",
-        "backend_tools": "后端依赖与工具",
+        "backend_services": "后端工程实现",
+        "backend_tools": "后端工程实现扩展",
         "database_models": "数据库模型",
     }.get(layer, "设计资产")
 

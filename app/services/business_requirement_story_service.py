@@ -29,11 +29,14 @@ class BusinessRequirementStoryService:
         priority: str | None = None,
         status_filter: str | None = None,
         q: str | None = None,
+        include_history: bool = False,
     ) -> list[BusinessRequirementStory]:
         ProjectService(self.db, self.current_user).get_project(project_id)
         statement = select(BusinessRequirementStory).where(
             BusinessRequirementStory.project_id == project_id
         )
+        if not include_history:
+            statement = statement.where(BusinessRequirementStory.is_current.is_(True))
         if priority:
             statement = statement.where(BusinessRequirementStory.priority == priority)
         if status_filter:
@@ -122,6 +125,17 @@ class BusinessRequirementStoryService:
         )
         for story in self.db.scalars(statement):
             self.db.delete(story)
+
+    def mark_current_pool_inactive(self, project_id: UUID) -> None:
+        statement = select(BusinessRequirementStory).where(
+            BusinessRequirementStory.project_id == project_id,
+            BusinessRequirementStory.is_current.is_(True),
+        )
+        for story in self.db.scalars(statement):
+            story.is_current = False
+            if story.status not in {"applied", "implemented", "verified", "deferred"}:
+                story.status = "applied"
+            self.db.add(story)
 
     def list_for_blueprint_context(self, project_id: UUID) -> list[BusinessRequirementStory]:
         return self.list_project_stories(project_id)

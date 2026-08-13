@@ -33,10 +33,10 @@ class ApiContractDraft(Base):
         nullable=False,
         index=True,
     )
-    blueprint_id: Mapped[UUID] = mapped_column(
+    blueprint_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("project_blueprints.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -87,7 +87,7 @@ class ApiContractDraft(Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="api_contract_drafts")
-    blueprint: Mapped[ProjectBlueprint] = relationship()
+    blueprint: Mapped[ProjectBlueprint | None] = relationship()
     source_requirement: Mapped[Requirement | None] = relationship()
     source_story: Mapped[BusinessRequirementStory | None] = relationship()
     change_set: Mapped[ChangeSet | None] = relationship()

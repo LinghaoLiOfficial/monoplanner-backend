@@ -85,6 +85,8 @@ def change_set_snapshot(change_set: Any) -> dict[str, Any]:
         "id": str(change_set.id),
         "project_id": str(change_set.project_id),
         "version": change_set.version,
+        "layer": getattr(change_set, "layer", None),
+        "batch_id": str(change_set.batch_id) if getattr(change_set, "batch_id", None) else None,
         "title": change_set.title,
         "status": change_set.status,
         "implementation_scope": change_set.implementation_scope,
@@ -96,6 +98,10 @@ def change_set_snapshot(change_set: Any) -> dict[str, Any]:
         "recommended_prompt_strategy": change_set.recommended_prompt_strategy,
         "content": change_set.content,
         "diff_from_previous": change_set.diff_from_previous,
+        "is_current": getattr(change_set, "is_current", True),
+        "applied_at": change_set.applied_at.isoformat()
+        if getattr(change_set, "applied_at", None)
+        else None,
     }
 
 

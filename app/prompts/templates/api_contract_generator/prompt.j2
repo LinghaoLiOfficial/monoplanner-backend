@@ -5,26 +5,42 @@
 
 ===USER===
 Input:
-project_name: {{ project_name }}
-target_base_path: {{ target_base_path }}
-blueprint_content:
-{{ blueprint_content | tojson_pretty }}
-target_output_schema:
-{{ target_output_schema | tojson_pretty }}
+  - project_name: {{ project_name }}
+  - target_base_path: {{ target_base_path }}
+  - blueprint_content:
+  - {{ blueprint_content | tojson_pretty }}
 
-Input Descriptions:
-project_name: 项目名称，用于 API 资源命名语境。
-target_base_path: API 根路径，默认应作为输出 base_path。
-blueprint_content: 项目蓝图，包含页面、业务实体、用户故事引用和 API 需求。
-target_output_schema: 必须遵守的 API 契约 JSON schema。
+Input Fields:
+  - project_name: string，项目名称，用于 API 资源命名语境。
+  - target_base_path: string，API 根路径；通常为 /api/v1，输出 api_base_path 应优先使用该值。
+  - blueprint_content: object，项目蓝图，包含 pages、domain_entities、business_requirement_stories、api_needs 等上游信息。
 
-Output Descriptions:
-返回 API 契约草案，必须包含 base_path、resources、schemas、error_model、notes。
-每个 resource 必须能追溯到页面、业务故事或业务实体。
-每个 endpoint 需要 method、path、operation_id、purpose、request_body、response_body、status_codes 等契约信息。
-request_body 和 response_body 必须引用 schemas 或说明为空。
-错误状态码要合理，缺省错误模型命名为 ApiError，至少包含 code 和 message，可选 details。
-不要生成 FastAPI 代码、数据库字段或 OpenAPI 文档。
+Output Fields:
+  - api_base_path: string，以 / 开头的 API 统一基础路径，默认取 target_base_path。
+  - api_resource_groups: array，按业务资源或领域对象组织的接口分组集合。
+  - api_resource_groups[].group_name: string，该 API 资源分组的名称。
+  - api_resource_groups[].group_purpose: string，该 API 资源分组承担的业务能力说明。
+  - api_resource_groups[].endpoints: array，该资源分组下的接口集合。
+  - api_resource_groups[].endpoints[].http_method: string，HTTP 方法，如 GET、POST、PATCH、DELETE。
+  - api_resource_groups[].endpoints[].endpoint_path: string，相对于 API 前缀的接口路径，可包含 {resource_id} 形式路径参数。
+  - api_resource_groups[].endpoints[].endpoint_purpose: string，该接口提供的业务能力和使用场景。
+  - api_resource_groups[].endpoints[].requires_auth: boolean，调用该接口是否必须具备已登录身份。
+  - api_resource_groups[].endpoints[].request_schema: object，请求参数、请求体字段和校验规则。
+  - api_resource_groups[].endpoints[].response_schema: object，成功响应的数据结构和字段说明。
+  - api_resource_groups[].endpoints[].error_model: array，接口可能返回的错误场景集合。
+  - api_resource_groups[].endpoints[].error_model[].status_code: integer，错误 HTTP 状态码。
+  - api_resource_groups[].endpoints[].error_model[].error_code: string，稳定错误码。
+  - api_resource_groups[].endpoints[].error_model[].error_message: string，错误信息。
+  - api_resource_groups[].endpoints[].error_model[].recovery_suggestion: string，恢复建议。
+  - notes: array[string]，契约边界、排除项、待确认点或实现提示。
+
+Output Rules:
+  - 每个 api_resource_group 必须能追溯到页面、业务故事或业务实体，不要生成与业务无关的接口。
+  - request_schema 和 response_schema 必须是对象；无请求体时也要说明 path/query 参数或使用空对象。
+  - error_model 必须是数组，至少覆盖与该接口相关的 400/401/403/404/409。
+  - 不要生成 FastAPI 代码、数据库字段或 OpenAPI 文档。
+  - 不要输出旧主结构 base_path、resources、schemas、status_codes、request_body、response_body。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
 Example Input [1]:
 {
@@ -39,38 +55,36 @@ Example Input [1]:
 
 Example Output [1]:
 {
-  "base_path": "/api/v1",
-  "resources": [
+  "api_base_path": "/api/v1",
+  "api_resource_groups": [
     {
-      "name": "inventory_items",
-      "description": "库存商品读取与补货状态更新",
+      "group_name": "inventory_items",
+      "group_purpose": "库存商品读取与补货状态更新",
       "endpoints": [
         {
-          "method": "GET",
-          "path": "/inventory-items/low-stock",
-          "operation_id": "list_low_stock_inventory_items",
-          "purpose": "返回低库存商品列表",
-          "request_body": null,
-          "response_body": "InventoryItemListResponse",
-          "status_codes": [{"code": 200, "description": "返回低库存商品列表"}]
+          "http_method": "GET",
+          "endpoint_path": "/inventory-items/low-stock",
+          "endpoint_purpose": "返回低库存商品列表",
+          "requires_auth": true,
+          "request_schema": {"query": [{"name": "page", "type": "integer", "required": false}]},
+          "response_schema": {"body": {"items": "array<InventoryItemResponse>"}},
+          "error_model": [
+            {"status_code": 401, "error_code": "UNAUTHENTICATED", "error_message": "用户未登录", "recovery_suggestion": "引导用户登录后重试"}
+          ]
         },
         {
-          "method": "PATCH",
-          "path": "/inventory-items/{item_id}/replenished",
-          "operation_id": "mark_inventory_item_replenished",
-          "purpose": "将指定商品标记为已补货",
-          "request_body": "MarkReplenishedRequest",
-          "response_body": "InventoryItemResponse",
-          "status_codes": [{"code": 200, "description": "状态已更新"}, {"code": 404, "description": "商品不存在"}]
+          "http_method": "PATCH",
+          "endpoint_path": "/inventory-items/{item_id}/replenished",
+          "endpoint_purpose": "将指定商品标记为已补货",
+          "requires_auth": true,
+          "request_schema": {"path": [{"name": "item_id", "type": "uuid", "required": true}], "body": [{"name": "note", "type": "string", "required": false}]},
+          "response_schema": {"body": "InventoryItemResponse"},
+          "error_model": [
+            {"status_code": 404, "error_code": "INVENTORY_ITEM_NOT_FOUND", "error_message": "商品不存在", "recovery_suggestion": "刷新列表后重试"}
+          ]
         }
       ]
     }
   ],
-  "schemas": [
-    {"name": "InventoryItemResponse", "fields": [{"name": "id", "type": "uuid", "required": true}, {"name": "name", "type": "string", "required": true}, {"name": "stock_status", "type": "string", "required": true}]},
-    {"name": "InventoryItemListResponse", "fields": [{"name": "items", "type": "array<InventoryItemResponse>", "required": true}]},
-    {"name": "MarkReplenishedRequest", "fields": [{"name": "note", "type": "string", "required": false}]}
-  ],
-  "error_model": {"name": "ApiError", "fields": [{"name": "code", "type": "string", "required": true}, {"name": "message", "type": "string", "required": true}]},
   "notes": ["接口只覆盖低库存查看和补货标记，不包含供应商结算。"]
 }

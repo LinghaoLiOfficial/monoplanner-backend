@@ -22,13 +22,16 @@ from app.llm.client import (
     LLMRequestError,
     LLMResponseFormatError,
 )
-from app.llm.json_client import LLMJsonGenerationError, generate_json
+from app.llm.json_client import generate_json
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.generation_run import GenerationRun
 from app.models.requirement import Requirement
 from app.prompts.business_story_decomposer import (
     build_business_story_decomposition_payload,
     build_business_story_decomposition_prompt,
+)
+from app.prompts.templates.business_story_decomposer.output_schema import (
+    BusinessStoryDecompositionOutput,
 )
 from app.schemas.business_requirement_story import GenerateBusinessRequirementStoriesRequest
 from app.services.business_requirement_story_service import BusinessRequirementStoryService
@@ -39,10 +42,28 @@ logger = logging.getLogger(__name__)
 
 VALID_PRIORITIES = {"p1_must", "p2_should", "p3_could", "p4_wont"}
 VALID_IMPLEMENTATION_SCOPES = {"frontend_only", "backend_only", "fullstack", "non_code"}
+VALID_STORY_AFFECTED_LAYERS = {
+    "ux_design",
+    "ui_design",
+    "frontend_pages",
+    "api_contract",
+    "backend_services",
+    "database_models",
+    "documentation",
+}
+LEGACY_LAYER_ALIASES = {
+    "frontend_tools": "frontend_pages",
+    "backend_tools": "backend_services",
+    "backend_implementation": "backend_services",
+    "database": "database_models",
+    "db_model": "database_models",
+    "db_models": "database_models",
+}
 RUN_TYPE = "generate_business_requirement_stories"
 NO_REQUIREMENT_MESSAGE = "请先在“用户需求”模块提交至少一条用户需求。"
 EMPTY_REQUIREMENT_MESSAGE = "用户需求内容为空，无法生成业务需求故事。"
 REQUIREMENT_NOT_FOUND_MESSAGE = "用户需求不存在或不属于当前项目。"
+REQUIREMENT_ALREADY_APPLIED_MESSAGE = "该原始用户需求已应用，不能重复更新业务需求故事池。"
 JSON_OBJECT_RESPONSE_FORMAT = {"response_format": {"type": "json_object"}}
 BUSINESS_STORY_RUNNING_MESSAGE = "正在更新业务需求故事..."
 BUSINESS_STORY_SUCCEEDED_MESSAGE = "业务需求故事已更新。"
@@ -70,8 +91,19 @@ class BusinessStoryGenerationService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=EMPTY_REQUIREMENT_MESSAGE,
             )
+        if requirement.status == "applied":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=REQUIREMENT_ALREADY_APPLIED_MESSAGE,
+            )
 
-        input_snapshot = _build_input_snapshot(project, requirement, payload.overwrite)
+        current_business_stories = _current_story_snapshots(self.db, project_id)
+        input_snapshot = _build_input_snapshot(
+            project,
+            requirement,
+            payload.overwrite,
+            current_business_stories=current_business_stories,
+        )
         run = GenerationRun(
             project_id=project_id,
             requirement_id=requirement.id,
@@ -92,8 +124,16 @@ class BusinessStoryGenerationService:
             run.id,
         )
         try:
-            user_payload = build_business_story_decomposition_payload(project, requirement)
-            prompt = build_business_story_decomposition_prompt(project, requirement)
+            user_payload = build_business_story_decomposition_payload(
+                project,
+                requirement,
+                current_business_stories,
+            )
+            prompt = build_business_story_decomposition_prompt(
+                project,
+                requirement,
+                current_business_stories,
+            )
             parsed = _generate_business_story_json(self.json_generator, prompt, user_payload)
             run.progress = 60
             run.message = "正在解析业务需求故事..."
@@ -101,10 +141,7 @@ class BusinessStoryGenerationService:
             self.db.commit()
             story_payloads = _validate_story_payloads(parsed)
 
-            if payload.overwrite:
-                BusinessRequirementStoryService(self.db).delete_existing_for_requirement(
-                    project_id, requirement.id
-                )
+            BusinessRequirementStoryService(self.db).mark_current_pool_inactive(project_id)
 
             stories = [
                 BusinessRequirementStory(
@@ -126,11 +163,15 @@ class BusinessStoryGenerationService:
                     execution_notes=story_payload.get("execution_notes"),
                     source_requirement_excerpt=requirement.raw_text[:500],
                     sort_order=index,
+                    is_current=True,
                 )
                 for index, story_payload in enumerate(story_payloads, start=1)
             ]
             for story in stories:
                 self.db.add(story)
+            requirement.status = "applied"
+            requirement.applied_at = datetime.now(UTC)
+            self.db.add(requirement)
             run.status = "succeeded"
             run.progress = 100
             run.message = BUSINESS_STORY_SUCCEEDED_MESSAGE
@@ -255,41 +296,15 @@ def _generate_business_story_json(
                 prompt.system,
                 prompt.user,
                 extra_params=JSON_OBJECT_RESPONSE_FORMAT,
+                response_model=BusinessStoryDecompositionOutput,
             )
-        return json_generator(prompt.system, prompt.user)
+        return json_generator(
+            prompt.system,
+            prompt.user,
+            response_model=BusinessStoryDecompositionOutput,
+        )
     except TypeError:
         return json_generator(prompt.system, prompt.user)
-    except LLMJsonGenerationError as exc:
-        if "not valid JSON" not in str(exc) and "does not contain a JSON object" not in str(exc):
-            raise
-        repair_payload = {
-            "invalid_output_error": str(exc),
-            "project_name": user_payload["project_name"],
-            "project_description": user_payload["project_description"],
-            "raw_requirement": user_payload["raw_requirement"],
-            "target_output_schema": user_payload["target_output_schema"],
-            "priority_definitions": user_payload["priority_definitions"],
-            "decomposition_rules": user_payload["decomposition_rules"],
-            "repair_rules": [
-                "只输出一个 JSON object",
-                "顶层必须包含 stories 数组",
-                "不要添加 JSON 之外的说明文字",
-                "根据 raw_requirement 重新生成业务需求故事，不要只复制示例",
-                "保留原始业务含义，并按目标 schema 补全所有必填字段",
-            ],
-        }
-        repair_prompt = (
-            "你是 JSON 格式修复器和资深产品经理。上一次业务需求故事生成结果不是合法 JSON。"
-            "请只返回一个严格合法的 JSON object，不要返回 Markdown、解释、注释或 "
-            "JSON 之外的任何字符。必须使用双引号，禁止尾随逗号，字符串内部换行必须转义为 \\n。"
-        )
-        if settings.llm_use_response_format:
-            return generate_json(
-                repair_prompt,
-                repair_payload,
-                extra_params=JSON_OBJECT_RESPONSE_FORMAT,
-            )
-        return generate_json(repair_prompt, repair_payload)
 
 
 def _validate_story_payloads(parsed: dict[str, Any]) -> list[dict[str, Any]]:
@@ -330,7 +345,7 @@ def _normalize_story(story: dict[str, Any]) -> dict[str, Any]:
         "implementation_scope": _normalize_implementation_scope(
             story.get("implementation_scope")
         ),
-        "affected_layers": _normalize_story_string_list(story.get("affected_layers", [])),
+        "affected_layers": _normalize_affected_layers(story.get("affected_layers", [])),
         "user_story": _require_non_empty_string(story["user_story"], "user_story"),
         "business_scope": _normalize_business_scope(story["business_scope"]),
         "data_rules": _normalize_data_rules(story["data_rules"]),
@@ -418,6 +433,15 @@ def _normalize_story_string_list(value: Any) -> list[str]:
     return normalized
 
 
+def _normalize_affected_layers(value: Any) -> list[str]:
+    layers: list[str] = []
+    for item in _normalize_story_string_list(value):
+        normalized = LEGACY_LAYER_ALIASES.get(item, item)
+        if normalized in VALID_STORY_AFFECTED_LAYERS and normalized not in layers:
+            layers.append(normalized)
+    return layers
+
+
 def _normalize_business_scope(value: Any) -> dict[str, list[str]]:
     if not isinstance(value, dict):
         raise ValueError("Story business_scope must be an object.")
@@ -471,7 +495,11 @@ def _require_non_empty_string(value: Any, field_name: str) -> str:
 
 
 def _build_input_snapshot(
-    project: Any, requirement: Requirement, overwrite: bool
+    project: Any,
+    requirement: Requirement,
+    overwrite: bool,
+    *,
+    current_business_stories: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     return {
         "project": {
@@ -486,7 +514,39 @@ def _build_input_snapshot(
             "source_type": requirement.source_type,
         },
         "overwrite": overwrite,
+        "current_business_story_count": len(current_business_stories or []),
+        "source": "project_config + new_raw_requirement + current_business_stories",
     }
+
+
+def _current_story_snapshots(db: Session, project_id: UUID) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": str(story.id),
+            "title": story.title,
+            "priority": story.priority,
+            "status": story.status,
+            "implementation_scope": story.implementation_scope,
+            "affected_layers": story.affected_layers,
+            "user_story": story.user_story,
+            "business_scope": story.business_scope,
+            "data_rules": story.data_rules,
+            "acceptance_criteria": story.acceptance_criteria,
+            "depends_on": story.depends_on,
+            "execution_notes": story.execution_notes,
+        }
+        for story in db.scalars(
+            select(BusinessRequirementStory)
+            .where(
+                BusinessRequirementStory.project_id == project_id,
+                BusinessRequirementStory.is_current.is_(True),
+            )
+            .order_by(
+                BusinessRequirementStory.sort_order.asc(),
+                BusinessRequirementStory.created_at.asc(),
+            )
+        )
+    ]
 
 
 def _count_priority_payloads(story_payloads: list[dict[str, Any]]) -> dict[str, int]:

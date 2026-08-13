@@ -220,8 +220,11 @@ class DbModelService:
 
 
 def _count_db_model_content(content: dict[str, Any]) -> dict[str, int]:
+    tables = content.get("database_tables")
+    if not isinstance(tables, list):
+        tables = content.get("entities", [])
     return {
-        "entities": len(content.get("entities", [])),
+        "database_tables": len(tables),
         "relationships": len(content.get("relationships", [])),
         "indexes": len(content.get("indexes", [])),
     }

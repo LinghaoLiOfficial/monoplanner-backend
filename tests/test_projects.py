@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.llm.client import LLMRequestError
 from app.models.api_contract import ApiContractDraft
 from app.models.blueprint import ProjectBlueprint
 from app.models.context_pack import ContextPack
@@ -9,7 +10,7 @@ from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from app.models.project import Project
 from app.models.requirement import Requirement
-from tests.llm_stream_helpers import patch_llm_stream_sequence
+from tests.llm_stream_helpers import patch_llm_stream, patch_llm_stream_sequence
 from tests.queue_helpers import run_generation_job_in_new_session
 
 
@@ -22,7 +23,26 @@ def _patch_generation_json(monkeypatch) -> None:
                 "one_liner": "Context workflow",
                 "target_users": ["Builder"],
                 "business_goal": "Generate context artifacts",
-                "tech_stack": {"frontend": "Next.js", "backend": "FastAPI"},
+                "tech_stack": {
+                    "frontend": [
+                        {"name": "Next.js", "type": "framework"},
+                        {"name": "React", "type": "ui_library"},
+                    ],
+                    "backend": [
+                        {"name": "FastAPI", "type": "framework"},
+                        {"name": "SQLAlchemy", "type": "orm"},
+                    ],
+                },
+            },
+            "tech_stack": {
+                "frontend": [
+                    {"name": "Next.js", "type": "framework"},
+                    {"name": "React", "type": "ui_library"},
+                ],
+                "backend": [
+                    {"name": "FastAPI", "type": "framework"},
+                    {"name": "SQLAlchemy", "type": "orm"},
+                ],
             },
             "product_goals": [{"goal": "Generate artifacts", "priority": "must_have"}],
             "user_roles": [{"name": "Builder", "description": "", "permissions": []}],
@@ -157,6 +177,108 @@ def test_create_project_does_not_require_description(client: TestClient) -> None
     assert project["name"] == "测试项目"
     assert project["description"] is None
     assert project["target_stacks_configured"] is False
+
+
+def test_create_project_saves_description(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/projects",
+        json={"name": "测试项目", "description": "用于管理库存和补货流程的项目。"},
+    )
+
+    assert response.status_code == 201
+    project = response.json()
+    assert project["name"] == "测试项目"
+    assert project["description"] == "用于管理库存和补货流程的项目。"
+    assert project["target_stacks_configured"] is False
+
+
+def test_generate_project_description_options(client: TestClient, monkeypatch) -> None:
+    patch_llm_stream(
+        monkeypatch,
+        {
+            "options": [
+                {
+                    "description": (
+                        "面向运营团队的库存管理平台，用于查看库存状态、识别缺货风险并跟踪补货进展。"
+                    )
+                },
+                {
+                    "description": (
+                        "服务门店店员的商品库存工作台，支持维护库存信息、处理补货提醒和记录处理结果。"
+                    )
+                },
+                {
+                    "description": (
+                        "为供应链团队设计的库存协同系统，用于同步库存变化、分派补货任务并沉淀业务记录。"
+                    )
+                },
+            ]
+        },
+    )
+
+    response = client.post(
+        "/api/v1/projects/description-options",
+        json={"name": " 库存运营助手 "},
+    )
+
+    assert response.status_code == 200
+    options = response.json()["options"]
+    assert len(options) == 3
+    assert options[0]["description"].startswith("面向运营团队")
+
+
+def test_generate_project_description_options_rejects_blank_name(client: TestClient) -> None:
+    response = client.post("/api/v1/projects/description-options", json={"name": "   "})
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "项目名称不能为空。"
+
+
+def test_generate_project_description_options_returns_503_when_llm_unconfigured(
+    client: TestClient,
+) -> None:
+    response = client.post("/api/v1/projects/description-options", json={"name": "库存运营助手"})
+
+    assert response.status_code == 503
+
+
+def test_generate_project_description_options_returns_502_for_invalid_json_output(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    def fail_format(*_args, **_kwargs):
+        yield "not json"
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", fail_format)
+
+    response = client.post("/api/v1/projects/description-options", json={"name": "库存运营助手"})
+
+    assert response.status_code == 502
+
+
+def test_generate_project_description_options_returns_502_for_incomplete_options(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    patch_llm_stream(monkeypatch, {"options": [{"description": "只有一个描述。"}]})
+
+    response = client.post("/api/v1/projects/description-options", json={"name": "库存运营助手"})
+
+    assert response.status_code == 502
+
+
+def test_generate_project_description_options_returns_502_for_llm_request_error(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    def fail_request(*_args, **_kwargs):
+        raise LLMRequestError("temporary upstream failure")
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", fail_request)
+
+    response = client.post("/api/v1/projects/description-options", json={"name": "库存运营助手"})
+
+    assert response.status_code == 502
 
 
 def test_create_project_uses_default_target_stacks(client: TestClient) -> None:
@@ -350,6 +472,25 @@ def test_update_project_resets_blank_target_stacks_to_defaults(client: TestClien
 
     assert response.status_code == 200
     updated_project = response.json()
+    assert updated_project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
+    assert updated_project["target_backend_stack"] == DEFAULT_BACKEND_STACK
+    assert updated_project["target_stacks_configured"] is True
+
+
+def test_update_project_allows_empty_target_stack_items(client: TestClient) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Empty Stack Items"}).json()
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={
+            "target_frontend_stack_items": [],
+            "target_backend_stack_items": [],
+        },
+    )
+
+    assert response.status_code == 200
+    updated_project = response.json()
+    assert updated_project["target_frontend_stack_items"] == []
+    assert updated_project["target_backend_stack_items"] == []
     assert updated_project["target_frontend_stack"] == DEFAULT_FRONTEND_STACK
     assert updated_project["target_backend_stack"] == DEFAULT_BACKEND_STACK
     assert updated_project["target_stacks_configured"] is True

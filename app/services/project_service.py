@@ -2,15 +2,40 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.tech_stack import (
+    normalize_tech_stack_items,
+    tech_stack_items_to_payload,
+    tech_stack_items_to_text,
+)
+from app.llm.client import (
+    CONFIGURATION_ERROR_DETAIL,
+    REQUEST_ERROR_DETAIL,
+    RESPONSE_FORMAT_ERROR_DETAIL,
+    LLMConfigurationError,
+    LLMEmptyResponseError,
+    LLMRequestError,
+    LLMResponseFormatError,
+)
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.prompts.renderer import render_prompt_template
+from app.prompts.templates.project_description_options.output_schema import (
+    ProjectDescriptionOptionsOutput,
+)
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectDescriptionOptionsRead,
+    ProjectDescriptionOptionsRequest,
+    ProjectUpdate,
+)
 from app.schemas.project_config import ProjectConfigUpdate
+from app.services.llm_orchestration_runtime import generate_orchestration_json
 
 PROJECT_NAME_EMPTY_MESSAGE = "项目名称不能为空。"
 PROJECT_NAME_EXISTS_MESSAGE = "项目名称已存在，请使用其他名称。"
@@ -25,18 +50,67 @@ class ProjectService:
         user = self._require_user()
         name = self._normalize_project_name(payload.name)
         self._ensure_name_available(name, owner_user_id=user.id)
+        frontend_items = normalize_tech_stack_items(
+            DEFAULT_FRONTEND_STACK,
+            infer_missing_type=True,
+        )
+        backend_items = normalize_tech_stack_items(
+            DEFAULT_BACKEND_STACK,
+            infer_missing_type=True,
+        )
         project = Project(
             owner_user_id=user.id,
             name=name,
             description=payload.description,
-            target_frontend_stack=DEFAULT_FRONTEND_STACK,
-            target_backend_stack=DEFAULT_BACKEND_STACK,
+            target_frontend_stack=tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK,
+            target_backend_stack=tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK,
+            target_frontend_stack_items=tech_stack_items_to_payload(frontend_items),
+            target_backend_stack_items=tech_stack_items_to_payload(backend_items),
             target_stacks_configured=False,
         )
         self.db.add(project)
         self._commit_project_change()
         self.db.refresh(project)
         return project
+
+    def generate_description_options(
+        self, payload: ProjectDescriptionOptionsRequest
+    ) -> ProjectDescriptionOptionsRead:
+        self._require_user()
+        name = self._normalize_project_name(payload.name)
+        prompt = render_prompt_template(
+            "project_description_options",
+            {
+                "task": "generate_project_description_options",
+                "project_name": name,
+            },
+        )
+        user_payload = {
+            "task": "generate_project_description_options",
+            "project_name": name,
+        }
+        try:
+            parsed = generate_orchestration_json(
+                prompt.system,
+                user_payload,
+                response_model=ProjectDescriptionOptionsOutput,
+            )
+            return ProjectDescriptionOptionsRead.model_validate(parsed)
+        except LLMConfigurationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=CONFIGURATION_ERROR_DETAIL,
+            ) from exc
+        except LLMRequestError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=REQUEST_ERROR_DETAIL,
+            ) from exc
+        except (LLMEmptyResponseError, LLMResponseFormatError, ValidationError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=RESPONSE_FORMAT_ERROR_DETAIL,
+            ) from exc
 
     def list_projects(self, q: str | None = None) -> list[Project]:
         user = self._require_user()
@@ -111,25 +185,52 @@ class ProjectService:
                 owner_user_id=project.owner_user_id,
                 exclude_project_id=project.id,
             )
-        if "target_frontend_stack" in updates:
-            updates["target_frontend_stack"] = normalize_stack(
-                updates["target_frontend_stack"],
-                DEFAULT_FRONTEND_STACK,
-            )
-        if "target_backend_stack" in updates:
-            updates["target_backend_stack"] = normalize_stack(
-                updates["target_backend_stack"],
-                DEFAULT_BACKEND_STACK,
-            )
-        if "target_frontend_stack" in updates or "target_backend_stack" in updates:
-            updates["target_frontend_stack"] = normalize_stack(
-                updates.get("target_frontend_stack", project.target_frontend_stack),
-                DEFAULT_FRONTEND_STACK,
-            )
-            updates["target_backend_stack"] = normalize_stack(
-                updates.get("target_backend_stack", project.target_backend_stack),
-                DEFAULT_BACKEND_STACK,
-            )
+        stack_keys = {
+            "target_frontend_stack",
+            "target_backend_stack",
+            "target_frontend_stack_items",
+            "target_backend_stack_items",
+            "frontend_tech_stack",
+            "backend_tech_stack",
+            "frontend_tech_stack_items",
+            "backend_tech_stack_items",
+        }
+        if stack_keys.intersection(updates):
+            if "target_frontend_stack_items" in updates:
+                frontend_source = updates["target_frontend_stack_items"]
+            elif "frontend_tech_stack_items" in updates:
+                frontend_source = updates["frontend_tech_stack_items"]
+            elif "frontend_tech_stack" in updates:
+                frontend_source = updates["frontend_tech_stack"]
+            elif "target_frontend_stack" in updates:
+                frontend_source = updates["target_frontend_stack"]
+            else:
+                frontend_source = (
+                    project.target_frontend_stack_items
+                    or project.target_frontend_stack
+                    or DEFAULT_FRONTEND_STACK
+                )
+
+            if "target_backend_stack_items" in updates:
+                backend_source = updates["target_backend_stack_items"]
+            elif "backend_tech_stack_items" in updates:
+                backend_source = updates["backend_tech_stack_items"]
+            elif "backend_tech_stack" in updates:
+                backend_source = updates["backend_tech_stack"]
+            elif "target_backend_stack" in updates:
+                backend_source = updates["target_backend_stack"]
+            else:
+                backend_source = (
+                    project.target_backend_stack_items
+                    or project.target_backend_stack
+                    or DEFAULT_BACKEND_STACK
+                )
+            frontend_items = normalize_tech_stack_items(frontend_source, infer_missing_type=True)
+            backend_items = normalize_tech_stack_items(backend_source, infer_missing_type=True)
+            updates["target_frontend_stack_items"] = tech_stack_items_to_payload(frontend_items)
+            updates["target_backend_stack_items"] = tech_stack_items_to_payload(backend_items)
+            updates["target_frontend_stack"] = tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK
+            updates["target_backend_stack"] = tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK
             updates["target_stacks_configured"] = True
         for field, value in updates.items():
             setattr(project, field, value)

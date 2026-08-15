@@ -14,7 +14,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.generators.api_contract_generator import (
     ApiContractValidationError,
     validate_api_contract_content,
@@ -531,8 +532,16 @@ class StreamingGenerationService:
             }
             for story in business_stories
         ]
-        frontend_stack = normalize_stack(project.target_frontend_stack, DEFAULT_FRONTEND_STACK)
-        backend_stack = normalize_stack(project.target_backend_stack, DEFAULT_BACKEND_STACK)
+        frontend_stack = (
+            tech_stack_items_to_text(getattr(project, "target_frontend_stack_items", []))
+            or project.target_frontend_stack
+            or DEFAULT_FRONTEND_STACK
+        )
+        backend_stack = (
+            tech_stack_items_to_text(getattr(project, "target_backend_stack_items", []))
+            or project.target_backend_stack
+            or DEFAULT_BACKEND_STACK
+        )
         input_snapshot = {
             "project_id": str(project_id),
             "requirement_id": str(requirement.id),
@@ -540,6 +549,12 @@ class StreamingGenerationService:
             "business_requirement_story_ids": [story["id"] for story in business_story_context],
             "target_frontend_stack": frontend_stack,
             "target_backend_stack": backend_stack,
+            "target_frontend_stack_items": tech_stack_items_to_payload(
+                getattr(project, "target_frontend_stack_items", [])
+            ),
+            "target_backend_stack_items": tech_stack_items_to_payload(
+                getattr(project, "target_backend_stack_items", [])
+            ),
         }
 
         def validate(parsed: dict[str, Any]) -> dict[str, Any]:

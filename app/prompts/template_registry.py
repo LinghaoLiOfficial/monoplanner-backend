@@ -19,6 +19,9 @@ from app.prompts.templates.context_pack.output_schema import ContextPackOutput
 from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 from app.prompts.templates.design_asset.output_schema import DesignAssetOutput
 from app.prompts.templates.frontend_pages.output_schema import FrontendPagesOutput
+from app.prompts.templates.project_description_options.output_schema import (
+    ProjectDescriptionOptionsOutput,
+)
 from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.prompts.templates.ui_design.output_schema import UIDesignOutput
 from app.prompts.templates.ux_design.output_schema import UXDesignOutput
@@ -46,6 +49,12 @@ PROMPT_TEMPLATE_CONTRACTS: tuple[PromptTemplateContract, ...] = (
         template_path=TEMPLATE_ROOT / "blueprint_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "blueprint_generator" / "output_schema.py",
         response_model=ProjectBlueprintOutput,
+    ),
+    PromptTemplateContract(
+        name="project_description_options",
+        template_path=TEMPLATE_ROOT / "project_description_options" / "prompt.j2",
+        schema_path=TEMPLATE_ROOT / "project_description_options" / "output_schema.py",
+        response_model=ProjectDescriptionOptionsOutput,
     ),
     PromptTemplateContract(
         name="api_contract_generator",

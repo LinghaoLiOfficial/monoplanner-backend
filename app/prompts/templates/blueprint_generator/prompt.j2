@@ -9,6 +9,10 @@ Input:
   - project_description: {{ project_description }}
   - target_frontend_stack: {{ target_frontend_stack }}
   - target_backend_stack: {{ target_backend_stack }}
+  - target_frontend_stack_items:
+  - {{ target_frontend_stack_items | tojson_pretty }}
+  - target_backend_stack_items:
+  - {{ target_backend_stack_items | tojson_pretty }}
   - latest_requirement:
   - {{ latest_requirement | tojson_pretty }}
   - business_stories:
@@ -17,14 +21,16 @@ Input:
 Input Fields:
   - project_name: string，项目名称。
   - project_description: string，可为空；为空时仅基于 latest_requirement 和 business_stories 推断。
-  - target_frontend_stack: string，目标前端技术栈，必须写入 tech_stack.frontend。
-  - target_backend_stack: string，目标后端技术栈，必须写入 tech_stack.backend。
+  - target_frontend_stack: string，目标前端技术栈摘要，仅供参考。
+  - target_backend_stack: string，目标后端技术栈摘要，仅供参考。
+  - target_frontend_stack_items: array，前端技术项结构化输入，包含 name、type、可选 tags 和 role。
+  - target_backend_stack_items: array，后端技术项结构化输入，包含 name、type、可选 tags 和 role。
   - latest_requirement: object，最新原始需求，包含 id、raw_text、language、source_type。
   - business_stories: array，已拆解业务故事，通常包含 id、title、priority、status、user_story。
 
 Output Fields:
-  - project: object，项目摘要；name 为项目名，one_liner 为一句话定位，target_users 为目标用户数组，business_goal 为业务目标，tech_stack 为前后端技术栈对象。
-  - tech_stack: object，必须包含 frontend 和 backend，值与目标技术栈保持一致。
+  - project: object，项目摘要；name 为项目名，one_liner 为一句话定位，target_users 为目标用户数组，business_goal 为业务目标，tech_stack 为前后端技术项数组对象。
+  - tech_stack: object，必须包含 frontend 和 backend，值为结构化技术项数组。
   - product_goals: array，每项包含 goal 和 priority；priority 可使用 must_have、should_have、could_have 等业务优先级语义。
   - user_roles: array，用户角色列表；每项包含 name 和 description。
   - core_modules: array，核心业务模块；每项包含 name、description，可补充 responsibilities。
@@ -48,6 +54,16 @@ Example Input [1]:
   "project_name": "Inventory Ops",
   "target_frontend_stack": "Next.js + React + TypeScript",
   "target_backend_stack": "FastAPI + SQLAlchemy + PostgreSQL",
+  "target_frontend_stack_items": [
+    {"name": "Next.js", "type": "framework"},
+    {"name": "React", "type": "ui_library"},
+    {"name": "TypeScript", "type": "language"}
+  ],
+  "target_backend_stack_items": [
+    {"name": "FastAPI", "type": "framework"},
+    {"name": "SQLAlchemy", "type": "orm"},
+    {"name": "PostgreSQL", "type": "database"}
+  ],
   "latest_requirement": {"raw_text": "让仓库管理员查看低库存商品并标记已补货"},
   "business_stories": [{"id": "story-1", "title": "查看低库存商品并标记补货", "priority": "p1_must", "user_story": "作为仓库管理员..."}]
 }
@@ -60,13 +76,29 @@ Example Output [1]:
     "target_users": ["仓库管理员"],
     "business_goal": "降低低库存商品遗漏处理的风险",
     "tech_stack": {
-      "frontend": "Next.js + React + TypeScript",
-      "backend": "FastAPI + SQLAlchemy + PostgreSQL"
+      "frontend": [
+        {"name": "Next.js", "type": "framework"},
+        {"name": "React", "type": "ui_library"},
+        {"name": "TypeScript", "type": "language"}
+      ],
+      "backend": [
+        {"name": "FastAPI", "type": "framework"},
+        {"name": "SQLAlchemy", "type": "orm"},
+        {"name": "PostgreSQL", "type": "database"}
+      ]
     }
   },
   "tech_stack": {
-    "frontend": "Next.js + React + TypeScript",
-    "backend": "FastAPI + SQLAlchemy + PostgreSQL"
+    "frontend": [
+      {"name": "Next.js", "type": "framework"},
+      {"name": "React", "type": "ui_library"},
+      {"name": "TypeScript", "type": "language"}
+    ],
+    "backend": [
+      {"name": "FastAPI", "type": "framework"},
+      {"name": "SQLAlchemy", "type": "orm"},
+      {"name": "PostgreSQL", "type": "database"}
+    ]
   },
   "product_goals": [{"goal": "集中展示低库存商品并支持补货标记", "priority": "must_have"}],
   "user_roles": [{"name": "仓库管理员", "description": "负责查看库存风险并更新补货状态"}],

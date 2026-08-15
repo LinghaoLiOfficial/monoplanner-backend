@@ -19,9 +19,29 @@ def _mock_blueprint_content() -> dict:
             "target_users": ["产品型开发者"],
             "business_goal": "把业务需求转成可执行上下文",
             "tech_stack": {
-                "frontend": "Next.js",
-                "backend": "FastAPI",
+                "frontend": [
+                    {"name": "Next.js", "type": "framework"},
+                    {"name": "React", "type": "ui_library"},
+                    {"name": "TypeScript", "type": "language"},
+                ],
+                "backend": [
+                    {"name": "FastAPI", "type": "framework"},
+                    {"name": "SQLAlchemy", "type": "orm"},
+                    {"name": "PostgreSQL", "type": "database"},
+                ],
             },
+        },
+        "tech_stack": {
+            "frontend": [
+                {"name": "Next.js", "type": "framework"},
+                {"name": "React", "type": "ui_library"},
+                {"name": "TypeScript", "type": "language"},
+            ],
+            "backend": [
+                {"name": "FastAPI", "type": "framework"},
+                {"name": "SQLAlchemy", "type": "orm"},
+                {"name": "PostgreSQL", "type": "database"},
+            ],
         },
         "product_goals": [{"goal": "生成项目蓝图", "priority": "must_have"}],
         "user_roles": [
@@ -117,8 +137,10 @@ def test_generate_and_read_blueprint(client: TestClient, monkeypatch) -> None:
     assert blueprint["version"] == 1
     assert blueprint["title"] == "项目蓝图"
     assert blueprint["content"]["project"]["name"] == "Blueprint Project"
-    assert "Next.js" in blueprint["content"]["project"]["tech_stack"]["frontend"]
-    assert "FastAPI" in blueprint["content"]["project"]["tech_stack"]["backend"]
+    assert blueprint["content"]["project"]["tech_stack"]["frontend"][0]["type"] == "framework"
+    backend_stack = blueprint["content"]["project"]["tech_stack"]["backend"]
+    assert backend_stack
+    assert any(item["type"] == "framework" for item in backend_stack)
     assert blueprint["content"]["api_needs"][0]["resource"] == "projects"
 
     list_response = client.get(f"/api/v1/projects/{project['id']}/blueprints")
@@ -159,9 +181,12 @@ def test_generate_blueprint_uses_latest_project_target_stacks(
     assert run is not None
     assert run.input_snapshot["target_frontend_stack"] == "Astro + React"
     assert run.input_snapshot["target_backend_stack"] == "FastAPI + SQLModel"
+    assert run.input_snapshot["target_frontend_stack_items"][0]["type"] == "framework"
     blueprint = client.get(f"/api/v1/projects/{project['id']}/blueprints").json()[0]
-    assert blueprint["content"]["project"]["tech_stack"]["frontend"] == "Astro + React"
-    assert blueprint["content"]["project"]["tech_stack"]["backend"] == "FastAPI + SQLModel"
+    assert blueprint["content"]["project"]["tech_stack"]["frontend"][0]["name"] == "Astro"
+    backend_stack = blueprint["content"]["project"]["tech_stack"]["backend"]
+    assert any(item["name"] == "FastAPI" and item["type"] == "framework" for item in backend_stack)
+    assert any(item["name"] == "SQLModel" and item["type"] == "orm" for item in backend_stack)
 
 
 def test_blueprint_payload_defaults_blank_project_target_stacks(db_session, test_user) -> None:

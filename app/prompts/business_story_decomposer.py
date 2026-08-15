@@ -1,5 +1,6 @@
 from app.models.project import Project
 from app.models.requirement import Requirement
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
 TEMPLATE_NAME = "business_story_decomposer"
@@ -17,6 +18,20 @@ def build_business_story_decomposition_payload(
         "project_config": {
             "target_frontend_stack": getattr(project, "target_frontend_stack", None),
             "target_backend_stack": getattr(project, "target_backend_stack", None),
+            "target_frontend_stack_items": tech_stack_items_to_payload(
+                getattr(project, "target_frontend_stack_items", [])
+            ),
+            "target_backend_stack_items": tech_stack_items_to_payload(
+                getattr(project, "target_backend_stack_items", [])
+            ),
+            "frontend_tech_stack": tech_stack_items_to_text(
+                getattr(project, "target_frontend_stack_items", [])
+            )
+            or getattr(project, "target_frontend_stack", None),
+            "backend_tech_stack": tech_stack_items_to_text(
+                getattr(project, "target_backend_stack_items", [])
+            )
+            or getattr(project, "target_backend_stack", None),
             "global_constraints": getattr(project, "global_constraints", []),
             "coding_preferences": getattr(project, "coding_preferences", []),
             "prompt_preferences": getattr(project, "prompt_preferences", []),

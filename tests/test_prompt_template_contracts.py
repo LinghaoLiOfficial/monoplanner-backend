@@ -35,6 +35,9 @@ from app.prompts.templates.context_pack.output_schema import ContextPackOutput
 from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 from app.prompts.templates.design_asset.output_schema import DesignAssetOutput
 from app.prompts.templates.frontend_pages.output_schema import FrontendPagesOutput
+from app.prompts.templates.project_description_options.output_schema import (
+    ProjectDescriptionOptionsOutput,
+)
 from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.prompts.templates.ui_design.output_schema import UIDesignOutput
 from app.prompts.templates.ux_design.output_schema import UXDesignOutput
@@ -60,6 +63,7 @@ EXPECTED_EXAMPLE_COUNTS = {
 EXPECTED_RESPONSE_MODELS = {
     "business_story_decomposer": BusinessStoryDecompositionOutput,
     "blueprint_generator": ProjectBlueprintOutput,
+    "project_description_options": ProjectDescriptionOptionsOutput,
     "api_contract_generator": ApiContractOutput,
     "backend_implementation": BackendImplementationOutput,
     "db_model_generator": DbModelOutput,
@@ -575,6 +579,11 @@ def _template_variables(name: str) -> dict[str, object]:
         return build_business_story_decomposition_payload(project, requirement)
     if name == "blueprint_generator":
         return build_blueprint_generation_payload(project, requirement, [])
+    if name == "project_description_options":
+        return {
+            "task": "generate_project_description_options",
+            "project_name": "库存运营助手",
+        }
     if name == "api_contract_generator":
         return build_api_contract_generation_payload(project, blueprint_content)
     if name == "db_model_generator":

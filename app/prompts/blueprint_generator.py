@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.tech_stack import (
+    normalize_tech_stack_items,
+    tech_stack_items_to_payload,
+    tech_stack_items_to_text,
+)
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
 TEMPLATE_NAME = "blueprint_generator"
@@ -14,19 +19,25 @@ def build_blueprint_generation_payload(
     requirement: Any,
     business_stories: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    frontend_stack = normalize_stack(
-        getattr(project, "target_frontend_stack", None),
-        DEFAULT_FRONTEND_STACK,
+    frontend_items = normalize_tech_stack_items(
+        getattr(project, "target_frontend_stack_items", None)
+        or getattr(project, "target_frontend_stack", None)
+        or DEFAULT_FRONTEND_STACK,
+        infer_missing_type=True,
     )
-    backend_stack = normalize_stack(
-        getattr(project, "target_backend_stack", None),
-        DEFAULT_BACKEND_STACK,
+    backend_items = normalize_tech_stack_items(
+        getattr(project, "target_backend_stack_items", None)
+        or getattr(project, "target_backend_stack", None)
+        or DEFAULT_BACKEND_STACK,
+        infer_missing_type=True,
     )
     return {
         "project_name": project.name,
         "project_description": project.description or "",
-        "target_frontend_stack": frontend_stack,
-        "target_backend_stack": backend_stack,
+        "target_frontend_stack": tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK,
+        "target_backend_stack": tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK,
+        "target_frontend_stack_items": tech_stack_items_to_payload(frontend_items),
+        "target_backend_stack_items": tech_stack_items_to_payload(backend_items),
         "latest_requirement": {
             "id": str(requirement.id),
             "raw_text": requirement.raw_text,

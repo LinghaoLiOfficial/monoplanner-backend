@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 json_type = JSON().with_variant(JSONB, "postgresql")
 
+
 class Project(Base):
     __tablename__ = "projects"
     __table_args__ = (UniqueConstraint("owner_user_id", "name", name="uq_projects_owner_name"),)
@@ -49,6 +50,12 @@ class Project(Base):
     )
     target_backend_stack: Mapped[str] = mapped_column(
         Text(), nullable=False, default=DEFAULT_BACKEND_STACK
+    )
+    target_frontend_stack_items: Mapped[list[dict[str, Any]]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
+    )
+    target_backend_stack_items: Mapped[list[dict[str, Any]]] = mapped_column(
+        json_type, nullable=False, default=list, server_default="[]"
     )
     target_stacks_configured: Mapped[bool] = mapped_column(
         Boolean(), nullable=False, default=False, server_default="false"

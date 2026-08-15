@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
 TEMPLATE_NAME = "db_model_generator"
@@ -17,7 +18,13 @@ def build_db_model_generation_payload(
         "project_name": project.name,
         "blueprint_content": blueprint_content,
         "api_contract_content": api_contract_content,
-        "target_backend_stack": project.target_backend_stack,
+        "target_backend_stack": tech_stack_items_to_text(
+            getattr(project, "target_backend_stack_items", [])
+        )
+        or project.target_backend_stack,
+        "target_backend_stack_items": tech_stack_items_to_payload(
+            getattr(project, "target_backend_stack_items", [])
+        ),
     }
 
 

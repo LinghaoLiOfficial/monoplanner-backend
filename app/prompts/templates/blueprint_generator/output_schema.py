@@ -2,10 +2,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.tech_stack import TechStackItem
+
 
 class BlueprintTechStack(BaseModel):
-    frontend: str
-    backend: str
+    frontend: list[TechStackItem]
+    backend: list[TechStackItem]
 
 
 class BlueprintProject(BaseModel):
@@ -77,6 +79,7 @@ class BlueprintNonFunctionalRequirements(BaseModel):
 
 class ProjectBlueprintOutput(BaseModel):
     project: BlueprintProject
+    tech_stack: BlueprintTechStack
     product_goals: list[BlueprintProductGoal]
     user_roles: list[BlueprintUserRole]
     core_modules: list[BlueprintCoreModule]

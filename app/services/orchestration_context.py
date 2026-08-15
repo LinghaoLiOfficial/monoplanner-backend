@@ -18,6 +18,7 @@ from app.models.frontend_tooling import FrontendTooling
 from app.models.project import Project
 from app.models.ui_design import UIDesign
 from app.models.ux_design import UXDesign
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 
 ASSET_MODELS_BY_LAYER = {
     "ux_design": UXDesign,
@@ -38,6 +39,20 @@ def project_config_snapshot(project: Project) -> dict[str, Any]:
         "description": project.description,
         "target_frontend_stack": project.target_frontend_stack,
         "target_backend_stack": project.target_backend_stack,
+        "target_frontend_stack_items": tech_stack_items_to_payload(
+            getattr(project, "target_frontend_stack_items", [])
+        ),
+        "target_backend_stack_items": tech_stack_items_to_payload(
+            getattr(project, "target_backend_stack_items", [])
+        ),
+        "frontend_tech_stack": tech_stack_items_to_text(
+            getattr(project, "target_frontend_stack_items", [])
+        )
+        or project.target_frontend_stack,
+        "backend_tech_stack": tech_stack_items_to_text(
+            getattr(project, "target_backend_stack_items", [])
+        )
+        or project.target_backend_stack,
         "global_constraints": project.global_constraints,
         "coding_preferences": project.coding_preferences,
         "prompt_preferences": project.prompt_preferences,

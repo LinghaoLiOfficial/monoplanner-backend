@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_active_user, get_db
 from app.models.user import User
-from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectDescriptionOptionsRead,
+    ProjectDescriptionOptionsRequest,
+    ProjectRead,
+    ProjectUpdate,
+)
 from app.schemas.project_config import ProjectConfigRead, ProjectConfigUpdate
 from app.services.project_service import ProjectService
 
@@ -25,6 +31,15 @@ def list_projects(
     db: DbSession, current_user: CurrentUser, q: str | None = None
 ) -> list[ProjectRead]:
     return ProjectService(db, current_user).list_projects(q=q)
+
+
+@router.post("/description-options", response_model=ProjectDescriptionOptionsRead)
+def generate_project_description_options(
+    db: DbSession,
+    current_user: CurrentUser,
+    payload: ProjectDescriptionOptionsRequest,
+) -> ProjectDescriptionOptionsRead:
+    return ProjectService(db, current_user).generate_description_options(payload)
 
 
 @router.get("/{project_id}", response_model=ProjectRead)

@@ -1,16 +1,28 @@
 from typing import Any
 
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.tech_stack import normalize_tech_stack_items, tech_stack_items_to_text
 from app.llm.json_client import LLMJsonGenerationError, generate_json, should_use_real_llm
 from app.prompts.renderer import render_prompt_template
 from app.prompts.templates.context_pack.output_schema import ContextPackOutput
 
-FRONTEND_STACK = "Next.js + React + TypeScript + Tailwind CSS 4 + Shadcn/ui + pnpm"
-BACKEND_STACK = "Python 3.12 + FastAPI + Uvicorn + SQLAlchemy 2.x + Alembic + PostgreSQL + uv"
-
-
 def _project_summary(blueprint_content: dict[str, Any]) -> dict[str, Any]:
     project = blueprint_content.get("project")
     return project if isinstance(project, dict) else {}
+
+
+def _stack_summary(blueprint_content: dict[str, Any], side: str, default: str) -> str:
+    project = _project_summary(blueprint_content)
+    tech_stack = project.get("tech_stack")
+    if isinstance(tech_stack, dict):
+        items = tech_stack.get(side)
+        if isinstance(items, list):
+            summary = tech_stack_items_to_text(
+                normalize_tech_stack_items(items, infer_missing_type=True)
+            )
+            if summary:
+                return summary
+    return default
 
 
 def _list_from_blueprint(blueprint_content: dict[str, Any], key: str) -> list[Any]:
@@ -122,8 +134,8 @@ def build_llm_context_pack_payloads(
             "blueprint": blueprint_content,
             "api_contract": api_contract_content,
             "db_model": db_model_content,
-            "frontend_stack": FRONTEND_STACK,
-            "backend_stack": BACKEND_STACK,
+            "frontend_stack": _stack_summary(blueprint_content, "frontend", DEFAULT_FRONTEND_STACK),
+            "backend_stack": _stack_summary(blueprint_content, "backend", DEFAULT_BACKEND_STACK),
         },
     )
     response = generate_json(
@@ -167,7 +179,7 @@ def _build_rule_based_context_pack_payloads(
             "relevant_entities": _list_from_blueprint(blueprint_content, "domain_entities"),
         },
         "task_boundaries": ["Only implement frontend code.", "Do not modify backend code."],
-        "tech_stack": [FRONTEND_STACK],
+        "tech_stack": [_stack_summary(blueprint_content, "frontend", DEFAULT_FRONTEND_STACK)],
         "expected_output": [
             "Next.js pages/components matching ProjectBlueprint.pages.",
             "TypeScript API types derived from ApiContractDraft.",
@@ -197,7 +209,7 @@ def _build_rule_based_context_pack_payloads(
             "relevant_entities": _list_from_blueprint(blueprint_content, "domain_entities"),
         },
         "task_boundaries": ["Only implement backend code.", "Do not modify frontend code."],
-        "tech_stack": [BACKEND_STACK],
+        "tech_stack": [_stack_summary(blueprint_content, "backend", DEFAULT_BACKEND_STACK)],
         "expected_output": [
             "FastAPI routes matching ApiContractDraft.",
             "Pydantic schemas and SQLAlchemy models matching DbModelDraft.",

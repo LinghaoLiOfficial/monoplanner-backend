@@ -1,6 +1,10 @@
 from typing import Any
 
-from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK, normalize_stack
+from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.tech_stack import (
+    normalize_tech_stack_items,
+    tech_stack_items_to_payload,
+)
 from app.llm.json_client import generate_json
 from app.models.project import Project
 from app.models.requirement import Requirement
@@ -60,20 +64,27 @@ def validate_blueprint_content(
         project_content.get("business_goal"),
         "基于用户需求交付可执行的全栈产品方案。",
     )
-    frontend_stack = normalize_stack(
-        getattr(project, "target_frontend_stack", None),
-        DEFAULT_FRONTEND_STACK,
+    frontend_items = normalize_tech_stack_items(
+        getattr(project, "target_frontend_stack_items", None)
+        or tech_stack.get("frontend")
+        or getattr(project, "target_frontend_stack", None)
+        or DEFAULT_FRONTEND_STACK,
+        infer_missing_type=True,
     )
-    backend_stack = normalize_stack(
-        getattr(project, "target_backend_stack", None),
-        DEFAULT_BACKEND_STACK,
+    backend_items = normalize_tech_stack_items(
+        getattr(project, "target_backend_stack_items", None)
+        or tech_stack.get("backend")
+        or getattr(project, "target_backend_stack", None)
+        or DEFAULT_BACKEND_STACK,
+        infer_missing_type=True,
     )
-    project_content["tech_stack"] = {
-        "frontend": frontend_stack,
-        "backend": backend_stack,
+    normalized_tech_stack = {
+        "frontend": tech_stack_items_to_payload(frontend_items),
+        "backend": tech_stack_items_to_payload(backend_items),
     }
+    project_content["tech_stack"] = normalized_tech_stack
     content["project"] = project_content
-    content["tech_stack"] = project_content["tech_stack"]
+    content["tech_stack"] = normalized_tech_stack
 
     content["product_goals"] = [
         _normalize_product_goal(item) for item in content["product_goals"] if isinstance(item, dict)
@@ -122,13 +133,17 @@ def build_deterministic_blueprint_content(
     project: Project, requirement: Requirement
 ) -> dict[str, Any]:
     raw_requirement = getattr(requirement, "raw_text", "") or ""
-    frontend_stack = normalize_stack(
-        getattr(project, "target_frontend_stack", None),
-        DEFAULT_FRONTEND_STACK,
+    frontend_items = normalize_tech_stack_items(
+        getattr(project, "target_frontend_stack_items", None)
+        or getattr(project, "target_frontend_stack", None)
+        or DEFAULT_FRONTEND_STACK,
+        infer_missing_type=True,
     )
-    backend_stack = normalize_stack(
-        getattr(project, "target_backend_stack", None),
-        DEFAULT_BACKEND_STACK,
+    backend_items = normalize_tech_stack_items(
+        getattr(project, "target_backend_stack_items", None)
+        or getattr(project, "target_backend_stack", None)
+        or DEFAULT_BACKEND_STACK,
+        infer_missing_type=True,
     )
 
     one_liner = raw_requirement.strip().replace("\n", " ")[:120]
@@ -140,10 +155,14 @@ def build_deterministic_blueprint_content(
             "name": project.name,
             "one_liner": one_liner,
             "business_goal": "将自然语言业务需求转化为适合 vibe coding 工具使用的结构化上下文包。",
+            "tech_stack": {
+                "frontend": tech_stack_items_to_payload(frontend_items),
+                "backend": tech_stack_items_to_payload(backend_items),
+            },
         },
         "tech_stack": {
-            "frontend": frontend_stack,
-            "backend": backend_stack,
+            "frontend": tech_stack_items_to_payload(frontend_items),
+            "backend": tech_stack_items_to_payload(backend_items),
         },
         "product_goals": [{"goal": "输入业务需求并生成结构化项目蓝图", "priority": "must_have"}],
         "user_roles": [

@@ -17,7 +17,7 @@ Input:
 Input Fields:
   - task: string，固定任务名 generate_change_set。
   - layer: string，当前要生成变更集的资产层，只能是 ux_design、ui_design、frontend_pages、api_contract、backend_services、database_models 之一。
-  - project_config: object，项目配置，包含名称、描述、技术栈、约束和提示词偏好。
+  - project_config: object，项目配置，包含名称、技术栈、约束和提示词偏好。
   - selected_story: object，当前要执行的业务需求故事，是生成变更范围的主依据。
   - current_assets: object，当前 layer 的最新版本资产快照，可包含相关上下游资产摘要，用于判断本 layer 需要新增、修改、删除或保持不变。
 

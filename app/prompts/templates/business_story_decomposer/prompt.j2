@@ -6,7 +6,6 @@
 ===USER===
 Input:
   - project_name: {{ project_name }}
-  - project_description: {{ project_description }}
   - project_config:
   - {{ project_config | tojson_pretty }}
   - raw_requirement:
@@ -22,7 +21,6 @@ Input:
 
 Input Fields:
   - project_name: string，项目名称。
-  - project_description: string 或 null，项目描述。
   - project_config: object，项目配置、技术栈、全局约束、编码偏好和提示词偏好。
   - raw_requirement: string，新的原始用户需求；该需求是一次性的，应用后会失效。
   - current_business_stories: array，当前最新有效的业务需求故事池。

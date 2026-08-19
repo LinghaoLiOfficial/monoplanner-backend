@@ -36,7 +36,6 @@ def project_config_snapshot(project: Project) -> dict[str, Any]:
     return {
         "id": str(project.id),
         "name": project.name,
-        "description": project.description,
         "target_frontend_stack": project.target_frontend_stack,
         "target_backend_stack": project.target_backend_stack,
         "target_frontend_stack_items": tech_stack_items_to_payload(

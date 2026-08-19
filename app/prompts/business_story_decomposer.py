@@ -14,7 +14,6 @@ def build_business_story_decomposition_payload(
 ) -> dict[str, object]:
     return {
         "project_name": project.name,
-        "project_description": getattr(project, "description", None),
         "project_config": {
             "target_frontend_stack": getattr(project, "target_frontend_stack", None),
             "target_backend_stack": getattr(project, "target_backend_stack", None),

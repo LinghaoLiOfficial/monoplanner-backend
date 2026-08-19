@@ -6,7 +6,6 @@
 ===USER===
 Input:
   - project_name: {{ project_name }}
-  - project_description: {{ project_description }}
   - target_frontend_stack: {{ target_frontend_stack }}
   - target_backend_stack: {{ target_backend_stack }}
   - target_frontend_stack_items:
@@ -20,7 +19,6 @@ Input:
 
 Input Fields:
   - project_name: string，项目名称。
-  - project_description: string，可为空；为空时仅基于 latest_requirement 和 business_stories 推断。
   - target_frontend_stack: string，目标前端技术栈摘要，仅供参考。
   - target_backend_stack: string，目标后端技术栈摘要，仅供参考。
   - target_frontend_stack_items: array，前端技术项结构化输入，包含 name、type、可选 tags 和 role。

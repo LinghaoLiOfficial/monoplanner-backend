@@ -41,6 +41,7 @@ from app.prompts.templates.project_description_options.output_schema import (
 from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.prompts.templates.ui_design.output_schema import UIDesignOutput
 from app.prompts.templates.ux_design.output_schema import UXDesignOutput
+from app.services.orchestration_context import project_config_snapshot
 
 REQUIRED_USER_SECTIONS = (
     "Input:",
@@ -121,6 +122,7 @@ def test_business_story_payload_does_not_inject_schema() -> None:
     payload = build_business_story_decomposition_payload(project, requirement)
 
     assert "target_output_schema" not in payload
+    assert "project_description" not in payload
 
 
 def test_core_prompt_payloads_do_not_inject_schema() -> None:
@@ -144,8 +146,28 @@ def test_core_prompt_payloads_do_not_inject_schema() -> None:
     db_payload = build_db_model_generation_payload(project, blueprint_content, api_contract_content)
 
     assert "target_output_schema" not in blueprint_payload
+    assert "project_description" not in blueprint_payload
     assert "target_output_schema" not in api_payload
     assert "target_output_schema" not in db_payload
+
+
+def test_project_config_snapshot_omits_description() -> None:
+    project = SimpleNamespace(
+        id="project-1",
+        name="Demo",
+        description="Demo project",
+        target_frontend_stack="Frontend",
+        target_backend_stack="Backend",
+        target_frontend_stack_items=[],
+        target_backend_stack_items=[],
+        global_constraints=[],
+        coding_preferences=[],
+        prompt_preferences=[],
+    )
+
+    snapshot = project_config_snapshot(project)
+
+    assert "description" not in snapshot
 
 
 def test_orchestration_payloads_do_not_inject_schema() -> None:

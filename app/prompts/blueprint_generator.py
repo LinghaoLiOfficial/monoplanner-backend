@@ -33,7 +33,6 @@ def build_blueprint_generation_payload(
     )
     return {
         "project_name": project.name,
-        "project_description": project.description or "",
         "target_frontend_stack": tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK,
         "target_backend_stack": tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK,
         "target_frontend_stack_items": tech_stack_items_to_payload(frontend_items),

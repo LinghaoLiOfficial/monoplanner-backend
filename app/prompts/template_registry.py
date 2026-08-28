@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from app.prompts.templates.api_contract.output_schema import ApiContractAssetOutput
 from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
 from app.prompts.templates.backend_implementation.output_schema import (
     BackendImplementationOutput,
@@ -16,6 +17,7 @@ from app.prompts.templates.business_story_decomposer.output_schema import (
 )
 from app.prompts.templates.change_set.output_schema import ChangeSetOutput
 from app.prompts.templates.context_pack.output_schema import ContextPackOutput
+from app.prompts.templates.database_models.output_schema import DatabaseModelAssetOutput
 from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 from app.prompts.templates.design_asset.output_schema import DesignAssetOutput
 from app.prompts.templates.frontend_pages.output_schema import FrontendPagesOutput
@@ -63,6 +65,12 @@ PROMPT_TEMPLATE_CONTRACTS: tuple[PromptTemplateContract, ...] = (
         response_model=ApiContractOutput,
     ),
     PromptTemplateContract(
+        name="api_contract",
+        template_path=TEMPLATE_ROOT / "api_contract" / "prompt.j2",
+        schema_path=TEMPLATE_ROOT / "api_contract" / "output_schema.py",
+        response_model=ApiContractAssetOutput,
+    ),
+    PromptTemplateContract(
         name="backend_implementation",
         template_path=TEMPLATE_ROOT / "backend_implementation" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "backend_implementation" / "output_schema.py",
@@ -73,6 +81,12 @@ PROMPT_TEMPLATE_CONTRACTS: tuple[PromptTemplateContract, ...] = (
         template_path=TEMPLATE_ROOT / "db_model_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "db_model_generator" / "output_schema.py",
         response_model=DbModelOutput,
+    ),
+    PromptTemplateContract(
+        name="database_models",
+        template_path=TEMPLATE_ROOT / "database_models" / "prompt.j2",
+        schema_path=TEMPLATE_ROOT / "database_models" / "output_schema.py",
+        response_model=DatabaseModelAssetOutput,
     ),
     PromptTemplateContract(
         name="change_set",

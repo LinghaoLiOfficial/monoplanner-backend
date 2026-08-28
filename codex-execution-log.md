@@ -666,3 +666,81 @@
 - Actions: 更新 `docs/backend_llm_tasks_analysis.md` 的标题、范围和总览表述，并同步补充项目技术文档中的分析单位说明。
 - Result: 文档现已按模板对而非纯任务名视角组织，更贴合后续逐模板审查和维护。
 - Verification: Not run；仅更新文档与项目记忆。
+
+## 2026-08-23 23:01 +08 - 评估业务需求池后端排序一致性
+
+- Request: 确认后端是否也需要按照前端的“优先级 -> 标题首字母（中文按拼音）”规则排序。
+- Actions: 检查 `app/services/business_requirement_story_service.py` 的列表查询和现有依赖。
+- Result: 当前后端只按优先级重排，优先级内部仍保留 `sort_order/created_at` 顺序；本轮判断为页面功能可由前端满足，但为保证 API 与其他客户端一致，后端后续建议补齐排序。
+- Verification: 未修改后端代码，未运行测试。
+
+## 2026-08-23 23:11 +08 - 确认需求池排序暂不扩展
+
+- Request: 确认前端不重复排序，当前不考虑“优先级后按标题首字母/中文拼音”新规则。
+- Actions: 同步前后端项目文档，明确需求池前端保持后端接口返回顺序，暂不新增标题拼音排序。
+- Result: 当前需求池排序规则不扩展；后端现有排序继续作为接口顺序来源。
+- Verification: 未修改后端代码，未运行后端测试。
+
+## 2026-08-23 23:59 +08 - 核对垂直切片说明的 LLM 上下文链路
+
+- Request: 确认需求详情中的垂直切片说明是否由后端 LLM 输出，以及是否参与后续上下文。
+- Actions: 检查 `business_story_decomposer` 的 schema/prompt、业务故事落库归一化、`_current_story_snapshots` 和 `story_snapshot`。
+- Result: `vertical_slice_note` 是可选 LLM 输出字段，示例含义为完整业务闭环说明；字段会落库并通过 API 返回，但当前两个后续故事快照均未包含它，因此不参与业务故事更新、ChangeSet、设计资产和 PromptPack 的 LLM 上下文。
+- Verification: 未修改代码，完成源码路径核对。
+
+## 2026-08-23 - 持久化业务故事执行进度任务
+
+- Request: 修复刷新敏捷业务需求池后执行进度条消失的问题。
+- Actions: 为业务故事新增 `execution_generation_run_id` 字段和 Alembic 迁移；执行变更集时持久化后台任务 ID；增加后端回归断言。
+- Result: 刷新后 API 可返回执行任务关联，前端可以恢复并继续轮询对应进度。
+- Verification: 修改文件定向 `uv run ruff check app/models/business_requirement_story.py app/models/generation_run.py app/schemas/business_requirement_story.py app/services/generation_queue_service.py tests/test_orchestration_phase_3_4.py alembic/versions/20260823_0015_add_story_execution_generation_run.py`、SQLAlchemy model mapper、`compileall` 和 `alembic heads` 通过；目标 pytest 因当前环境没有可用的 pytest 可执行文件未运行；全量 Ruff 仍有既有无关问题。
+
+## 2026-08-23 - 限制同项目变更集生成并发
+
+- Request: 确保某个敏捷业务需求执行时其他需求不能执行。
+- Actions: 在 `GenerationQueueService.enqueue_change_set_for_story` 增加同项目活跃 `generate_change_set` 任务检查；同一故事复用任务，其他故事返回 409；新增并发限制回归测试。
+- Result: 后端队列层阻止同一项目多个需求同时生成变更集。
+- Verification: 后端定向 Ruff、SQLAlchemy model mapper 和 `git diff --check` 通过；目标 pytest 因当前环境没有可用的 pytest 可执行文件未运行。
+
+## 2026-08-24 11:07 +08 - 修复分层 ChangeSet 版本号语义
+
+- Request: 修复只执行一次敏捷业务后，变更集模块方案资产显示 v1-v6 而非各层 v1 的问题。
+- Actions: 修改 `app/services/change_set_generation_service.py`，让 `ChangeSet.version` 按项目 + layer 独立递增，并兼容旧数据中只通过 `affected_layers` 标识 layer 的记录；更新编排回归测试断言首批 6 层均为 v1、同层重新生成变为 v2。
+- Result: 新生成的同批 UX/UI/前端/API/后端/数据库分层 ChangeSet 不再共享项目级全局版本序列。
+- Verification: `uv run python -m pytest tests/test_orchestration_phase_3_4.py`、`uv run ruff check app/services/change_set_generation_service.py tests/test_orchestration_phase_3_4.py`、`git diff --check` 通过。
+
+## 2026-08-24 11:28 +08 - 调整变更集生成成功文案
+
+- Request: 将敏捷业务需求池需求详情卡片进度条的成功文本“分层变更集已生成”改为“变更集已生成”。
+- Actions: 修改 `app/services/change_set_generation_service.py` 中 `generate_change_set` 完成时写入 `GenerationRun.message` 的中文文案。
+- Result: 前端展示执行进度成功状态时会显示“变更集已生成。”。
+- Verification: `uv run ruff check app/services/change_set_generation_service.py`、`uv run python -m pytest tests/test_orchestration_phase_3_4.py -k story_execute_generates_change_set` 通过。
+
+## 2026-08-24 12:38 +08 - 移除 ChangeSet 不变分类
+
+- Request: 从变更集资产中移除“不变”分类，只保留新增、修改、删除。
+- Actions: 修改 `app/prompts/orchestration.py`、`app/prompts/templates/change_set/output_schema.py`、`app/prompts/templates/change_set/prompt.j2` 和 `app/services/orchestration_validators.py`，将 ChangeSet `module_changes` 契约改为 `added/modified/removed`，并让校验归一化丢弃输入中的 `unchanged`；更新编排测试覆盖兼容输入。
+- Result: 新生成的 ChangeSet 不再要求或保存 `unchanged` 分类，历史/异常输入中的 `unchanged` 不会进入归一化结果。
+- Verification: `uv run ruff check app/prompts/orchestration.py app/prompts/templates/change_set/output_schema.py app/services/orchestration_validators.py tests/test_orchestration_phase_3_4.py`、`uv run python -m pytest tests/test_orchestration_phase_3_4.py`、`git diff --check` 通过。
+
+## 2026-08-24 - 拆分 ChangeSet 与资产生成任务
+
+- Request: 将敏捷业务执行和变更集应用改为父任务加资产层独立子任务，并在全部资产完成后单独生成 PromptPack。
+- Actions: 为 `GenerationRun` 接入父子关系和 `asset_layer`；队列新增父任务协调、按固定依赖顺序激活子任务、失败聚合和失败子任务重试；ChangeSet 与资产服务改为单层执行入口；PromptPack 改为应用父任务的独立子任务；前端同步扩展任务聚合类型；更新队列工作流测试辅助函数。
+- Result: 敏捷业务执行只生成各层 ChangeSet；应用阶段按 UX/UI/前端/API/后端/数据库串行生成资产，全部成功后才生成 PromptPack 并将批次 ChangeSet 标记为 `applied`；成功资产在部分失败时保留。
+- Verification: `uv run --group dev python -m pytest tests/test_orchestration_phase_3_4.py tests/test_generation_queue.py tests/test_prompt_template_contracts.py -q`，40 passed；目标 Ruff 通过；前端 `pnpm exec tsc --noEmit`、`pnpm lint` 通过；全量 Ruff 仍有既有无关文件格式问题。
+- Follow-ups: 真实多 worker 部署时应继续观察同一父任务的数据库锁竞争和失败子任务的人工重试体验。
+
+## 2026-08-25 14:10 +08 - 按项目打开时间排序
+
+- Request: 我的项目按点击进入时间排序；新建项目的点击时间默认为创建时间。
+- Actions: 为 `Project` 增加 `last_opened_at`，新增 Alembic 迁移 `20260825_0017` 回填已有项目的创建时间；项目列表改按 `last_opened_at` 倒序；新增 `POST /projects/{project_id}/opened` 写入打开时间，并补充项目排序测试。
+- Result: 新创建项目的 `last_opened_at` 与 `created_at` 相同；后续进入项目会更新打开时间，使其在项目列表中置顶。
+- Verification: `uv run pytest tests/test_projects.py`（29 passed）、`uv run alembic heads`、`uv run ruff check alembic/versions/20260825_0017_add_project_last_opened_at.py`、`git diff --check` 通过。
+
+## 2026-08-25 23:56 +08 - 增加活动变更集应用任务查询
+
+- Request: 为变更集应用进度条提供刷新和模块切换后的恢复能力。
+- Actions: 在 `ChangeSetService` 中新增项目级活动 `apply_change_set` 父任务查询，并在变更集 API 增加 `/projects/{project_id}/change-set-application-runs` 接口。
+- Result: 前端可以重新进入变更集模块时读取仍在排队、运行或部分完成的应用任务。
+- Verification: `uv run pytest tests/test_generation_queue.py -q`（16 passed）、`git diff --check` 通过。

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,6 +16,7 @@ from app.models.frontend_page_structure import FrontendPageStructure
 from app.models.generation_run import GenerationRun
 from app.models.ui_design import UIDesign
 from app.models.ux_design import UXDesign
+from app.services.orchestration_validators import validate_change_set_payload
 from tests.llm_stream_helpers import patch_llm_stream, stream_json_payload
 from tests.queue_helpers import run_generation_job_in_new_session
 
@@ -83,9 +86,9 @@ def _change_set_payload(*, layers: list[str] | None = None) -> dict:
         ],
         "impact_summary": "实现任务创建闭环。",
         "module_changes": {
-            "ux_design": {"added": [{"target": "任务创建流程"}]},
-            "ui_design": {"added": [{"target": "任务创建表单"}]},
-            "api_contract": {"added": ["POST /tasks"]},
+            "ux_design": {"added": [{"target": "任务创建流程"}], "unchanged": ["旧流程说明"]},
+            "ui_design": {"added": [{"target": "任务创建表单"}], "unchanged": ["旧视觉说明"]},
+            "api_contract": {"added": ["POST /tasks"], "unchanged": ["旧接口说明"]},
         },
         "risks": [],
         "open_questions": [],
@@ -96,6 +99,35 @@ def _change_set_payload(*, layers: list[str] | None = None) -> dict:
         "content": {"story": "task create"},
         "diff": {"added": ["task create"]},
     }
+
+
+def test_change_set_title_is_normalized_to_single_suffix() -> None:
+    payload_without_suffix = _change_set_payload(layers=["api_contract"])
+    payload_without_suffix["title"] = "论文文件上传 API 契约定义"
+    payload_with_suffix = _change_set_payload(layers=["api_contract"])
+    payload_with_suffix["title"] = "论文文件上传 API 契约定义变更集"
+    payload_with_duplicate_suffix = _change_set_payload(layers=["api_contract"])
+    payload_with_duplicate_suffix["title"] = "论文文件上传 API 契约定义变更集变更集"
+
+    assert (
+        validate_change_set_payload(payload_without_suffix, expected_layer="api_contract")[
+            "title"
+        ]
+        == "论文文件上传 API 契约定义变更集"
+    )
+    assert (
+        validate_change_set_payload(payload_with_suffix, expected_layer="api_contract")[
+            "title"
+        ]
+        == "论文文件上传 API 契约定义变更集"
+    )
+    assert (
+        validate_change_set_payload(
+            payload_with_duplicate_suffix,
+            expected_layer="api_contract",
+        )["title"]
+        == "论文文件上传 API 契约定义变更集"
+    )
 
 
 def _asset_payload(title: str, content: dict | None = None) -> dict:
@@ -374,6 +406,12 @@ def test_story_execute_generates_change_set(
 
     assert response.status_code == 202
     assert response.json()["run_type"] == "generate_change_set"
+    execution_run_id = response.json()["id"]
+    db_session.expire_all()
+    persisted_story = db_session.get(BusinessRequirementStory, story.id)
+    assert persisted_story is not None
+    assert str(persisted_story.execution_generation_run_id) == execution_run_id
+
     run = run_generation_job_in_new_session(response.json()["id"])
     assert run.status == "completed"
 
@@ -388,6 +426,7 @@ def test_story_execute_generates_change_set(
         "backend_services",
         "database_models",
     }
+    assert {item.version for item in change_sets} == {1}
     assert len({item.batch_id for item in change_sets}) == 1
     ux_change_set = next(item for item in change_sets if item.layer == "ux_design")
     assert ux_change_set.title == "创建任务变更集"
@@ -395,6 +434,48 @@ def test_story_execute_generates_change_set(
     assert ux_change_set.status == "ready"
     assert ux_change_set.affected_layers == ["ux_design"]
     assert ux_change_set.module_changes["ux_design"]["added"]
+    assert "unchanged" not in ux_change_set.module_changes["ux_design"]
+
+
+def test_story_execute_rejects_other_story_while_change_set_generation_is_active(
+    client: TestClient, db_session: Session
+) -> None:
+    project, requirement, story = _create_project_requirement_and_story(client, db_session)
+    other_story = BusinessRequirementStory(
+        project_id=project["id"],
+        requirement_id=requirement["id"],
+        title="另一个需求",
+        priority="p2_should",
+        status="ready",
+        implementation_scope="fullstack",
+        affected_layers=["frontend_pages"],
+        user_story="另一个需求用户故事",
+        business_scope={"included": [], "excluded": []},
+        data_rules=[],
+        acceptance_criteria=[],
+        sort_order=2,
+        is_current=True,
+    )
+    db_session.add(other_story)
+    db_session.commit()
+
+    active_run = GenerationRun(
+        project_id=project["id"],
+        requirement_id=requirement["id"],
+        run_type="generate_change_set",
+        status="running",
+        progress=30,
+        message="正在生成变更集...",
+        queue_payload={"project_id": project["id"], "story_id": str(story.id)},
+        input_snapshot={"project_id": project["id"], "story_id": str(story.id)},
+    )
+    db_session.add(active_run)
+    db_session.commit()
+
+    response = client.post(f"/api/v1/business-stories/{other_story.id}/execute")
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "当前项目已有其他需求正在执行，请等待完成后再试。"
 
 
 def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
@@ -500,7 +581,7 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     assert response.status_code == 202
     run = run_generation_job_in_new_session(response.json()["id"])
     assert run.status == "completed"
-    assert run.output_snapshot["change_set_id"] == str(change_set.id)
+    assert run.output_snapshot["change_set_ids"]
     assert [_prompt_layer(payload) for payload in captured_payloads[:6]] == [
         "ux_design",
         "ui_design",
@@ -552,6 +633,75 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     assert prompt_pack.change_set_id == change_set.id
     assert "UX/UI 差异" in prompt_pack.prompt_text
     assert "ux_design" in prompt_pack.prompt_text
+
+
+def test_change_set_batch_apply_marks_batch_and_creates_one_prompt_pack(
+    client: TestClient, db_session: Session, monkeypatch
+) -> None:
+    project, requirement, story = _create_project_requirement_and_story(client, db_session)
+    batch_id = uuid4()
+    ux_change_set = ChangeSet(
+        project_id=project["id"],
+        source_requirement_id=requirement["id"],
+        source_story_id=story.id,
+        version=1,
+        batch_id=batch_id,
+        layer="ux_design",
+        title="UX 方案",
+        status="ready",
+        implementation_scope="frontend_only",
+        affected_layers=["ux_design"],
+        module_changes={"ux_design": {"added": ["任务创建流程"]}},
+    )
+    ui_change_set = ChangeSet(
+        project_id=project["id"],
+        source_requirement_id=requirement["id"],
+        source_story_id=story.id,
+        version=1,
+        batch_id=batch_id,
+        layer="ui_design",
+        title="UI 方案",
+        status="ready",
+        implementation_scope="frontend_only",
+        affected_layers=["ui_design"],
+        module_changes={"ui_design": {"added": ["任务创建表单规则"]}},
+    )
+    db_session.add_all([ux_change_set, ui_change_set])
+    db_session.commit()
+    captured_payloads: list[str] = []
+    mocked_outputs = [_ux_design_payload(), _ui_design_payload(), _prompt_pack_payload()]
+
+    def stream(_self, _system_prompt, user_payload, **_kwargs):
+        captured_payloads.append(user_payload)
+        if not mocked_outputs:
+            raise AssertionError("No mocked LLM stream payload remaining.")
+        return stream_json_payload(mocked_outputs.pop(0))
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
+
+    response = client.post(
+        f"/api/v1/projects/{project['id']}/change-set-batches/{batch_id}/apply"
+    )
+
+    assert response.status_code == 202
+    run = run_generation_job_in_new_session(response.json()["id"])
+    assert run.status == "completed"
+    assert run.output_snapshot["batch_id"] == str(batch_id)
+    db_session.expire_all()
+    batch_change_sets = db_session.scalars(
+        select(ChangeSet).where(ChangeSet.batch_id == batch_id)
+    ).all()
+    assert {item.status for item in batch_change_sets} == {"applied"}
+    assert {item.is_current for item in batch_change_sets} == {False}
+    assert len(db_session.scalars(select(UXDesign)).all()) == 1
+    assert len(db_session.scalars(select(UIDesign)).all()) == 1
+    prompt_packs = db_session.scalars(
+        select(ContextPack).where(ContextPack.role == "prompt_pack")
+    ).all()
+    assert len(prompt_packs) == 1
+    assert '"change_sets": [' in captured_payloads[-1]
+    assert "UX 方案" in captured_payloads[-1]
+    assert "UI 方案" in captured_payloads[-1]
 
 
 def test_change_set_apply_reuses_assets_already_created_by_same_run(
@@ -738,9 +888,14 @@ def test_change_set_apply_llm_request_error_is_requeued(
 
     assert response.status_code == 202
     result = run_generation_job_in_new_session(response.json()["id"])
-    assert result.status == "queued"
-    assert result.attempt_count == 1
-    assert result.next_attempt_at is not None
+    assert result.status == "waiting"
+    child_runs = db_session.scalars(
+        select(GenerationRun).where(GenerationRun.parent_run_id == result.id)
+    ).all()
+    assert len(child_runs) == 1
+    assert child_runs[0].status == "queued"
+    assert child_runs[0].attempt_count == 1
+    assert child_runs[0].next_attempt_at is not None
     db_session.expire_all()
     assert db_session.scalars(select(UXDesign)).all() == []
 
@@ -797,6 +952,7 @@ def test_regenerate_change_set_creates_new_record(
     assert len(change_sets) == 2
     assert change_sets[0].title == "旧变更集"
     assert change_sets[1].title == "创建任务变更集"
+    assert change_sets[1].version == 2
 
 
 def test_prompt_pack_generate_only_creates_context_pack(

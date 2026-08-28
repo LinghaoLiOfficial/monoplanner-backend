@@ -146,6 +146,7 @@ def test_project_crud_flow(client: TestClient) -> None:
     first_project = first.json()
     assert first_project["status"] == "draft"
     assert "Next.js" in first_project["target_frontend_stack"]
+    assert first_project["last_opened_at"] == first_project["created_at"]
 
     list_response = client.get("/api/v1/projects")
     assert list_response.status_code == 200
@@ -167,6 +168,24 @@ def test_project_crud_flow(client: TestClient) -> None:
     assert delete_response.status_code == 204
     missing_response = client.get(f"/api/v1/projects/{first_project['id']}")
     assert missing_response.status_code == 404
+
+
+def test_project_list_orders_by_last_opened_at(client: TestClient) -> None:
+    first_project = client.post("/api/v1/projects", json={"name": "First"}).json()
+    second_project = client.post("/api/v1/projects", json={"name": "Second"}).json()
+
+    opened_response = client.post(f"/api/v1/projects/{first_project['id']}/opened")
+
+    assert opened_response.status_code == 200
+    assert opened_response.json()["last_opened_at"] >= first_project["last_opened_at"]
+
+    list_response = client.get("/api/v1/projects")
+
+    assert list_response.status_code == 200
+    assert [item["id"] for item in list_response.json()] == [
+        first_project["id"],
+        second_project["id"],
+    ]
 
 
 def test_create_project_does_not_require_description(client: TestClient) -> None:

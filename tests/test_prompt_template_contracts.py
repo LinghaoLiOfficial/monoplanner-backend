@@ -21,6 +21,7 @@ from app.prompts.renderer import (
     tojson_pretty,
 )
 from app.prompts.template_registry import PROMPT_TEMPLATE_CONTRACTS
+from app.prompts.templates.api_contract.output_schema import ApiContractAssetOutput
 from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
 from app.prompts.templates.backend_implementation.output_schema import (
     BackendImplementationOutput,
@@ -32,6 +33,7 @@ from app.prompts.templates.business_story_decomposer.output_schema import (
 )
 from app.prompts.templates.change_set.output_schema import ChangeSetOutput
 from app.prompts.templates.context_pack.output_schema import ContextPackOutput
+from app.prompts.templates.database_models.output_schema import DatabaseModelAssetOutput
 from app.prompts.templates.db_model_generator.output_schema import DbModelOutput
 from app.prompts.templates.design_asset.output_schema import DesignAssetOutput
 from app.prompts.templates.frontend_pages.output_schema import FrontendPagesOutput
@@ -66,8 +68,10 @@ EXPECTED_RESPONSE_MODELS = {
     "blueprint_generator": ProjectBlueprintOutput,
     "project_description_options": ProjectDescriptionOptionsOutput,
     "api_contract_generator": ApiContractOutput,
+    "api_contract": ApiContractAssetOutput,
     "backend_implementation": BackendImplementationOutput,
     "db_model_generator": DbModelOutput,
+    "database_models": DatabaseModelAssetOutput,
     "change_set": ChangeSetOutput,
     "design_asset": DesignAssetOutput,
     "ux_design": UXDesignOutput,
@@ -113,6 +117,15 @@ def test_registered_templates_render_to_non_empty_system_and_user() -> None:
 def test_registered_templates_keep_runtime_response_models() -> None:
     for contract in PROMPT_TEMPLATE_CONTRACTS:
         assert contract.response_model is EXPECTED_RESPONSE_MODELS[contract.name]
+
+
+def test_ux_prompt_requires_readable_chinese_user_visible_names() -> None:
+    rendered = render_prompt_template("ux_design", _template_variables("ux_design"))
+
+    assert "面向用户阅读的名称和值必须使用中文自然语言业务表达" in rendered.user
+    assert "不要把 screen_name、region_name、flow_name、primary_actor 等用户可见名称写成英文变量名" in rendered.user
+    assert "paper_upload_flow" in rendered.user
+    assert "论文上传流程" in rendered.user
 
 
 def test_business_story_payload_does_not_inject_schema() -> None:
@@ -626,10 +639,14 @@ def _template_variables(name: str) -> dict[str, object]:
         "ui_design",
         "frontend_pages",
         "backend_implementation",
+        "api_contract",
+        "database_models",
     }:
         layer = (
             "backend_services"
             if name in {"design_asset", "backend_implementation"}
+            else "database_models"
+            if name == "database_models"
             else name
         )
         return build_design_asset_payload(

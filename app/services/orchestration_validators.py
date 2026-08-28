@@ -23,7 +23,7 @@ def validate_change_set_payload(
     *,
     expected_layer: str | None = None,
 ) -> dict[str, Any]:
-    title = _require_string(parsed.get("title"), "title")
+    title = _normalize_change_set_title(_require_string(parsed.get("title"), "title"))
     scope = _require_enum(
         parsed.get("implementation_scope"),
         VALID_IMPLEMENTATION_SCOPES,
@@ -135,6 +135,14 @@ def _normalize_status(value: Any) -> str:
     return _require_enum(value, VALID_CHANGE_SET_STATUSES, "status")
 
 
+def _normalize_change_set_title(value: str) -> str:
+    suffix = "变更集"
+    normalized = value.strip()
+    while normalized.endswith(suffix):
+        normalized = normalized.removesuffix(suffix).strip()
+    return f"{normalized}{suffix}"
+
+
 def _normalize_prompt(value: dict[str, Any]) -> dict[str, Any]:
     return {
         "needed": bool(value.get("needed", False)),
@@ -171,7 +179,6 @@ def _normalize_module_changes(
             "added": _list_or_empty(current.get("added")),
             "modified": _list_or_empty(current.get("modified")),
             "removed": _list_or_empty(current.get("removed")),
-            "unchanged": _list_or_empty(current.get("unchanged")),
         }
     return normalized
 

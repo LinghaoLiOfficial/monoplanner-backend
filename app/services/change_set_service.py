@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.change_set import ChangeSet
+from app.models.generation_run import GenerationRun
 from app.models.user import User
 from app.schemas.change_set import ChangeSetUpdate
 from app.services.project_service import ProjectService
@@ -42,6 +43,23 @@ class ChangeSetService:
                 select(ChangeSet)
                 .where(ChangeSet.project_id == project_id)
                 .order_by(ChangeSet.created_at.desc())
+            )
+        )
+
+    def list_active_application_runs(self, project_id: UUID) -> list[GenerationRun]:
+        ProjectService(self.db, self.current_user).get_project(project_id)
+        return list(
+            self.db.scalars(
+                select(GenerationRun)
+                .where(
+                    GenerationRun.project_id == project_id,
+                    GenerationRun.run_type == "apply_change_set",
+                    GenerationRun.parent_run_id.is_(None),
+                    GenerationRun.status.in_(
+                        ["queued", "running", "waiting", "partially_completed"]
+                    ),
+                )
+                .order_by(GenerationRun.created_at.desc())
             )
         )
 

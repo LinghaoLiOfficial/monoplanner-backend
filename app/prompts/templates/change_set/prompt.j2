@@ -19,14 +19,22 @@ Input Fields:
   - layer: string，当前要生成变更集的资产层，只能是 ux_design、ui_design、frontend_pages、api_contract、backend_services、database_models 之一。
   - project_config: object，项目配置，包含名称、技术栈、约束和提示词偏好。
   - selected_story: object，当前要执行的业务需求故事，是生成变更范围的主依据。
-  - current_assets: object，当前 layer 的最新版本资产快照，可包含相关上下游资产摘要，用于判断本 layer 需要新增、修改、删除或保持不变。
+  - current_assets: object，当前 layer 的最新版本资产快照，可包含相关上下游资产摘要，用于判断本 layer 需要新增、修改或删除。
 
 Output Fields:
   - title: string，变更集名称，应该能概括本次业务变更。
   - implementation_scope: enum，frontend_only、backend_only、fullstack、non_code 之一。
   - affected_layers: array[enum]，必须只包含当前 layer。
   - impact_summary: string，说明本 layer 变更对产品、设计资产和实现范围的影响。
-  - module_changes: object，必须以当前 layer 为 key；该 layer 包含 added、modified、removed、unchanged 四个数组。
+  - module_changes: object，必须以当前 layer 为 key；该 layer 包含 added、modified、removed 三个数组。每个数组元素必须优先使用字段级变更对象，历史短字符串仅用于兼容。
+  - module_changes.<layer>.<operation>[].field: string，资产输出契约中的字段名或字段路径。
+  - module_changes.<layer>.<operation>[].selector: object，用于定位数组中的具体对象，例如 group_name、endpoint_path、table_name、field_name、screen_name、flow_name、component_name 或 path。
+  - module_changes.<layer>.<operation>[].before: any，上一版本该字段或对象的状态；新增时可为 null。
+  - module_changes.<layer>.<operation>[].after: any，本次目标状态；删除时可为 null。
+  - module_changes.<layer>.<operation>[].reason: string，变化原因。
+  - module_changes.<layer>.<operation>[].constraints: array，必须遵守的业务、契约或设计约束。
+  - module_changes.<layer>.<operation>[].dependencies: array，依赖的其他字段、资产层或变更条目。
+  - module_changes.<layer>.<operation>[].acceptance_criteria: array，判断该条变更已落实的验收条件。
   - risks: array，实施风险或一致性风险，没有则为空数组。
   - open_questions: array，仍需确认的问题，没有则为空数组。
   - recommended_prompt_strategy: object，推荐后续 PromptPack 策略，可包含 generate_frontend_prompt、generate_backend_prompt、reason。
@@ -35,10 +43,13 @@ Output Fields:
 
 Output Rules:
   - 只输出当前 layer 的变更集；不要混入其他 layer 的完整变更。
+  - title 必须以“变更集”结尾；不要重复输出“变更集变更集”。
   - affected_layers 必须等于 [layer]。
-  - module_changes 必须只描述当前 layer 的 added、modified、removed、unchanged。
+  - module_changes 必须只描述当前 layer 的 added、modified、removed；每条变更必须绑定当前 layer 的资产字段，不得只写无法定位的泛化短语。
+  - 变更条目必须描述从上一版本到目标版本的过程，不要输出完整目标资产快照；未变化的字段不要重复列出。
+  - API 契约使用资源组、HTTP 方法 + 接口路径和错误码定位；数据库模型使用表名和字段名定位；UX 使用页面/流程/步骤/分支定位；UI 使用页面/组件定位；前端和后端使用路由、目录路径或逻辑目标定位。
   - content.layer 必须等于当前 layer。
-  - 如果当前 layer 无需修改，仍可输出空 added/modified/removed，并在 unchanged 中说明保持不变的原因。
+  - 如果当前 layer 无需修改，仍可输出空 added/modified/removed，并在 impact_summary、risks 或 open_questions 中说明原因。
   - 只生成结构化变更计划，不生成业务代码。
   - 只输出严格 JSON object，不要 Markdown 或解释文字。
 
@@ -56,7 +67,7 @@ Example Output [1]:
   "affected_layers": ["api_contract"],
   "impact_summary": "新增低库存列表和补货标记 API 契约。",
   "module_changes": {
-    "api_contract": {"added": ["GET /inventory/low-stock", "PATCH /inventory/{id}/replenished"], "modified": [], "removed": [], "unchanged": []}
+    "api_contract": {"added": ["GET /inventory/low-stock", "PATCH /inventory/{id}/replenished"], "modified": [], "removed": []}
   },
   "risks": ["低库存阈值来源需要明确"],
   "open_questions": ["补货标记是否需要审计备注？"],
@@ -74,12 +85,12 @@ Example Input [2]:
 
 Example Output [2]:
 {
-  "title": "调整低库存状态视觉层级",
+  "title": "调整低库存状态视觉层级变更集",
   "implementation_scope": "frontend_only",
   "affected_layers": ["ui_design"],
   "impact_summary": "仅调整前端状态展示，不改变 API、服务或数据库。",
   "module_changes": {
-    "ui_design": {"added": [], "modified": ["低库存 Badge 颜色和层级"], "removed": [], "unchanged": []}
+    "ui_design": {"added": [], "modified": ["低库存 Badge 颜色和层级"], "removed": []}
   },
   "risks": [],
   "open_questions": [],

@@ -41,6 +41,12 @@ class BusinessRequirementStory(Base):
         nullable=True,
         index=True,
     )
+    execution_generation_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("generation_runs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     priority: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft", index=True)
@@ -87,5 +93,6 @@ class BusinessRequirementStory(Base):
         back_populates="business_requirement_stories"
     )
     generation_run: Mapped[GenerationRun | None] = relationship(
-        back_populates="business_requirement_stories"
+        back_populates="business_requirement_stories",
+        foreign_keys=[generation_run_id],
     )

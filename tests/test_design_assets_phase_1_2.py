@@ -297,7 +297,7 @@ def test_change_sets_and_existing_asset_patch_aliases(
     context_pack = ContextPack(
         project_id=project["id"],
         blueprint_id=blueprint.id,
-        role="backend_engineer",
+        role="prompt_pack",
         title="Prompt",
         summary="初版",
         content={"batch_summary": "demo"},
@@ -352,6 +352,7 @@ def test_change_sets_and_existing_asset_patch_aliases(
 
     prompt_list = client.get(f"/api/v1/projects/{project['id']}/prompt-packs")
     assert prompt_list.status_code == 200
+    assert [item["role"] for item in prompt_list.json()] == ["prompt_pack"]
     assert prompt_list.json()[0]["id"] == str(context_pack.id)
 
     context_patch = client.patch(
@@ -362,3 +363,53 @@ def test_change_sets_and_existing_asset_patch_aliases(
     assert context_patch.json()["id"] != str(context_pack.id)
     assert context_patch.json()["version"] == 2
     assert context_patch.json()["prompt_text"] == "Updated prompt"
+
+
+def test_prompt_packs_default_to_prompt_pack_role(
+    client: TestClient, db_session: Session
+) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Prompt Pack Filter"}).json()
+    prompt_pack = ContextPack(
+        project_id=project["id"],
+        version=2,
+        role="prompt_pack",
+        title="Prompt Pack",
+        summary="当前有效",
+        content={"batch_summary": "prompt"},
+        prompt_text="# Prompt Pack",
+        format="markdown",
+    )
+    legacy_pack = ContextPack(
+        project_id=project["id"],
+        version=1,
+        role="frontend_engineer",
+        title="Legacy Frontend",
+        summary="旧版上下文",
+        content={"batch_summary": "legacy"},
+        prompt_text="# Legacy",
+        format="markdown",
+    )
+    db_session.add_all([legacy_pack, prompt_pack])
+    db_session.commit()
+    db_session.refresh(prompt_pack)
+    db_session.refresh(legacy_pack)
+
+    response = client.get(f"/api/v1/projects/{project['id']}/prompt-packs")
+    assert response.status_code == 200
+    payload = response.json()
+    assert [item["role"] for item in payload] == ["prompt_pack"]
+    assert payload[0]["id"] == str(prompt_pack.id)
+
+    filtered = client.get(
+        f"/api/v1/projects/{project['id']}/prompt-packs",
+        params={"role": "frontend_engineer"},
+    )
+    assert filtered.status_code == 200
+    assert [item["role"] for item in filtered.json()] == ["prompt_pack"]
+
+    legacy_response = client.get(
+        f"/api/v1/projects/{project['id']}/context-packs",
+        params={"role": "frontend_engineer"},
+    )
+    assert legacy_response.status_code == 200
+    assert [item["role"] for item in legacy_response.json()] == ["frontend_engineer"]

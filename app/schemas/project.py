@@ -127,6 +127,7 @@ class ProjectRead(BaseModel):
     prompt_preferences: list[Any] = Field(default_factory=list)
     status: str
     created_at: datetime
+    last_opened_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -144,12 +145,18 @@ class ProjectRead(BaseModel):
     @computed_field
     @property
     def frontend_tech_stack(self) -> str:
-        return tech_stack_items_to_text(self.target_frontend_stack_items) or self.target_frontend_stack
+        return (
+            tech_stack_items_to_text(self.target_frontend_stack_items)
+            or self.target_frontend_stack
+        )
 
     @computed_field
     @property
     def backend_tech_stack(self) -> str:
-        return tech_stack_items_to_text(self.target_backend_stack_items) or self.target_backend_stack
+        return (
+            tech_stack_items_to_text(self.target_backend_stack_items)
+            or self.target_backend_stack
+        )
 
     @field_validator("target_frontend_stack", mode="before")
     @classmethod

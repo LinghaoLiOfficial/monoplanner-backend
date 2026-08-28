@@ -12,11 +12,21 @@ ORDERED_AFFECTED_LAYERS = [
 ]
 
 
+class ModuleChangeItem(BaseModel):
+    field: str | None = None
+    selector: dict[str, Any] = Field(default_factory=dict)
+    before: Any = None
+    after: Any = None
+    reason: str | None = None
+    constraints: list[Any] = Field(default_factory=list)
+    dependencies: list[Any] = Field(default_factory=list)
+    acceptance_criteria: list[Any] = Field(default_factory=list)
+
+
 class ModuleChangeBucket(BaseModel):
-    added: list[Any] = Field(default_factory=list)
-    modified: list[Any] = Field(default_factory=list)
-    removed: list[Any] = Field(default_factory=list)
-    unchanged: list[Any] = Field(default_factory=list)
+    added: list[ModuleChangeItem | str] = Field(default_factory=list)
+    modified: list[ModuleChangeItem | str] = Field(default_factory=list)
+    removed: list[ModuleChangeItem | str] = Field(default_factory=list)
 
 
 class ChangeSetOutput(BaseModel):

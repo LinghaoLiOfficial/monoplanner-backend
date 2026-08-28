@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -58,15 +59,20 @@ class ProjectService:
             DEFAULT_BACKEND_STACK,
             infer_missing_type=True,
         )
+        created_at = datetime.now(UTC)
         project = Project(
             owner_user_id=user.id,
             name=name,
             description=payload.description,
-            target_frontend_stack=tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK,
+            target_frontend_stack=(
+                tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK
+            ),
             target_backend_stack=tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK,
             target_frontend_stack_items=tech_stack_items_to_payload(frontend_items),
             target_backend_stack_items=tech_stack_items_to_payload(backend_items),
             target_stacks_configured=False,
+            created_at=created_at,
+            last_opened_at=created_at,
         )
         self.db.add(project)
         self._commit_project_change()
@@ -120,7 +126,11 @@ class ProjectService:
         keyword = q.strip() if q is not None else ""
         if keyword:
             statement = statement.where(Project.name.ilike(f"%{keyword}%"))
-        return list(self.db.scalars(statement.order_by(Project.created_at.desc())))
+        return list(
+            self.db.scalars(
+                statement.order_by(Project.last_opened_at.desc(), Project.created_at.desc())
+            )
+        )
 
     def get_project(self, project_id: UUID) -> Project:
         project = self.db.get(Project, project_id)
@@ -130,6 +140,14 @@ class ProjectService:
                 detail="Project not found.",
             )
         self.ensure_project_access(project)
+        return project
+
+    def record_project_opened(self, project_id: UUID) -> Project:
+        project = self.get_project(project_id)
+        project.last_opened_at = datetime.now(UTC)
+        self.db.add(project)
+        self._commit_project_change()
+        self.db.refresh(project)
         return project
 
     def ensure_project_access(self, project: Project) -> None:
@@ -229,8 +247,12 @@ class ProjectService:
             backend_items = normalize_tech_stack_items(backend_source, infer_missing_type=True)
             updates["target_frontend_stack_items"] = tech_stack_items_to_payload(frontend_items)
             updates["target_backend_stack_items"] = tech_stack_items_to_payload(backend_items)
-            updates["target_frontend_stack"] = tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK
-            updates["target_backend_stack"] = tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK
+            updates["target_frontend_stack"] = (
+                tech_stack_items_to_text(frontend_items) or DEFAULT_FRONTEND_STACK
+            )
+            updates["target_backend_stack"] = (
+                tech_stack_items_to_text(backend_items) or DEFAULT_BACKEND_STACK
+            )
             updates["target_stacks_configured"] = True
         for field, value in updates.items():
             setattr(project, field, value)

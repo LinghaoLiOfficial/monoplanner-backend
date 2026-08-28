@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from threading import Barrier, Lock
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -139,6 +140,56 @@ def test_apply_change_set_reuses_existing_active_run_when_worker_heartbeat_lags(
     assert response.json()["id"] == str(active_run.id)
     assert response.json()["status"] == RUNNING_STATUS
     assert db_session.scalars(select(GenerationRun)).all() == [active_run]
+
+
+def test_apply_change_set_reuses_active_run_across_same_batch(
+    client: TestClient, db_session: Session
+) -> None:
+    project = _create_project_with_requirement(client)
+    batch_id = uuid4()
+    first_change_set = ChangeSet(
+        project_id=project["id"],
+        source_requirement_id=project["requirement_id"],
+        version=1,
+        batch_id=batch_id,
+        layer="ux_design",
+        title="UX 方案",
+        status="ready",
+        implementation_scope="fullstack",
+        affected_layers=["ux_design"],
+    )
+    second_change_set = ChangeSet(
+        project_id=project["id"],
+        source_requirement_id=project["requirement_id"],
+        version=1,
+        batch_id=batch_id,
+        layer="api_contract",
+        title="API 方案",
+        status="ready",
+        implementation_scope="fullstack",
+        affected_layers=["api_contract"],
+    )
+    db_session.add_all([first_change_set, second_change_set])
+    db_session.commit()
+    db_session.refresh(first_change_set)
+    db_session.refresh(second_change_set)
+
+    first_response = client.post(f"/api/v1/change-sets/{first_change_set.id}/apply")
+    second_response = client.post(f"/api/v1/change-sets/{second_change_set.id}/apply")
+    batch_response = client.post(
+        f"/api/v1/projects/{project['id']}/change-set-batches/{batch_id}/apply"
+    )
+
+    assert first_response.status_code == 202
+    assert second_response.status_code == 202
+    assert batch_response.status_code == 202
+    assert second_response.json()["id"] == first_response.json()["id"]
+    assert batch_response.json()["id"] == first_response.json()["id"]
+    runs = db_session.scalars(
+        select(GenerationRun).where(GenerationRun.run_type == "apply_change_set")
+    ).all()
+    assert len(runs) == 1
+    assert runs[0].queue_payload["batch_id"] == str(batch_id)
 
 
 def test_claim_next_job_locks_oldest_run(client: TestClient, db_session: Session) -> None:

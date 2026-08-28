@@ -25,4 +25,14 @@ def run_next_generation_job_in_new_session(worker_id: str = "test-worker"):
 
 def run_generation_job_in_new_session(run_id: str | UUID, worker_id: str = "test-worker"):
     with SessionLocal() as db:
-        return GenerationQueueService(db).execute_run(UUID(str(run_id)))
+        service = GenerationQueueService(db)
+        root_id = UUID(str(run_id))
+        service.execute_run(root_id)
+        for _ in range(32):
+            refreshed = service.get_run(root_id)
+            if refreshed.status in {"completed", "failed", "partially_completed"}:
+                return refreshed
+            next_run = service.run_once(worker_id)
+            if next_run is None:
+                return service.get_run(root_id)
+        return service.get_run(root_id)

@@ -23,6 +23,16 @@ def list_project_change_sets(
     return ChangeSetService(db, current_user).list_project_change_sets(project_id)
 
 
+@router.get(
+    "/projects/{project_id}/change-set-application-runs",
+    response_model=list[GenerationRunRead],
+)
+def list_active_change_set_application_runs(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> list[GenerationRunRead]:
+    return ChangeSetService(db, current_user).list_active_application_runs(project_id)
+
+
 @router.get("/change-sets/{change_set_id}", response_model=ChangeSetRead)
 def get_change_set(
     db: DbSession, current_user: CurrentUser, change_set_id: UUID
@@ -49,6 +59,23 @@ def apply_change_set(
     db: DbSession, current_user: CurrentUser, change_set_id: UUID
 ) -> GenerationRunRead:
     return GenerationQueueService(db, current_user).enqueue_apply_change_set(change_set_id)
+
+
+@router.post(
+    "/projects/{project_id}/change-set-batches/{batch_id}/apply",
+    response_model=GenerationRunRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def apply_change_set_batch(
+    db: DbSession,
+    current_user: CurrentUser,
+    project_id: UUID,
+    batch_id: UUID,
+) -> GenerationRunRead:
+    return GenerationQueueService(db, current_user).enqueue_apply_change_set_batch(
+        project_id,
+        batch_id,
+    )
 
 
 @router.post("/change-sets/{change_set_id}/discard", response_model=ChangeSetRead)

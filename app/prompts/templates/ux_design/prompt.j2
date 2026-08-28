@@ -49,6 +49,8 @@ Output Fields:
 
 Output Rules:
   - 只描述用户如何完成任务，包括页面低保真结构、业务逻辑流、页面区域、流程步骤、结果分支和体验注意事项。
+  - 面向用户阅读的名称和值必须使用中文自然语言业务表达，尤其是 title、summary、content.version_summary、screen_name、region_name、flow_name、primary_actor、flow_goal、screen_purpose、region_purpose、user_action、system_feedback 和 branch_description。
+  - 不要把 screen_name、region_name、flow_name、primary_actor 等用户可见名称写成英文变量名、snake_case、camelCase、kebab-case、代码标识符或内部技术标识；例如不要输出 paper_upload_flow、paperUploadFlow 或 task-create-flow，应输出“论文上传流程”这类中文业务名称。
   - 不要输出视觉样式、组件外观或代码目录落点。
   - 不要输出旧结构 user_goals、user_flows、interaction_states、empty_states、error_states、permission_experience、accessibility_requirements。
   - 只输出严格 JSON object，不要 Markdown 或解释文字。

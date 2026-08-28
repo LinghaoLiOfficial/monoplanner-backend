@@ -47,6 +47,13 @@ def get_project(db: DbSession, current_user: CurrentUser, project_id: UUID) -> P
     return ProjectService(db, current_user).get_project(project_id)
 
 
+@router.post("/{project_id}/opened", response_model=ProjectRead)
+def record_project_opened(
+    db: DbSession, current_user: CurrentUser, project_id: UUID
+) -> ProjectRead:
+    return ProjectService(db, current_user).record_project_opened(project_id)
+
+
 @router.get("/{project_id}/config", response_model=ProjectConfigRead)
 def get_project_config(
     db: DbSession, current_user: CurrentUser, project_id: UUID

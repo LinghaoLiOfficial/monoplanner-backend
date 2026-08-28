@@ -18,9 +18,11 @@ from app.models.context_pack import ContextPack
 from app.models.db_model_draft import DbModelDraft
 from app.models.generation_run import GenerationRun
 from app.prompts.orchestration import build_design_asset_prompt
+from app.prompts.templates.api_contract.output_schema import ApiContractAssetOutput
 from app.prompts.templates.backend_implementation.output_schema import (
     BackendImplementationOutput,
 )
+from app.prompts.templates.database_models.output_schema import DatabaseModelAssetOutput
 from app.prompts.templates.design_asset.output_schema import DesignAssetOutput
 from app.prompts.templates.frontend_pages.output_schema import FrontendPagesOutput
 from app.prompts.templates.ui_design.output_schema import UIDesignOutput
@@ -28,7 +30,6 @@ from app.prompts.templates.ux_design.output_schema import UXDesignOutput
 from app.services.llm_orchestration_runtime import generate_orchestration_json
 from app.services.orchestration_context import (
     ASSET_MODELS_BY_LAYER,
-    asset_snapshot,
     change_set_snapshot,
     latest_assets_snapshot,
     next_asset_version,
@@ -39,7 +40,6 @@ from app.services.orchestration_validators import (
     validate_design_asset_payload,
 )
 from app.services.project_service import ProjectService
-from app.services.prompt_pack_generation_service import PromptPackGenerationService
 
 RUN_TYPE = "apply_change_set"
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class DesignAssetOrchestrationService:
         self.db = db
         self.llm_client_factory = llm_client_factory
 
-    def execute_run(self, run: GenerationRun) -> dict[str, Any]:
+    def execute_asset_run(self, run: GenerationRun) -> dict[str, Any]:
         payload = run.queue_payload or {}
         change_set_id = payload.get("change_set_id")
         if not change_set_id:
@@ -86,8 +86,10 @@ class DesignAssetOrchestrationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Change set not found.",
             )
-        change_sets = self._batch_change_sets(change_set)
-        if any(item.status not in APPLIABLE_STATUSES for item in change_sets):
+        layer = run.asset_layer or payload.get("layer") or change_set.layer
+        if layer not in ASSET_GENERATION_ORDER:
+            raise HTTPException(status_code=400, detail="A valid asset layer is required.")
+        if change_set.status not in APPLIABLE_STATUSES:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Only draft, ready, or failed change sets can be applied.",
@@ -106,61 +108,17 @@ class DesignAssetOrchestrationService:
         self.db.add(run)
         self.db.commit()
 
-        project_config = project_config_snapshot(project)
         old_assets = latest_assets_snapshot(self.db, project.id)
-        related_assets = dict(old_assets)
-        change_sets_by_layer: dict[str, ChangeSet] = {}
-        for item in change_sets:
-            if item.layer in ASSET_GENERATION_ORDER:
-                change_sets_by_layer[item.layer] = item
-                continue
-            for layer in item.affected_layers:
-                if layer in ASSET_GENERATION_ORDER:
-                    change_sets_by_layer[layer] = item
-        affected_layers = [
-            layer for layer in ASSET_GENERATION_ORDER if layer in change_sets_by_layer
-        ]
-        created_assets: dict[str, Any] = {}
-        generated_assets: dict[str, dict[str, Any]] = {}
-        prompt_packs: list[ContextPack] = []
-        total_steps = len(affected_layers) + (1 if affected_layers else 0)
-        completed_steps = 0
-
-        for layer in affected_layers:
-            layer_change_set = change_sets_by_layer[layer]
-            existing_asset = self._find_existing_asset(run, layer_change_set, layer)
-            if existing_asset is not None:
-                created_assets[layer] = existing_asset
-                generated_assets[layer] = _asset_payload_snapshot(existing_asset)
-                related_assets[layer] = asset_snapshot(existing_asset)
-                completed_steps += 1
-                self._set_run_progress(
-                    run,
-                    self._step_progress(completed_steps, total_steps),
-                    f"{ASSET_PROGRESS_LABELS.get(layer, layer)}已存在，已跳过重复生成。",
-                    output_snapshot=self._progress_snapshot(
-                        change_set,
-                        created_assets,
-                        change_sets=change_sets,
-                    ),
-                )
-                continue
-            self._set_run_progress(
-                run,
-                self._step_progress(completed_steps, total_steps),
-                f"正在生成{ASSET_PROGRESS_LABELS.get(layer, layer)}...",
-            )
-            logger.info(
-                "design_asset_orchestration.layer.start run_id=%s change_set_id=%s layer=%s",
-                run.id,
-                layer_change_set.id,
-                layer,
-            )
+        existing_asset = self._find_existing_asset(run, change_set, layer)
+        if existing_asset is not None:
+            asset = existing_asset
+        else:
+            related_assets = dict(old_assets)
             prompt = build_design_asset_prompt(
                 layer=layer,
-                project_config=project_config,
+                project_config=project_config_snapshot(project),
                 selected_story=story_snapshot(story),
-                change_set=change_set_snapshot(layer_change_set),
+                change_set=change_set_snapshot(change_set),
                 previous_version=old_assets.get(layer),
                 related_assets=related_assets,
             )
@@ -170,91 +128,34 @@ class DesignAssetOrchestrationService:
                 response_model=_design_asset_response_model(layer),
                 llm_client_factory=self.llm_client_factory,
             )
-            generated_assets[layer] = validate_design_asset_payload(parsed, layer=layer)
-            logger.info(
-                "design_asset_orchestration.layer.generated run_id=%s change_set_id=%s layer=%s",
-                run.id,
-                layer_change_set.id,
-                layer,
-            )
-            related_assets[layer] = _generated_asset_snapshot(generated_assets[layer])
+            asset_payload = validate_design_asset_payload(parsed, layer=layer)
             asset = self._persist_asset(
                 project_id=project.id,
                 run=run,
-                change_set=layer_change_set,
+                change_set=change_set,
                 blueprint_id=None,
                 layer=layer,
-                payload=generated_assets[layer],
+                payload=asset_payload,
             )
-            created_assets[layer] = asset
-            related_assets[layer] = asset_snapshot(asset)
-            completed_steps += 1
-            self._set_run_progress(
-                run,
-                self._step_progress(completed_steps, total_steps),
-                f"{ASSET_PROGRESS_LABELS.get(layer, layer)}已保存。",
-                output_snapshot=self._progress_snapshot(
-                    change_set,
-                    created_assets,
-                    change_sets=change_sets,
-                ),
-            )
-
-        if affected_layers:
-            self._set_run_progress(
-                run,
-                self._step_progress(completed_steps, total_steps),
-                "正在生成指令集合...",
-            )
-            prompt_packs = PromptPackGenerationService(
-                self.db,
-                llm_client_factory=self.llm_client_factory,
-            ).generate_for_change_set_batch(
-                run,
-                change_set,
-                change_sets=change_sets,
-                old_versions=old_assets,
-                new_versions={
-                    **{layer: asset_snapshot(asset) for layer, asset in created_assets.items()},
-                },
-            )
-            completed_steps += 1
-            self._set_run_progress(
-                run,
-                self._step_progress(completed_steps, total_steps),
-                "指令集合已保存。",
-                output_snapshot=self._progress_snapshot(
-                    change_set,
-                    created_assets,
-                    change_sets=change_sets,
-                    prompt_packs=prompt_packs,
-                ),
-            )
-
-        now = datetime.now(UTC)
-        for item in change_sets:
-            item.status = "applied"
-            item.is_current = False
-            item.applied_at = now
-            self.db.add(item)
-        if story is not None:
-            story.status = "applied"
-            self.db.add(story)
         run.status = "completed"
         run.progress = 100
-        run.message = "分层变更集已应用。"
+        run.message = f"{ASSET_PROGRESS_LABELS.get(layer, layer)}已保存。"
         run.output_snapshot = {
-            "change_set_id": str(change_set.id),
-            "change_set_ids": [str(item.id) for item in change_sets],
-            "batch_id": str(change_set.batch_id) if change_set.batch_id else None,
-            "asset_ids": {layer: str(asset.id) for layer, asset in created_assets.items()},
-            "context_pack_ids": [str(pack.id) for pack in prompt_packs],
-            "affected_layers": affected_layers,
+            "change_set_ids": [str(change_set.id)],
+            "batch_id": (
+                str(change_set.batch_id) if change_set.batch_id else payload.get("batch_id")
+            ),
+            "asset_ids": {layer: str(asset.id)},
+            "completed_layers": [layer],
         }
         run.completed_at = datetime.now(UTC)
         self.db.add(run)
         self.db.commit()
         return run.output_snapshot
+
+    def execute_run(self, run: GenerationRun) -> dict[str, Any]:
+        """Backward-compatible single-layer entry point for legacy callers."""
+        return self.execute_asset_run(run)
 
     def _find_existing_asset(
         self,
@@ -382,6 +283,10 @@ def _design_asset_response_model(layer: str):
         return FrontendPagesOutput
     if layer == "backend_services":
         return BackendImplementationOutput
+    if layer == "api_contract":
+        return ApiContractAssetOutput
+    if layer == "database_models":
+        return DatabaseModelAssetOutput
     return DesignAssetOutput
 
 

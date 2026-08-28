@@ -24,6 +24,7 @@ class BusinessRequirementStoryResponse(BaseModel):
     project_id: UUID
     requirement_id: UUID | None
     generation_run_id: UUID | None
+    execution_generation_run_id: UUID | None
     title: str
     priority: BusinessStoryPriority
     status: BusinessStoryStatus

@@ -63,7 +63,7 @@ class PromptPackGenerationService:
             run,
             change_set,
             change_sets=change_sets,
-            old_versions={},
+            old_versions=payload.get("previous_assets") or {},
             new_versions=latest_assets_snapshot(self.db, change_set.project_id),
         )
         run.status = "completed"

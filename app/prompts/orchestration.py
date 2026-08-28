@@ -18,7 +18,7 @@ ORDERED_AFFECTED_LAYERS = [
 ]
 
 MODULE_CHANGE_CONTRACT = {
-    layer: {"added": [], "modified": [], "removed": [], "unchanged": []}
+    layer: {"added": [], "modified": [], "removed": []}
     for layer in ORDERED_AFFECTED_LAYERS
 }
 
@@ -91,6 +91,10 @@ def build_design_asset_prompt(
     template_name = (
         "backend_implementation"
         if layer == "backend_services"
+        else "api_contract"
+        if layer == "api_contract"
+        else "database_models"
+        if layer == "database_models"
         else layer
         if layer in {"ux_design", "ui_design", "frontend_pages"}
         else "design_asset"

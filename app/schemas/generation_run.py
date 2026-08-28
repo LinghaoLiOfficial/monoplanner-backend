@@ -10,6 +10,8 @@ class GenerationRunRead(BaseModel):
     project_id: UUID
     requirement_id: UUID | None = None
     run_type: str
+    parent_run_id: UUID | None = None
+    asset_layer: str | None = None
     status: str
     progress: int
     message: str | None = None

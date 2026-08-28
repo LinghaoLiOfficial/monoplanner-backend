@@ -25,6 +25,7 @@ from app.services.orchestration_validators import validate_change_set_payload
 from app.services.project_service import ProjectService
 
 RUN_TYPE = "generate_change_set"
+CHILD_RUN_TYPE = "generate_change_set_asset"
 LAYER_GENERATION_ORDER = [
     "ux_design",
     "ui_design",
@@ -44,18 +45,15 @@ class ChangeSetGenerationService:
         self.db = db
         self.llm_client_factory = llm_client_factory
 
-    def execute_run(self, run: GenerationRun) -> list[ChangeSet]:
+    def execute_asset_run(self, run: GenerationRun) -> ChangeSet:
         payload = run.queue_payload or {}
         story_id = payload.get("story_id")
         source_change_set_id = payload.get("source_change_set_id")
+        layer = run.asset_layer or payload.get("layer")
+        if not isinstance(layer, str) or not layer:
+            raise ValueError("ChangeSet asset run requires an asset layer.")
         story = self._resolve_story(story_id, source_change_set_id)
         project = ProjectService(self.db).get_project(story.project_id)
-        source_change_set = (
-            self.db.get(ChangeSet, UUID(str(source_change_set_id)))
-            if source_change_set_id
-            else None
-        )
-
         run.status = "running"
         run.progress = max(run.progress, 10)
         run.message = "正在生成变更集..."
@@ -68,63 +66,62 @@ class ChangeSetGenerationService:
         self.db.add(run)
         self.db.commit()
 
-        batch_id = uuid4()
+        batch_id = UUID(str(payload["batch_id"])) if payload.get("batch_id") else uuid4()
         project_config = project_config_snapshot(project)
         selected_story = story_snapshot(story) or {}
         current_assets = latest_assets_snapshot(self.db, project.id)
-        layers = _ordered_generation_layers(story.affected_layers, source_change_set)
-        change_sets: list[ChangeSet] = []
-        for layer in layers:
-            prompt = build_change_set_prompt(
-                layer=layer,
-                project_config=project_config,
-                selected_story=selected_story,
-                current_assets={
-                    "layer": layer,
-                    "current_layer_asset": current_assets.get(layer),
-                    "related_assets": current_assets,
-                },
-            )
-            parsed = generate_orchestration_json(
-                prompt.system,
-                prompt.user,
-                response_model=ChangeSetOutput,
-                llm_client_factory=self.llm_client_factory,
-            )
-            parsed = _narrow_change_set_to_layer(parsed, layer)
-            validated = validate_change_set_payload(parsed, expected_layer=layer)
-            content = dict(validated["content"])
-            content["layer"] = layer
-            content["batch_id"] = str(batch_id)
-            change_set = ChangeSet(
-                project_id=project.id,
-                source_requirement_id=story.requirement_id,
-                source_story_id=story.id,
-                generation_run_id=run.id,
-                version=self._next_version(project.id),
-                layer=layer,
-                batch_id=batch_id,
-                content=content,
-                **{key: value for key, value in validated.items() if key != "content"},
-            )
-            self.db.add(change_set)
-            self.db.flush()
-            change_sets.append(change_set)
+        prompt = build_change_set_prompt(
+            layer=layer,
+            project_config=project_config,
+            selected_story=selected_story,
+            current_assets={
+                "layer": layer,
+                "current_layer_asset": current_assets.get(layer),
+                "related_assets": current_assets,
+            },
+        )
+        parsed = generate_orchestration_json(
+            prompt.system,
+            prompt.user,
+            response_model=ChangeSetOutput,
+            llm_client_factory=self.llm_client_factory,
+        )
+        parsed = _narrow_change_set_to_layer(parsed, layer)
+        validated = validate_change_set_payload(parsed, expected_layer=layer)
+        content = dict(validated["content"])
+        content["layer"] = layer
+        content["batch_id"] = str(batch_id)
+        change_set = ChangeSet(
+            project_id=project.id,
+            source_requirement_id=story.requirement_id,
+            source_story_id=story.id,
+            generation_run_id=run.id,
+            version=self._next_version(project.id, layer),
+            layer=layer,
+            batch_id=batch_id,
+            content=content,
+            **{key: value for key, value in validated.items() if key != "content"},
+        )
+        self.db.add(change_set)
+        self.db.flush()
         run.status = "completed"
         run.progress = 100
-        run.message = "分层变更集已生成。"
+        run.message = f"{layer} 变更集已生成。"
         run.output_snapshot = {
             "batch_id": str(batch_id),
-            "change_set_ids": [str(change_set.id) for change_set in change_sets],
-            "affected_layers": [change_set.layer for change_set in change_sets],
-            "counts": {"change_sets": len(change_sets)},
+            "change_set_ids": [str(change_set.id)],
+            "affected_layers": [layer],
+            "counts": {"change_sets": 1},
         }
         run.completed_at = datetime.now(UTC)
         self.db.add(run)
         self.db.commit()
-        for change_set in change_sets:
-            self.db.refresh(change_set)
-        return change_sets
+        self.db.refresh(change_set)
+        return change_set
+
+    def execute_run(self, run: GenerationRun) -> ChangeSet:
+        """Backward-compatible single-layer entry point for legacy callers."""
+        return self.execute_asset_run(run)
 
     def _resolve_story(
         self,
@@ -149,14 +146,18 @@ class ChangeSetGenerationService:
             )
         return story
 
-    def _next_version(self, project_id: UUID) -> int:
-        latest = self.db.scalar(
+    def _next_version(self, project_id: UUID, layer: str) -> int:
+        existing_change_sets = self.db.scalars(
             select(ChangeSet)
             .where(ChangeSet.project_id == project_id)
             .order_by(ChangeSet.version.desc())
-            .limit(1)
-        )
-        return 1 if latest is None else latest.version + 1
+        ).all()
+        layer_versions = [
+            change_set.version
+            for change_set in existing_change_sets
+            if _change_set_layer_key(change_set) == layer
+        ]
+        return 1 if not layer_versions else max(layer_versions) + 1
 
 
 def _ordered_story_layers(affected_layers: list[str]) -> list[str]:
@@ -175,6 +176,10 @@ def _ordered_generation_layers(
         if source_layers:
             return source_layers
     return _ordered_story_layers(story_layers)
+
+
+def _change_set_layer_key(change_set: ChangeSet) -> str | None:
+    return change_set.layer or next(iter(change_set.affected_layers or []), None)
 
 
 def _narrow_change_set_to_layer(parsed: dict[str, Any], layer: str) -> dict[str, Any]:

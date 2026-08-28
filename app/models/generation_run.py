@@ -36,6 +36,10 @@ class GenerationRun(Base):
         index=True,
     )
     run_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    parent_run_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("generation_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    asset_layer: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     progress: Mapped[int] = mapped_column(default=0, server_default="0", nullable=False)
     message: Mapped[str | None] = mapped_column(Text(), nullable=True)
@@ -77,5 +81,12 @@ class GenerationRun(Base):
     project: Mapped[Project] = relationship(back_populates="generation_runs")
     requirement: Mapped[Requirement | None] = relationship(back_populates="generation_runs")
     business_requirement_stories: Mapped[list[BusinessRequirementStory]] = relationship(
-        back_populates="generation_run"
+        back_populates="generation_run",
+        foreign_keys="BusinessRequirementStory.generation_run_id",
+    )
+    parent_run: Mapped[GenerationRun | None] = relationship(
+        remote_side=[id], back_populates="child_runs", foreign_keys=[parent_run_id]
+    )
+    child_runs: Mapped[list[GenerationRun]] = relationship(
+        back_populates="parent_run", foreign_keys=[parent_run_id], cascade="all, delete-orphan"
     )

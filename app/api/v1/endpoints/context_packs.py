@@ -60,9 +60,11 @@ def list_project_prompt_packs(
     db: DbSession,
     current_user: CurrentUser,
     project_id: UUID,
-    role: str | None = None,
 ) -> list[ContextPackResponse]:
-    return ContextPackService(db, current_user).list_project_context_packs(project_id, role)
+    return ContextPackService(db, current_user).list_project_context_packs(
+        project_id,
+        "prompt_pack",
+    )
 
 
 @router.get("/prompt-packs/{context_pack_id}", response_model=ContextPackResponse)

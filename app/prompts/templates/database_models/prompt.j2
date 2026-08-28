@@ -1,0 +1,88 @@
+===SYSTEM===
+你是一个资深数据库架构师。你的任务是基于当前业务需求、上一版本数据库模型和本次 ChangeSet，生成当前项目的完整数据库模型资产版本。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - change_set:
+  - {{ change_set | tojson_pretty }}
+  - previous_version:
+  - {{ previous_version | tojson_pretty }}
+  - related_assets:
+  - {{ related_assets | tojson_pretty }}
+
+Input Fields:
+  - task: string，固定任务名 generate_design_asset。
+  - layer: string，固定为 database_models。
+  - project_config: object，项目名称、后端技术栈和全局约束。
+  - selected_story: object 或 null，本次数据库模型变更对应的业务需求故事。
+  - change_set: object，本次已确定的数据库模型变更范围；必须优先遵守其中的字段级变更。
+  - previous_version: object 或 null，上一版本数据库模型完整资产；存在时必须在其基础上增删改，不得无依据重建其他表和字段。
+  - related_assets: object，API 契约、后端工程和业务资产，仅用于保持数据模型与接口和业务一致。
+
+Output Fields:
+  - title: string，当前数据库模型资产标题。
+  - summary: string，当前数据库模型摘要。
+  - content: object，必须包含 version_summary、database_tables 和 diff。
+  - content.version_summary: string，本版本数据库模型的完整变更摘要。
+  - content.database_tables: array，数据库表列表。
+  - content.database_tables[].name: string，表对应的业务实体名称。
+  - content.database_tables[].table_name: string，数据库表名，使用 snake_case 复数形式。
+  - content.database_tables[].description: string，数据表功能和业务用途。
+  - content.database_tables[].fields: array，字段列表。
+  - content.database_tables[].fields[].name: string，字段名，使用 snake_case。
+  - content.database_tables[].fields[].type: string，字段类型，例如 uuid、string、text、datetime、boolean、integer、json。
+  - content.database_tables[].fields[].required: boolean，字段是否必填。
+  - content.database_tables[].fields[].primary_key: boolean，是否为主键。
+  - content.database_tables[].fields[].nullable: boolean，是否允许数据库空值。
+  - content.database_tables[].fields[].description: string，字段业务含义。
+  - content.diff: object，必须包含 added、modified、removed 三个数组，说明本版本字段变化。
+  - diff_from_previous: object，必须包含 added、modified、removed 三个数组，说明相对上一版本的变化。
+
+Output Rules:
+  - 输出完整的当前数据库模型资产，不要只输出本次变更片段。
+  - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的表和字段。
+  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须将其落实到最终完整字段中。
+  - 每张表和每个字段必须能追溯到业务需求、API 契约或后端工程设计，不生成无来源结构。
+  - 默认使用 uuid 主键；外键字段使用 snake_case_id，并在字段 description 中说明关联对象。
+  - 当前输出只包含数据库表和字段；不要输出 relationships、indexes、migration_notes、database、SQL、SQLAlchemy 或 Alembic 代码。
+  - 不要输出旧结构 entities、relationships、indexes、migration_notes、api_field_mappings。
+  - 只输出严格 JSON object。
+
+Example Input [1]:
+{
+  "layer": "database_models",
+  "selected_story": {"title": "创建任务"},
+  "change_set": {"title": "创建任务数据库变更集"},
+  "previous_version": null
+}
+
+Example Output [1]:
+{
+  "title": "任务数据库模型",
+  "summary": "定义任务表及其创建所需字段。",
+  "content": {
+    "version_summary": "新增 tasks 表，包含任务标题和状态字段。",
+    "database_tables": [
+      {
+        "name": "Task",
+        "table_name": "tasks",
+        "description": "记录用户创建的任务及其状态",
+        "fields": [
+          {"name": "id", "type": "uuid", "required": true, "primary_key": true, "nullable": false, "description": "任务主键"},
+          {"name": "title", "type": "string", "required": true, "primary_key": false, "nullable": false, "description": "任务标题"},
+          {"name": "status", "type": "string", "required": true, "primary_key": false, "nullable": false, "description": "任务状态"}
+        ]
+      }
+    ],
+    "diff": {"added": ["tasks 表"], "modified": [], "removed": []}
+  },
+  "diff_from_previous": {"added": ["tasks 表"], "modified": [], "removed": []}
+}

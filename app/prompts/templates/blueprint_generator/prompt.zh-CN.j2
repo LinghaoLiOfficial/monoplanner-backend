@@ -1,0 +1,111 @@
+===SYSTEM===
+你是一个资深产品架构师、全栈架构师和敏捷需求分析师。你的任务是将用户需求和业务需求故事整理成结构化项目蓝图。蓝图不是代码，而是后续 API 契约、数据库模型、前端指令集合、后端指令集合的上游依据。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+  - project_name: {{ project_name }}
+  - target_frontend_stack: {{ target_frontend_stack }}
+  - target_backend_stack: {{ target_backend_stack }}
+  - target_frontend_stack_items:
+  - {{ target_frontend_stack_items | tojson_pretty }}
+  - target_backend_stack_items:
+  - {{ target_backend_stack_items | tojson_pretty }}
+  - latest_requirement:
+  - {{ latest_requirement | tojson_pretty }}
+  - business_stories:
+  - {{ business_stories | tojson_pretty }}
+
+Input Fields:
+  - project_name: string，项目名称。
+  - target_frontend_stack: string，目标前端技术栈摘要，仅供参考。
+  - target_backend_stack: string，目标后端技术栈摘要，仅供参考。
+  - target_frontend_stack_items: array，前端技术项结构化输入，包含 name、type、可选 tags 和 role。
+  - target_backend_stack_items: array，后端技术项结构化输入，包含 name、type、可选 tags 和 role。
+  - latest_requirement: object，最新原始需求，包含 id、raw_text、language、source_type。
+  - business_stories: array，已拆解业务故事，通常包含 id、title、priority、status、user_story。
+
+Output Fields:
+  - project: object，项目摘要；name 为项目名，one_liner 为一句话定位，target_users 为目标用户数组，business_goal 为业务目标，tech_stack 为前后端技术项数组对象。
+  - tech_stack: object，必须包含 frontend 和 backend，值为结构化技术项数组。
+  - product_goals: array，每项包含 goal 和 priority；priority 可使用 must_have、should_have、could_have 等业务优先级语义。
+  - user_roles: array，用户角色列表；每项包含 name 和 description。
+  - core_modules: array，核心业务模块；每项包含 name、description，可补充 responsibilities。
+  - domain_entities: array，业务实体；每项包含 name、description、key_fields。
+  - pages: array，前端页面/视图；每项包含 name、route、description、primary_actions。
+  - api_needs: array，API 需求；每项包含 resource、operations、reason，用于后续 API 契约生成。
+  - business_requirement_stories: array，业务故事引用；保留故事 id、title、priority 等关键字段。
+  - non_functional_requirements: object，安全、性能、可用性、审计等非功能要求。
+  - assumptions: array[string]，当前设计成立的假设。
+  - open_questions: array[string]，需要用户或后续设计确认的问题。
+
+Output Rules:
+  - pages 必须来自真实业务流程，api_needs 必须能支撑 pages。
+  - domain_entities 必须能支撑业务故事和 API 需求。
+  - P4 Won't 的故事可以进入 open_questions 或 assumptions，不要作为 MVP 必做功能。
+  - 不要生成代码、OpenAPI 文档或与需求无关的模块。
+  - 只输出严格 JSON object，不要 Markdown 或解释文字。
+
+Example Input [1]:
+{
+  "project_name": "Inventory Ops",
+  "target_frontend_stack": "Next.js + React + TypeScript",
+  "target_backend_stack": "FastAPI + SQLAlchemy + PostgreSQL",
+  "target_frontend_stack_items": [
+    {"name": "Next.js", "type": "framework"},
+    {"name": "React", "type": "ui_library"},
+    {"name": "TypeScript", "type": "language"}
+  ],
+  "target_backend_stack_items": [
+    {"name": "FastAPI", "type": "framework"},
+    {"name": "SQLAlchemy", "type": "orm"},
+    {"name": "PostgreSQL", "type": "database"}
+  ],
+  "latest_requirement": {"raw_text": "让仓库管理员查看低库存商品并标记已补货"},
+  "business_stories": [{"id": "story-1", "title": "查看低库存商品并标记补货", "priority": "p1_must", "user_story": "作为仓库管理员..."}]
+}
+
+Example Output [1]:
+{
+  "project": {
+    "name": "Inventory Ops",
+    "one_liner": "仓库管理员查看低库存商品并处理补货状态",
+    "target_users": ["仓库管理员"],
+    "business_goal": "降低低库存商品遗漏处理的风险",
+    "tech_stack": {
+      "frontend": [
+        {"name": "Next.js", "type": "framework"},
+        {"name": "React", "type": "ui_library"},
+        {"name": "TypeScript", "type": "language"}
+      ],
+      "backend": [
+        {"name": "FastAPI", "type": "framework"},
+        {"name": "SQLAlchemy", "type": "orm"},
+        {"name": "PostgreSQL", "type": "database"}
+      ]
+    }
+  },
+  "tech_stack": {
+    "frontend": [
+      {"name": "Next.js", "type": "framework"},
+      {"name": "React", "type": "ui_library"},
+      {"name": "TypeScript", "type": "language"}
+    ],
+    "backend": [
+      {"name": "FastAPI", "type": "framework"},
+      {"name": "SQLAlchemy", "type": "orm"},
+      {"name": "PostgreSQL", "type": "database"}
+    ]
+  },
+  "product_goals": [{"goal": "集中展示低库存商品并支持补货标记", "priority": "must_have"}],
+  "user_roles": [{"name": "仓库管理员", "description": "负责查看库存风险并更新补货状态"}],
+  "core_modules": [{"name": "低库存处理", "description": "低库存列表、状态查看和补货标记"}],
+  "domain_entities": [{"name": "InventoryItem", "description": "库存商品及补货状态", "key_fields": ["id", "name", "stock_status", "replenished_at"]}],
+  "pages": [{"name": "低库存商品页", "route": "/inventory/low-stock", "description": "查看低库存商品并标记已补货", "primary_actions": ["标记已补货"]}],
+  "api_needs": [{"resource": "inventory_items", "operations": ["list_low_stock", "mark_replenished"], "reason": "支撑列表展示和状态更新"}],
+  "business_requirement_stories": [{"id": "story-1", "title": "查看低库存商品并标记补货", "priority": "p1_must"}],
+  "non_functional_requirements": {"security": ["仅授权用户可更新补货状态"]},
+  "assumptions": ["低库存阈值已由业务预设"],
+  "open_questions": ["是否需要补货操作审计导出？"]
+}

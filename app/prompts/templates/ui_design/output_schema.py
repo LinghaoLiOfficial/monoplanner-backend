@@ -18,22 +18,61 @@ class UIThemeConfiguration(BaseModel):
     default_theme: str
 
 
+class UIVisualToken(BaseModel):
+    token_name: str
+    token_value: str
+    semantic_role: str
+    usage_context: str
+    anti_usage: list[str] = Field(default_factory=list)
+    token_type: str | None = None
+    css_variable: str | None = None
+    validated_status: str | None = None
+    source_basis: list[str] = Field(default_factory=list)
+    contrast_notes: str | None = None
+
+
+class UIVisualTokenGroup(BaseModel):
+    group_name: str
+    description: str | None = None
+    tokens: list[UIVisualToken] = Field(default_factory=list)
+
+
+class UIInteractionStateRule(BaseModel):
+    state_name: str
+    visual_cues: list[str] = Field(default_factory=list)
+    usage_context: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+
+
 class UIVisualSystem(BaseModel):
     design_style: UIDesignStyle
+    brand_anchor: str | None = None
+    style_tags: list[str] = Field(default_factory=list)
     design_principles: list[str] = Field(default_factory=list)
     theme_configuration: UIThemeConfiguration
+    evidence_policy: str | None = None
+    source_references: list[str] = Field(default_factory=list)
+    tbd_items: list[str] = Field(default_factory=list)
+    accessibility_rules: list[str] = Field(default_factory=list)
+    responsive_contract: list[str] = Field(default_factory=list)
     color_system: list[str] = Field(default_factory=list)
     typography_system: list[str] = Field(default_factory=list)
     spacing_system: list[str] = Field(default_factory=list)
     shape_system: list[str] = Field(default_factory=list)
     elevation_system: list[str] = Field(default_factory=list)
     interaction_visual_system: list[str] = Field(default_factory=list)
+    token_catalog: list[UIVisualTokenGroup] = Field(default_factory=list)
+    interaction_state_matrix: list[UIInteractionStateRule] = Field(default_factory=list)
 
 
 class UILayoutRule(BaseModel):
     target_screen: str
     desktop_layout: str
     mobile_layout: str
+    primary_action: str | None = None
+    desktop_grid: str | None = None
+    mobile_reflow: str | None = None
+    container_rules: list[str] = Field(default_factory=list)
 
 
 class UIVisualPriority(BaseModel):
@@ -49,6 +88,10 @@ class UIComponentStyleRule(BaseModel):
     component_name: str
     visual_priority: UIVisualPriority
     style_rules: list[str] = Field(default_factory=list)
+    states: list[UIInteractionStateRule] = Field(default_factory=list)
+    responsive_behavior: list[str] = Field(default_factory=list)
+    accessibility_notes: list[str] = Field(default_factory=list)
+    implementation_hint: str | None = None
 
 
 class UIDesignContent(BaseModel):

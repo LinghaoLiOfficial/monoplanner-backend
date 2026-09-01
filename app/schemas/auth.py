@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 UserRole = Literal["user", "vip-plus", "vip-pro", "vip-pro-max", "admin"]
 ManageableUserRole = Literal["user", "vip-plus", "vip-pro", "vip-pro-max"]
+UserLocale = Literal["zh-CN", "en"]
 
 
 class SendEmailVerificationRequest(BaseModel):
@@ -50,6 +51,7 @@ class UserRead(BaseModel):
     is_email_verified: bool
     avatar_seed: str
     avatar_bg_color: str
+    preferred_locale: UserLocale = "zh-CN"
     last_login_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -68,6 +70,7 @@ class LoginResponse(AuthUserResponse):
 class UpdateMeRequest(BaseModel):
     username: str | None = Field(default=None, min_length=3, max_length=100)
     display_name: str | None = Field(default=None, max_length=100)
+    preferred_locale: UserLocale | None = None
 
 
 class AdminUserUpdateRequest(BaseModel):

@@ -27,6 +27,7 @@ class User(Base):
     is_email_verified: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
     avatar_seed: Mapped[str] = mapped_column(String(100), nullable=False)
     avatar_bg_color: Mapped[str] = mapped_column(String(20), nullable=False)
+    preferred_locale: Mapped[str] = mapped_column(String(20), nullable=False, default="zh-CN")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

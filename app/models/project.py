@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON, Uuid
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.llm_prompt_language import DEFAULT_LLM_PROMPT_LANGUAGE
 from app.db.base_class import Base
 
 if TYPE_CHECKING:
@@ -68,6 +69,12 @@ class Project(Base):
     )
     prompt_preferences: Mapped[list[Any]] = mapped_column(
         json_type, nullable=False, default=list, server_default="[]"
+    )
+    llm_prompt_language: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        default=DEFAULT_LLM_PROMPT_LANGUAGE,
+        server_default=DEFAULT_LLM_PROMPT_LANGUAGE,
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft")
     created_at: Mapped[datetime] = mapped_column(

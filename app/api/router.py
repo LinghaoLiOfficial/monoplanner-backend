@@ -15,6 +15,7 @@ from app.api.v1.endpoints import (
     frontend_toolings,
     generation,
     health,
+    llm_prompt_templates,
     projects,
     requirements,
     template_items,
@@ -44,4 +45,5 @@ api_router.include_router(generation.router, tags=["generation"])
 api_router.include_router(generation.run_router, tags=["generation-runs"])
 api_router.include_router(auth.router, tags=["auth"])
 api_router.include_router(auth.admin_router, tags=["admin-users"])
+api_router.include_router(llm_prompt_templates.router, tags=["admin-llm-prompt-templates"])
 api_router.include_router(template_items.router, tags=["template-items"])

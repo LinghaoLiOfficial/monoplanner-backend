@@ -31,12 +31,21 @@ Output Fields:
   - title: string，UI 视觉设计资产标题。
   - summary: string，UI 视觉设计摘要。
   - content.version_summary: string，本版本 UI 视觉设计摘要。
-  - content.visual_system: object，视觉系统，必须包含 design_style、design_principles、theme_configuration、color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system。
+  - content.visual_system: object，视觉系统，必须包含 design_style、brand_anchor、style_tags、design_principles、theme_configuration、color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system、token_catalog、interaction_state_matrix。
   - content.visual_system.design_style.style_description: string，整体视觉风格描述。
   - content.visual_system.design_style.signature_traits: array[string]，标志性视觉特征。
+  - content.visual_system.brand_anchor: string，可复用的品牌锚点或视觉识别短语。
+  - content.visual_system.style_tags: array[string]，可快速扫描的风格标签。
   - content.visual_system.theme_configuration.theme_types.light_mode: string，浅色主题说明。
   - content.visual_system.theme_configuration.theme_types.dark_mode: string，深色主题说明。
   - content.visual_system.theme_configuration.default_theme: string，默认主题，通常为 light_mode 或 dark_mode。
+  - content.visual_system.token_catalog: array，每项包含 group_name、description、tokens。
+  - content.visual_system.token_catalog[].tokens[].token_name: string，token 名称。
+  - content.visual_system.token_catalog[].tokens[].token_value: string，token 数值或 CSS 表达。
+  - content.visual_system.token_catalog[].tokens[].semantic_role: string，token 的语义角色。
+  - content.visual_system.token_catalog[].tokens[].usage_context: string，token 的用途和场景。
+  - content.visual_system.token_catalog[].tokens[].anti_usage: array[string]，避免使用的场景或约束。
+  - content.visual_system.interaction_state_matrix: array，每项包含 state_name、visual_cues、usage_context、constraints。
   - content.layout_rules: array，每项包含 target_screen、desktop_layout、mobile_layout。
   - content.component_style_rules: array，每项包含 component_name、visual_priority、style_rules。
   - content.component_style_rules[].visual_priority: object，必须覆盖 primary_content、secondary_content、tertiary_content、primary_actions、secondary_actions、danger_actions 六组数组。
@@ -66,6 +75,8 @@ Example Output [1]:
         "style_description": "清晰、工作台式、强调库存风险和快速处理。",
         "signature_traits": ["高对比风险提示", "紧凑表格密度", "主操作突出"]
       },
+      "brand_anchor": "库存运营工作台",
+      "style_tags": ["高对比", "紧凑信息密度", "快速操作"],
       "design_principles": ["优先呈现风险信息", "操作状态必须可辨识", "移动端保持主操作可触达"],
       "theme_configuration": {
         "theme_types": {
@@ -79,7 +90,30 @@ Example Output [1]:
       "spacing_system": ["列表行保持紧凑垂直间距", "筛选区与列表之间保留明确分隔"],
       "shape_system": ["状态 Badge 使用胶囊形", "列表容器使用小圆角"],
       "elevation_system": ["页面主体不使用重阴影", "弹层使用轻量阴影区分层级"],
-      "interaction_visual_system": ["按钮 loading 时保留宽度", "错误状态需同时使用颜色和文本"]
+      "interaction_visual_system": ["按钮 loading 时保留宽度", "错误状态需同时使用颜色和文本"],
+      "token_catalog": [
+        {
+          "group_name": "颜色系统",
+          "description": "库存状态、主操作与页面底色使用的语义颜色。",
+          "tokens": [
+            {
+              "token_name": "warning",
+              "token_value": "#f59e0b",
+              "semantic_role": "低库存风险",
+              "usage_context": "用于低库存状态、提醒和高优先级提示",
+              "anti_usage": ["不用于普通正文"]
+            }
+          ]
+        }
+      ],
+      "interaction_state_matrix": [
+        {
+          "state_name": "loading",
+          "visual_cues": ["按钮宽度保持不变", "主操作显示加载态"],
+          "usage_context": ["提交创建", "执行批量操作"],
+          "constraints": ["不能导致布局跳动"]
+        }
+      ]
     },
     "layout_rules": [
       {"target_screen": "低库存商品页", "desktop_layout": "筛选区在顶部，列表占据主区域", "mobile_layout": "筛选区折叠为紧凑控件，操作按钮保持可触达"}

@@ -5,6 +5,11 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from app.core.llm_prompt_language import (
+    DEFAULT_LLM_PROMPT_LANGUAGE,
+    SUPPORTED_LLM_PROMPT_LANGUAGES,
+    LLMPromptLanguage,
+)
 from app.prompts.templates.api_contract.output_schema import ApiContractAssetOutput
 from app.prompts.templates.api_contract_generator.output_schema import ApiContractOutput
 from app.prompts.templates.backend_implementation.output_schema import (
@@ -34,105 +39,103 @@ TEMPLATE_ROOT = Path(__file__).resolve().parent / "templates"
 @dataclass(frozen=True)
 class PromptTemplateContract:
     name: str
-    template_path: Path
     schema_path: Path
     response_model: type[BaseModel]
+
+    def template_path(self, language: str | None = DEFAULT_LLM_PROMPT_LANGUAGE) -> Path:
+        normalized = (
+            language
+            if language in SUPPORTED_LLM_PROMPT_LANGUAGES
+            else DEFAULT_LLM_PROMPT_LANGUAGE
+        )
+        return TEMPLATE_ROOT / self.name / f"prompt.{normalized}.j2"
+
+    @property
+    def template_paths(self) -> dict[LLMPromptLanguage, Path]:
+        return {
+            language: self.template_path(language)
+            for language in SUPPORTED_LLM_PROMPT_LANGUAGES
+        }
 
 
 PROMPT_TEMPLATE_CONTRACTS: tuple[PromptTemplateContract, ...] = (
     PromptTemplateContract(
         name="business_story_decomposer",
-        template_path=TEMPLATE_ROOT / "business_story_decomposer" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "business_story_decomposer" / "output_schema.py",
         response_model=BusinessStoryDecompositionOutput,
     ),
     PromptTemplateContract(
         name="blueprint_generator",
-        template_path=TEMPLATE_ROOT / "blueprint_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "blueprint_generator" / "output_schema.py",
         response_model=ProjectBlueprintOutput,
     ),
     PromptTemplateContract(
         name="project_description_options",
-        template_path=TEMPLATE_ROOT / "project_description_options" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "project_description_options" / "output_schema.py",
         response_model=ProjectDescriptionOptionsOutput,
     ),
     PromptTemplateContract(
         name="api_contract_generator",
-        template_path=TEMPLATE_ROOT / "api_contract_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "api_contract_generator" / "output_schema.py",
         response_model=ApiContractOutput,
     ),
     PromptTemplateContract(
         name="api_contract",
-        template_path=TEMPLATE_ROOT / "api_contract" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "api_contract" / "output_schema.py",
         response_model=ApiContractAssetOutput,
     ),
     PromptTemplateContract(
         name="backend_implementation",
-        template_path=TEMPLATE_ROOT / "backend_implementation" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "backend_implementation" / "output_schema.py",
         response_model=BackendImplementationOutput,
     ),
     PromptTemplateContract(
         name="db_model_generator",
-        template_path=TEMPLATE_ROOT / "db_model_generator" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "db_model_generator" / "output_schema.py",
         response_model=DbModelOutput,
     ),
     PromptTemplateContract(
         name="database_models",
-        template_path=TEMPLATE_ROOT / "database_models" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "database_models" / "output_schema.py",
         response_model=DatabaseModelAssetOutput,
     ),
     PromptTemplateContract(
         name="change_set",
-        template_path=TEMPLATE_ROOT / "change_set" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "change_set" / "output_schema.py",
         response_model=ChangeSetOutput,
     ),
     PromptTemplateContract(
         name="design_asset",
-        template_path=TEMPLATE_ROOT / "design_asset" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "design_asset" / "output_schema.py",
         response_model=DesignAssetOutput,
     ),
     PromptTemplateContract(
         name="ux_design",
-        template_path=TEMPLATE_ROOT / "ux_design" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "ux_design" / "output_schema.py",
         response_model=UXDesignOutput,
     ),
     PromptTemplateContract(
         name="ui_design",
-        template_path=TEMPLATE_ROOT / "ui_design" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "ui_design" / "output_schema.py",
         response_model=UIDesignOutput,
     ),
     PromptTemplateContract(
         name="frontend_pages",
-        template_path=TEMPLATE_ROOT / "frontend_pages" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "frontend_pages" / "output_schema.py",
         response_model=FrontendPagesOutput,
     ),
     PromptTemplateContract(
         name="blueprint_summary",
-        template_path=TEMPLATE_ROOT / "blueprint_summary" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "blueprint_summary" / "output_schema.py",
         response_model=BlueprintSummaryOutput,
     ),
     PromptTemplateContract(
         name="prompt_pack",
-        template_path=TEMPLATE_ROOT / "prompt_pack" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "prompt_pack" / "output_schema.py",
         response_model=PromptPackOutput,
     ),
     PromptTemplateContract(
         name="context_pack",
-        template_path=TEMPLATE_ROOT / "context_pack" / "prompt.j2",
         schema_path=TEMPLATE_ROOT / "context_pack" / "output_schema.py",
         response_model=ContextPackOutput,
     ),

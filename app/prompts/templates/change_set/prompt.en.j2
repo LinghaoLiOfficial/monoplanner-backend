@@ -1,0 +1,50 @@
+===SYSTEM===
+You are a senior change-set planner. Your task is to generate one layered change set for the selected story and current asset context.
+
+You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or any characters outside the JSON object.
+
+===USER===
+Input:
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - current_assets:
+  - {{ current_assets | tojson_pretty }}
+
+Input Fields:
+  - task: string, the generation task name when provided.
+  - layer: string or null, the target asset layer when provided.
+  - project_config: object, project configuration, technology stacks, constraints, coding preferences, prompt preferences, and llm_prompt_language when available.
+  - selected_story: object or null, the business story driving this generation when available.
+  - change_set: object, the change scope when available.
+  - previous_version: object or null, the previous asset version when available; reflect differences when present.
+  - related_assets: object, related asset context used for consistency.
+  - blueprint_content: object, upstream blueprint content when provided.
+  - api_contract_content: object or null, upstream API contract content when provided.
+  - business_stories: array, upstream business stories when provided.
+
+Output Fields:
+  - Return every required field defined by the registered response schema for this template.
+  - Preserve JSON field names, enum values, object nesting, and array shapes exactly as required by the schema.
+  - Use natural English for user-facing titles, summaries, descriptions, prompts, notes, risks, and checklist items.
+
+Output Rules:
+  - Return all fields required by the ChangeSetOutput schema. Use natural English for titles, summaries, risks, and questions.
+  - Keep code identifiers, enum values, file paths, API paths, and package names in their canonical technical form.
+  - Do not invent highly specific file paths unless the context supports them.
+  - Output a strict JSON object only.
+
+Example Input [1]:
+{"layer": "frontend_pages", "selected_story": {"title": "View low-stock items"}}
+
+Example Output [1]:
+{"title": "Low-stock frontend change set", "implementation_scope": "fullstack", "affected_layers": ["frontend_pages"], "impact_summary": "Adds the low-stock page behavior.", "module_changes": {"frontend_pages": {"added": ["Low-stock page"], "modified": [], "removed": []}}, "risks": [], "open_questions": [], "recommended_prompt_strategy": "Implement after API contract is available.", "content": {"layer": "frontend_pages"}, "diff_from_previous": {"added": ["Low-stock page"], "modified": [], "removed": []}}
+
+Example Input [2]:
+{"layer": "api_contract", "selected_story": {"title": "Create tasks"}}
+
+Example Output [2]:
+{"title": "Low-stock frontend change set", "implementation_scope": "fullstack", "affected_layers": ["frontend_pages"], "impact_summary": "Adds the low-stock page behavior.", "module_changes": {"frontend_pages": {"added": ["Low-stock page"], "modified": [], "removed": []}}, "risks": [], "open_questions": [], "recommended_prompt_strategy": "Implement after API contract is available.", "content": {"layer": "frontend_pages"}, "diff_from_previous": {"added": ["Low-stock page"], "modified": [], "removed": []}}

@@ -7,6 +7,11 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
+from app.core.llm_prompt_language import (
+    DEFAULT_LLM_PROMPT_LANGUAGE,
+    LLMPromptLanguage,
+    normalize_llm_prompt_language,
+)
 from app.prompts.template_registry import TEMPLATE_ROOT
 
 SYSTEM_MARKER = "===SYSTEM==="
@@ -23,8 +28,18 @@ class RenderedPrompt:
     user: str
 
 
-def render_prompt_template(template_name: str, variables: dict[str, Any]) -> RenderedPrompt:
-    template_path = f"{template_name}/prompt.j2"
+def prompt_template_path(template_name: str, language: str | None = None) -> str:
+    normalized_language = normalize_llm_prompt_language(language)
+    return f"{template_name}/prompt.{normalized_language}.j2"
+
+
+def render_prompt_template(
+    template_name: str,
+    variables: dict[str, Any],
+    *,
+    language: str | None = DEFAULT_LLM_PROMPT_LANGUAGE,
+) -> RenderedPrompt:
+    template_path = prompt_template_path(template_name, language)
     rendered = _environment().get_template(template_path).render(**variables).strip()
     return split_rendered_prompt(rendered, template_name=template_name)
 
@@ -71,6 +86,8 @@ def _environment() -> Environment:
 __all__ = [
     "PromptTemplateRenderError",
     "RenderedPrompt",
+    "LLMPromptLanguage",
+    "prompt_template_path",
     "render_prompt_template",
     "split_rendered_prompt",
     "tojson_pretty",

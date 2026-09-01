@@ -23,7 +23,7 @@ class ContextPackService:
         self.current_user = current_user
 
     def generate_context_packs(self, project_id: UUID) -> list[ContextPack]:
-        ProjectService(self.db, self.current_user).get_project(project_id)
+        project = ProjectService(self.db, self.current_user).get_project(project_id)
         blueprint = BlueprintService(self.db, self.current_user).get_latest_blueprint(project_id)
         if blueprint is None:
             self._record_failed_run(
@@ -44,6 +44,7 @@ class ContextPackService:
                 blueprint.content,
                 api_contract.content if api_contract else None,
                 db_model.content if db_model else None,
+                language=project.llm_prompt_language,
             )
             packs = [
                 ContextPack(
@@ -74,6 +75,7 @@ class ContextPackService:
                         "blueprint_id": str(blueprint.id),
                         "api_contract_id": str(api_contract.id) if api_contract else None,
                         "db_model_id": str(db_model.id) if db_model else None,
+                        "llm_prompt_language": project.llm_prompt_language,
                     },
                     output_snapshot={
                         "context_pack_ids": [str(pack.id) for pack in packs],
@@ -95,7 +97,7 @@ class ContextPackService:
 
     def execute_context_pack_run(self, run: GenerationRun) -> list[ContextPack]:
         project_id = run.project_id
-        ProjectService(self.db, self.current_user).get_project(project_id)
+        project = ProjectService(self.db, self.current_user).get_project(project_id)
         blueprint = BlueprintService(self.db).get_latest_blueprint(project_id)
         if blueprint is None:
             raise HTTPException(
@@ -114,6 +116,7 @@ class ContextPackService:
             "blueprint_id": str(blueprint.id),
             "api_contract_id": str(api_contract.id) if api_contract else None,
             "db_model_id": str(db_model.id) if db_model else None,
+            "llm_prompt_language": project.llm_prompt_language,
         }
         self.db.add(run)
         self.db.commit()
@@ -122,6 +125,7 @@ class ContextPackService:
             blueprint.content,
             api_contract.content if api_contract else None,
             db_model.content if db_model else None,
+            language=project.llm_prompt_language,
         )
         run.progress = 80
         run.message = "正在保存 Context Pack..."

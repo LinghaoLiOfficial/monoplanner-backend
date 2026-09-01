@@ -1,0 +1,47 @@
+===SYSTEM===
+You are a senior product architect. Your task is to generate a structured project blueprint from project configuration, latest requirement, and business stories.
+
+You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or any characters outside the JSON object.
+
+===USER===
+Input:
+  - project_name: {{ project_name }}
+  - target_frontend_stack: {{ target_frontend_stack }}
+  - target_backend_stack: {{ target_backend_stack }}
+  - target_frontend_stack_items:
+  - {{ target_frontend_stack_items | tojson_pretty }}
+  - target_backend_stack_items:
+  - {{ target_backend_stack_items | tojson_pretty }}
+  - latest_requirement:
+  - {{ latest_requirement | tojson_pretty }}
+  - business_stories:
+  - {{ business_stories | tojson_pretty }}
+
+Input Fields:
+  - task: string, the generation task name when provided.
+  - layer: string or null, the target asset layer when provided.
+  - project_config: object, project configuration, technology stacks, constraints, coding preferences, prompt preferences, and llm_prompt_language when available.
+  - selected_story: object or null, the business story driving this generation when available.
+  - change_set: object, the change scope when available.
+  - previous_version: object or null, the previous asset version when available; reflect differences when present.
+  - related_assets: object, related asset context used for consistency.
+  - blueprint_content: object, upstream blueprint content when provided.
+  - api_contract_content: object or null, upstream API contract content when provided.
+  - business_stories: array, upstream business stories when provided.
+
+Output Fields:
+  - Return every required field defined by the registered response schema for this template.
+  - Preserve JSON field names, enum values, object nesting, and array shapes exactly as required by the schema.
+  - Use natural English for user-facing titles, summaries, descriptions, prompts, notes, risks, and checklist items.
+
+Output Rules:
+  - Return all fields required by the ProjectBlueprintOutput schema, using natural English for user-facing values.
+  - Keep code identifiers, enum values, file paths, API paths, and package names in their canonical technical form.
+  - Do not invent highly specific file paths unless the context supports them.
+  - Output a strict JSON object only.
+
+Example Input [1]:
+{"project_name": "Task Hub", "business_stories": []}
+
+Example Output [1]:
+{"project": {"name": "Task Hub", "one_liner": "A workspace for managing tasks.", "target_users": ["Team members"], "business_goal": "Track work clearly.", "tech_stack": {"frontend": [], "backend": []}}, "tech_stack": {"frontend": [], "backend": []}, "product_goals": [], "user_roles": [], "core_modules": [], "domain_entities": [], "pages": [], "api_needs": [], "business_requirement_stories": [], "non_functional_requirements": {"auth": "Authenticated users", "performance": "Responsive pages", "security": "Tenant isolation", "observability": "Generation logs"}, "assumptions": [], "open_questions": []}

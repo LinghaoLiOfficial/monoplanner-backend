@@ -1,0 +1,83 @@
+===SYSTEM===
+You are a senior product backlog curator. Based on the project configuration, a new raw user requirement, and the current business story pool, return the latest effective set of business stories. Decide additions, updates, and removals, but return only the final stories array.
+
+You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or any characters outside the JSON object.
+
+===USER===
+Input:
+  - project_name: {{ project_name }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - raw_requirement:
+  - {{ raw_requirement | tojson_pretty }}
+  - current_business_stories:
+  - {{ current_business_stories | tojson_pretty }}
+  - priority_definitions:
+  - {{ priority_definitions | tojson_pretty }}
+  - decomposition_rules:
+  - {{ decomposition_rules | tojson_pretty }}
+  - forbidden:
+  - {{ forbidden | tojson_pretty }}
+
+Input Fields:
+  - project_name: string, project name.
+  - project_config: object, project configuration, technology stacks, global constraints, coding preferences, and prompt preferences.
+  - raw_requirement: string, the new one-time user requirement; after being applied it becomes inactive.
+  - current_business_stories: array, the current effective business story pool.
+  - priority_definitions: object, definitions for story priorities.
+  - decomposition_rules: array[string], decomposition and update rules.
+  - forbidden: array[string], forbidden output rules.
+
+Output Fields:
+  - stories: array, the updated effective business story pool.
+  - stories[].title: string, business story title in natural English.
+  - stories[].priority: enum, one of p1_must, p2_should, p3_could, p4_wont.
+  - stories[].implementation_scope: enum, one of frontend_only, backend_only, fullstack, non_code.
+  - stories[].affected_layers: array[enum], only ux_design, ui_design, frontend_pages, api_contract, backend_services, database_models, documentation.
+  - stories[].user_story: string, user story.
+  - stories[].business_scope: object, must contain included and excluded array[string].
+  - stories[].data_rules: array, field, constraint, source, or validation rules.
+  - stories[].acceptance_criteria: array[string], testable acceptance criteria.
+  - stories[].vertical_slice_note: string or null.
+  - stories[].depends_on: array, dependent story titles or stable identifiers.
+  - stories[].source_requirement_ids: array[string], empty if ids are unavailable.
+  - stories[].execution_notes: string or null.
+
+Output Rules:
+  - Return the latest story pool after applying raw_requirement, not only newly added stories.
+  - If raw_requirement changes an existing story, keep only the updated version.
+  - If raw_requirement cancels an existing story, remove it from stories.
+  - Every story must be a vertical business slice, not a horizontal technical task.
+  - Determine affected_layers from business impact: experience flows to ux_design, visual presentation to ui_design, frontend pages/components/routes/API clients to frontend_pages, APIs to api_contract, backend services/permissions/transactions/validation to backend_services, tables/fields/indexes/relations to database_models.
+  - Do not output project_blueprint, prompt_assets, frontend_tools, or backend_tools as affected_layers.
+  - Use natural English for user-facing values.
+  - Output a strict JSON object only.
+
+Example Input [1]:
+{
+  "raw_requirement": "Add low-stock item viewing and replenishment marking",
+  "current_business_stories": []
+}
+
+Example Output [1]:
+{
+  "stories": [
+    {"title": "View low-stock items and mark replenishment", "priority": "p1_must", "implementation_scope": "fullstack", "affected_layers": ["ux_design", "ui_design", "frontend_pages", "api_contract", "backend_services", "database_models"], "user_story": "As a warehouse manager, I want to view low-stock items and mark them as replenished so that inventory risks are handled on time.", "business_scope": {"included": ["View low-stock items", "Mark replenishment complete"], "excluded": ["Automatic purchasing"]}, "data_rules": [{"field": "stock_status", "rule": "Only low-stock items can be marked as replenished"}], "acceptance_criteria": ["Users can view a low-stock list", "Users can mark a low-stock item as replenished"], "vertical_slice_note": "Covers the complete business loop across frontend, API, service, and data model layers.", "depends_on": [], "source_requirement_ids": [], "execution_notes": "Generate layered change sets first, then generate asset versions for each layer."}
+  ]
+}
+
+Example Input [2]:
+{
+  "raw_requirement": "Cancel attachments and keep only task creation",
+  "current_business_stories": [
+    {"title": "Create tasks", "priority": "p1_must", "affected_layers": ["frontend_pages", "api_contract", "backend_services", "database_models"]},
+    {"title": "Upload task attachments", "priority": "p2_should", "affected_layers": ["frontend_pages", "api_contract", "backend_services", "database_models"]}
+  ]
+}
+
+Example Output [2]:
+{
+  "stories": [
+    {"title": "Create tasks", "priority": "p1_must", "implementation_scope": "fullstack", "affected_layers": ["frontend_pages", "api_contract", "backend_services", "database_models"], "user_story": "As a user, I want to create a task so that I can record work to be done.", "business_scope": {"included": ["Create tasks"], "excluded": ["Attachment upload"]}, "data_rules": [{"field": "title", "rule": "Title is required"}], "acceptance_criteria": ["Users can create tasks", "Attachment capability is absent from the current story pool"], "vertical_slice_note": "Keeps the task creation loop and removes the attachment story.", "depends_on": [], "source_requirement_ids": [], "execution_notes": "Attachment capability was cancelled by the new requirement."}
+  ]
+}

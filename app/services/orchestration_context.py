@@ -6,6 +6,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.llm_prompt_language import normalize_llm_prompt_language
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.models.api_contract import ApiContractDraft
 from app.models.backend_service_design import BackendImplementation
 from app.models.backend_tooling import BackendTooling
@@ -18,7 +20,6 @@ from app.models.frontend_tooling import FrontendTooling
 from app.models.project import Project
 from app.models.ui_design import UIDesign
 from app.models.ux_design import UXDesign
-from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 
 ASSET_MODELS_BY_LAYER = {
     "ux_design": UXDesign,
@@ -55,6 +56,9 @@ def project_config_snapshot(project: Project) -> dict[str, Any]:
         "global_constraints": project.global_constraints,
         "coding_preferences": project.coding_preferences,
         "prompt_preferences": project.prompt_preferences,
+        "llm_prompt_language": normalize_llm_prompt_language(
+            getattr(project, "llm_prompt_language", None)
+        ),
     }
 
 

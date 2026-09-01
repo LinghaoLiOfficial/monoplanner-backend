@@ -209,6 +209,8 @@ def _ui_design_payload() -> dict:
                     "style_description": "清晰、工作台式、强调任务创建效率。",
                     "signature_traits": ["主操作突出", "紧凑表单", "错误就近展示"],
                 },
+                "brand_anchor": "任务创建工作台",
+                "style_tags": ["高密度", "快速录入", "状态可辨识"],
                 "design_principles": ["主操作突出", "错误状态必须有文本辅助"],
                 "theme_configuration": {
                     "theme_types": {
@@ -223,6 +225,29 @@ def _ui_design_payload() -> dict:
                 "shape_system": ["输入框和按钮使用小圆角"],
                 "elevation_system": ["表单容器不使用重阴影"],
                 "interaction_visual_system": ["提交 loading 时按钮宽度保持稳定"],
+                "token_catalog": [
+                    {
+                        "group_name": "颜色系统",
+                        "description": "创建任务相关的主色与状态色。",
+                        "tokens": [
+                            {
+                                "token_name": "primary",
+                                "token_value": "#111111",
+                                "semantic_role": "主操作",
+                                "usage_context": "用于创建按钮与关键提示",
+                                "anti_usage": ["不要用于错误状态"],
+                            }
+                        ],
+                    }
+                ],
+                "interaction_state_matrix": [
+                    {
+                        "state_name": "loading",
+                        "visual_cues": ["按钮宽度保持不变"],
+                        "usage_context": ["提交表单"],
+                        "constraints": ["不能导致布局跳动"],
+                    }
+                ],
             },
             "layout_rules": [
                 {

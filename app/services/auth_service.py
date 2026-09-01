@@ -140,6 +140,8 @@ class AuthService:
             user.avatar_seed = make_avatar_seed(username)
         if "display_name" in updates:
             user.display_name = _normalize_optional_text(updates["display_name"])
+        if "preferred_locale" in updates and updates["preferred_locale"] is not None:
+            user.preferred_locale = updates["preferred_locale"]
         self.db.add(user)
         self._commit_unique_user_change()
         self.db.refresh(user)

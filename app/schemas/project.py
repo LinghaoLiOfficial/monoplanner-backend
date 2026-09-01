@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.llm_prompt_language import DEFAULT_LLM_PROMPT_LANGUAGE
 from app.core.tech_stack import (
     normalize_stack_text,
     normalize_tech_stack_items,
@@ -20,6 +21,7 @@ class ProjectCreate(BaseModel):
     target_backend_stack: str | None = None
     target_frontend_stack_items: list[Any] | None = None
     target_backend_stack_items: list[Any] | None = None
+    llm_prompt_language: Literal["zh-CN", "en"] = DEFAULT_LLM_PROMPT_LANGUAGE
 
     @model_validator(mode="before")
     @classmethod
@@ -48,11 +50,17 @@ class ProjectCreate(BaseModel):
             and payload.get("backend_tech_stack_items") is not None
         ):
             payload["target_backend_stack_items"] = payload["backend_tech_stack_items"]
+        if (
+            "llm_prompt_language" not in payload
+            and payload.get("development_language") is not None
+        ):
+            payload["llm_prompt_language"] = payload["development_language"]
         return payload
 
 
 class ProjectDescriptionOptionsRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
+    llm_prompt_language: Literal["zh-CN", "en"] = DEFAULT_LLM_PROMPT_LANGUAGE
 
     @model_validator(mode="before")
     @classmethod
@@ -62,6 +70,11 @@ class ProjectDescriptionOptionsRequest(BaseModel):
         payload = dict(data)
         if "name" not in payload and payload.get("project_name") is not None:
             payload["name"] = payload["project_name"]
+        if (
+            "llm_prompt_language" not in payload
+            and payload.get("development_language") is not None
+        ):
+            payload["llm_prompt_language"] = payload["development_language"]
         return payload
 
 
@@ -81,6 +94,7 @@ class ProjectUpdate(BaseModel):
     target_backend_stack: str | None = None
     target_frontend_stack_items: list[Any] | None = None
     target_backend_stack_items: list[Any] | None = None
+    llm_prompt_language: Literal["zh-CN", "en"] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -109,6 +123,11 @@ class ProjectUpdate(BaseModel):
             and payload.get("backend_tech_stack_items") is not None
         ):
             payload["target_backend_stack_items"] = payload["backend_tech_stack_items"]
+        if (
+            "llm_prompt_language" not in payload
+            and payload.get("development_language") is not None
+        ):
+            payload["llm_prompt_language"] = payload["development_language"]
         return payload
 
 
@@ -125,6 +144,7 @@ class ProjectRead(BaseModel):
     global_constraints: list[Any] = Field(default_factory=list)
     coding_preferences: list[Any] = Field(default_factory=list)
     prompt_preferences: list[Any] = Field(default_factory=list)
+    llm_prompt_language: Literal["zh-CN", "en"] = DEFAULT_LLM_PROMPT_LANGUAGE
     status: str
     created_at: datetime
     last_opened_at: datetime

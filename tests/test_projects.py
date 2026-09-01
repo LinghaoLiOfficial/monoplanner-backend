@@ -196,6 +196,42 @@ def test_create_project_does_not_require_description(client: TestClient) -> None
     assert project["name"] == "测试项目"
     assert project["description"] is None
     assert project["target_stacks_configured"] is False
+    assert project["llm_prompt_language"] == "zh-CN"
+
+
+def test_create_project_accepts_english_llm_prompt_language(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/projects",
+        json={"name": "English Project", "llm_prompt_language": "en"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["llm_prompt_language"] == "en"
+
+
+def test_create_project_rejects_invalid_llm_prompt_language(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/projects",
+        json={"name": "Invalid Language", "llm_prompt_language": "fr"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_project_configuration_updates_llm_prompt_language(client: TestClient) -> None:
+    project = client.post("/api/v1/projects", json={"name": "Config Language"}).json()
+
+    response = client.patch(
+        f"/api/v1/projects/{project['id']}/configuration",
+        json={"llm_prompt_language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["llm_prompt_language"] == "en"
+
+    detail_response = client.get(f"/api/v1/projects/{project['id']}/configuration")
+    assert detail_response.status_code == 200
+    assert detail_response.json()["llm_prompt_language"] == "en"
 
 
 def test_create_project_saves_description(client: TestClient) -> None:
@@ -244,6 +280,45 @@ def test_generate_project_description_options(client: TestClient, monkeypatch) -
     options = response.json()["options"]
     assert len(options) == 3
     assert options[0]["description"].startswith("面向运营团队")
+
+
+def test_generate_project_description_options_accepts_english_language(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    patch_llm_stream(
+        monkeypatch,
+        {
+            "options": [
+                {
+                    "description": (
+                        "A project workspace for teams to organize planning artifacts "
+                        "and delivery context."
+                    )
+                },
+                {
+                    "description": (
+                        "A product planning assistant that converts requirements into "
+                        "implementation-ready design assets."
+                    )
+                },
+                {
+                    "description": (
+                        "A coordination platform for turning business requests into structured "
+                        "full-stack delivery plans."
+                    )
+                },
+            ]
+        },
+    )
+
+    response = client.post(
+        "/api/v1/projects/description-options",
+        json={"name": "Planner", "llm_prompt_language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["options"]) == 3
 
 
 def test_generate_project_description_options_rejects_blank_name(client: TestClient) -> None:

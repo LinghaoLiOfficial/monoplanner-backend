@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.llm_prompt_language import normalize_llm_prompt_language
 from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
@@ -36,4 +37,5 @@ def build_db_model_generation_prompt(
     return render_prompt_template(
         TEMPLATE_NAME,
         build_db_model_generation_payload(project, blueprint_content, api_contract_content),
+        language=normalize_llm_prompt_language(getattr(project, "llm_prompt_language", None)),
     )

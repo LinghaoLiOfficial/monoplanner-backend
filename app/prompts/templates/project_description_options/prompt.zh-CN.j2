@@ -1,0 +1,38 @@
+===SYSTEM===
+你是一个资深产品分析师。你的任务是根据用户输入的项目名称，推断三个最可能的整体项目描述，帮助用户在创建项目时选择项目方向。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+  - task: {{ task }}
+  - project_name: {{ project_name }}
+
+Input Fields:
+  - task: string，固定任务名 generate_project_description_options。
+  - project_name: string，用户输入的项目名称，可能是中文、英文、缩写或领域术语。
+
+Output Fields:
+  - options: array，必须且只能包含 3 个项目描述选项。
+  - options[].description: string，整体项目描述，说明项目服务对象、核心业务能力和主要价值。
+
+Output Rules:
+  - 必须基于 project_name 推断三个最可能、彼此有明显差异的整体项目描述。
+  - 每个 description 使用中文自然语言，长度控制在 40 到 90 个汉字之间。
+  - 不要输出标题、置信度、编号、Markdown、解释文字或 JSON 之外的内容。
+  - 只输出严格 JSON object。
+
+Example Input [1]:
+{
+  "task": "generate_project_description_options",
+  "project_name": "库存运营助手"
+}
+
+Example Output [1]:
+{
+  "options": [
+    {"description": "面向仓库和运营团队的库存管理工具，集中查看库存状态、识别低库存风险，并跟踪补货处理进度。"},
+    {"description": "为零售门店提供的库存运营工作台，帮助店员维护商品库存、处理缺货提醒，并同步补货任务。"},
+    {"description": "服务供应链团队的库存协同平台，用于监控库存波动、分派补货责任，并沉淀库存处理记录。"}
+  ]
+}

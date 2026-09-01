@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.llm_prompt_language import DEFAULT_LLM_PROMPT_LANGUAGE
 from app.core.tech_stack import (
     normalize_stack_text,
     normalize_tech_stack_items,
@@ -26,6 +27,7 @@ class ProjectConfigRead(BaseModel):
     global_constraints: list[Any] = Field(default_factory=list)
     coding_preferences: list[Any] = Field(default_factory=list)
     prompt_preferences: list[Any] = Field(default_factory=list)
+    llm_prompt_language: Literal["zh-CN", "en"] = DEFAULT_LLM_PROMPT_LANGUAGE
     status: str
     created_at: datetime
     updated_at: datetime
@@ -45,12 +47,18 @@ class ProjectConfigRead(BaseModel):
     @computed_field
     @property
     def frontend_tech_stack(self) -> str:
-        return tech_stack_items_to_text(self.target_frontend_stack_items) or self.target_frontend_stack
+        return (
+            tech_stack_items_to_text(self.target_frontend_stack_items)
+            or self.target_frontend_stack
+        )
 
     @computed_field
     @property
     def backend_tech_stack(self) -> str:
-        return tech_stack_items_to_text(self.target_backend_stack_items) or self.target_backend_stack
+        return (
+            tech_stack_items_to_text(self.target_backend_stack_items)
+            or self.target_backend_stack
+        )
 
     @computed_field
     @property
@@ -112,6 +120,7 @@ class ProjectConfigUpdate(BaseModel):
     global_constraints: list[Any] | None = None
     coding_preferences: list[Any] | None = None
     prompt_preferences: list[Any] | None = None
+    llm_prompt_language: Literal["zh-CN", "en"] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -142,4 +151,9 @@ class ProjectConfigUpdate(BaseModel):
             payload["target_backend_stack_items"] = payload["backend_tech_stack_items"]
         if "coding_preferences" not in payload and payload.get("code_preferences") is not None:
             payload["coding_preferences"] = payload["code_preferences"]
+        if (
+            "llm_prompt_language" not in payload
+            and payload.get("development_language") is not None
+        ):
+            payload["llm_prompt_language"] = payload["development_language"]
         return payload

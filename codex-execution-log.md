@@ -744,3 +744,24 @@
 - Actions: 在 `ChangeSetService` 中新增项目级活动 `apply_change_set` 父任务查询，并在变更集 API 增加 `/projects/{project_id}/change-set-application-runs` 接口。
 - Result: 前端可以重新进入变更集模块时读取仍在排队、运行或部分完成的应用任务。
 - Verification: `uv run pytest tests/test_generation_queue.py -q`（16 passed）、`git diff --check` 通过。
+
+## 2026-08-31 23:38 +08 - 增加用户语言偏好字段
+
+- Request: 前端语言选择不再使用 `localStorage`，改为读取数据库中的用户偏好，且数据库默认偏好为中文。
+- Actions: 为 `users` 增加 `preferred_locale` 字段和 Alembic 迁移；扩展 `UserRead` 与 `UpdateMeRequest`；`AuthService.update_me()` 支持保存 `zh-CN` / `en`；补充 `/auth/me` 默认偏好与更新偏好的认证测试。
+- Result: `/api/v1/auth/me` 会返回当前用户语言偏好，新老用户默认 `zh-CN`，前端可通过 PATCH 当前用户资料持久化语言选择。
+- Verification: `uv run pytest tests/test_auth.py`、`uv run pytest tests/test_auth.py tests/test_admin_llm_prompt_templates.py tests/test_prompt_template_contracts.py`、`uv run python -m compileall app`、`uv run alembic heads`、`git diff --check` 通过。
+
+## 2026-08-31 16:08 +08 - 新增 admin LLM 提示词模板中心
+
+- Request: 为 admin 用户增加可从后端获取的 LLM 提示词模板中心，只展示新主链路会触发的模板。
+- Actions: 新增 `LLMPromptTemplate` schema、后端模板聚合服务和 `/api/v1/admin/llm-prompt-templates` 只读接口；前端新增 admin 模板中心页面与导航入口，并补充权限与模板内容测试。
+- Result: admin 现在可以按模块查看并复制项目配置、敏捷业务需求池、变更集、UX/UI、前端工程实现、API 契约、后端工程实现、数据库模型和指令集合对应的新 LLM 模板；旧链路模板未纳入返回。
+- Verification: `uv run pytest tests/test_admin_llm_prompt_templates.py tests/test_prompt_template_contracts.py` 通过。
+
+## 2026-09-01 14:03 +08 - UI 视觉设计契约与质量校验增强
+
+- Request: 实现 UI 视觉设计模块深度改进中的后端存储契约、validator、LLM 提示词模板和测试。
+- Actions: 扩展 `app/prompts/templates/ui_design/output_schema.py` 的证据、TBD、可访问性、响应式、token 来源和组件状态字段；在 `app/services/orchestration_validators.py` 为 `ui_design` 归一化 token/state/diff 并生成 `visual_quality_summary.warnings`；更新 UI、frontend_pages、prompt_pack 中英模板。
+- Result: `ui_designs.content` 继续用 JSONB 兼容保存新版结构，LLM 生成链路会强调 validated/normative/tbd/inferred 分级，并对品牌色误用为 danger、暗色模式缺少来源、token 缺 anti_usage 等风险产生结构化提示。
+- Verification: `uv run pytest tests/test_prompt_template_contracts.py tests/test_design_assets_phase_1_2.py tests/test_orchestration_phase_3_4.py -q` 通过。

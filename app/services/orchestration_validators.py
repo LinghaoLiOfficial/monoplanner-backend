@@ -72,6 +72,8 @@ def validate_design_asset_payload(parsed: dict[str, Any], *, layer: str) -> dict
     content = parsed.get("content")
     if not isinstance(content, dict):
         raise OrchestrationValidationError(f"{layer} content must be an object.")
+    if layer == "ui_design":
+        content = _normalize_ui_design_content(content)
     diff = parsed.get("diff_from_previous") or content.get("diff")
     return {
         "title": _string_or_default(parsed.get("title"), _default_asset_title(layer)),
@@ -81,6 +83,82 @@ def validate_design_asset_payload(parsed: dict[str, Any], *, layer: str) -> dict
         "content": content,
         "diff_from_previous": _dict_or_empty(diff),
     }
+
+
+def _normalize_ui_design_content(content: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(content)
+    normalized["diff"] = _diff_or_default(normalized.get("diff"))
+    visual_system = _dict_or_empty(normalized.get("visual_system"))
+    token_catalog = _normalize_token_catalog(visual_system.get("token_catalog"))
+    state_matrix = _normalize_interaction_state_matrix(
+        visual_system.get("interaction_state_matrix")
+    )
+    visual_system["token_catalog"] = token_catalog
+    visual_system["interaction_state_matrix"] = state_matrix
+    for key in (
+        "source_references",
+        "tbd_items",
+        "accessibility_rules",
+        "responsive_contract",
+        "design_principles",
+        "color_system",
+        "typography_system",
+        "spacing_system",
+        "shape_system",
+        "elevation_system",
+        "interaction_visual_system",
+    ):
+        visual_system[key] = _list_or_empty(visual_system.get(key))
+    normalized["visual_system"] = visual_system
+    normalized["layout_rules"] = _list_or_empty(normalized.get("layout_rules"))
+    normalized["component_style_rules"] = _list_or_empty(
+        normalized.get("component_style_rules")
+    )
+    return normalized
+
+
+def _normalize_token_catalog(value: Any) -> list[dict[str, Any]]:
+    groups = _list_or_empty(value)
+    normalized_groups: list[dict[str, Any]] = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        normalized_tokens: list[dict[str, Any]] = []
+        for token in _list_or_empty(group.get("tokens")):
+            if not isinstance(token, dict):
+                continue
+            normalized_token = dict(token)
+            normalized_token["anti_usage"] = _list_or_empty(
+                normalized_token.get("anti_usage")
+            )
+            normalized_token["source_basis"] = _list_or_empty(
+                normalized_token.get("source_basis")
+            )
+            normalized_tokens.append(normalized_token)
+        normalized_group = dict(group)
+        normalized_group["tokens"] = normalized_tokens
+        normalized_groups.append(normalized_group)
+    return normalized_groups
+
+
+def _normalize_interaction_state_matrix(value: Any) -> list[dict[str, Any]]:
+    states = _list_or_empty(value)
+    normalized_states: list[dict[str, Any]] = []
+    for state in states:
+        if not isinstance(state, dict):
+            continue
+        normalized_state = dict(state)
+        normalized_state["visual_cues"] = _list_or_empty(
+            normalized_state.get("visual_cues")
+        )
+        normalized_state["usage_context"] = _list_or_empty(
+            normalized_state.get("usage_context")
+        )
+        normalized_state["constraints"] = _list_or_empty(
+            normalized_state.get("constraints")
+        )
+        normalized_states.append(normalized_state)
+    return normalized_states
 
 
 def validate_blueprint_summary_payload(parsed: dict[str, Any]) -> dict[str, Any]:
@@ -227,3 +305,12 @@ def _list_or_empty(value: Any) -> list[Any]:
 
 def _dict_or_empty(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def _diff_or_default(value: Any) -> dict[str, list[Any]]:
+    diff = _dict_or_empty(value)
+    return {
+        "added": _list_or_empty(diff.get("added")),
+        "modified": _list_or_empty(diff.get("modified")),
+        "removed": _list_or_empty(diff.get("removed")),
+    }

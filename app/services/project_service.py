@@ -71,6 +71,7 @@ class ProjectService:
             target_frontend_stack_items=tech_stack_items_to_payload(frontend_items),
             target_backend_stack_items=tech_stack_items_to_payload(backend_items),
             target_stacks_configured=False,
+            llm_prompt_language=payload.llm_prompt_language,
             created_at=created_at,
             last_opened_at=created_at,
         )
@@ -90,6 +91,7 @@ class ProjectService:
                 "task": "generate_project_description_options",
                 "project_name": name,
             },
+            language=payload.llm_prompt_language,
         )
         user_payload = {
             "task": "generate_project_description_options",

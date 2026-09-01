@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.core.constants import DEFAULT_BACKEND_STACK, DEFAULT_FRONTEND_STACK
+from app.core.llm_prompt_language import normalize_llm_prompt_language
 from app.core.tech_stack import (
     normalize_tech_stack_items,
     tech_stack_items_to_payload,
@@ -55,4 +56,5 @@ def build_blueprint_generation_prompt(
     return render_prompt_template(
         TEMPLATE_NAME,
         build_blueprint_generation_payload(project, requirement, business_stories),
+        language=normalize_llm_prompt_language(getattr(project, "llm_prompt_language", None)),
     )

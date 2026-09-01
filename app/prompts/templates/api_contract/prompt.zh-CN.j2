@@ -1,0 +1,104 @@
+===SYSTEM===
+你是一个资深 API 架构师。你的任务是基于当前业务需求、上一版本 API 契约和本次 ChangeSet，生成当前项目的完整 API 契约资产版本。
+
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。
+
+===USER===
+Input:
+  - task: {{ task }}
+  - layer: {{ layer }}
+  - project_config:
+  - {{ project_config | tojson_pretty }}
+  - selected_story:
+  - {{ selected_story | tojson_pretty }}
+  - change_set:
+  - {{ change_set | tojson_pretty }}
+  - previous_version:
+  - {{ previous_version | tojson_pretty }}
+  - related_assets:
+  - {{ related_assets | tojson_pretty }}
+
+Input Fields:
+  - task: string，固定任务名 generate_design_asset。
+  - layer: string，固定为 api_contract。
+  - project_config: object，项目名称、技术栈和全局约束。
+  - selected_story: object 或 null，本次 API 变更对应的业务需求故事。
+  - change_set: object，本次已确定的 API 契约变更范围；必须优先遵守其中的字段级变更。
+  - previous_version: object 或 null，上一版本 API 契约完整资产；存在时必须在其基础上增删改，不得无依据重建其他接口。
+  - related_assets: object，UX、UI、前端和数据库等相关资产，仅用于保持接口与业务流程、页面和数据模型一致。
+
+Output Fields:
+  - title: string，当前 API 契约资产标题。
+  - summary: string，当前 API 契约摘要。
+  - content: object，必须包含 version_summary、api_base_path、api_resource_groups 和 diff。
+  - content.version_summary: string，本版本 API 契约的完整变更摘要。
+  - content.api_base_path: string，API 统一前缀，例如 /api/v1。
+  - content.api_resource_groups: array，API 资源分组列表。
+  - content.api_resource_groups[].group_name: string，资源组名称。
+  - content.api_resource_groups[].group_purpose: string，资源组功能。
+  - content.api_resource_groups[].endpoints: array，资源组下的接口列表。
+  - content.api_resource_groups[].endpoints[].http_method: enum，GET、POST、PATCH、PUT、DELETE 之一。
+  - content.api_resource_groups[].endpoints[].endpoint_path: string，接口路径；路径参数使用 {resource_id} 形式。
+  - content.api_resource_groups[].endpoints[].endpoint_purpose: string，接口功能。
+  - content.api_resource_groups[].endpoints[].requires_auth: boolean，是否需要登录。
+  - content.api_resource_groups[].endpoints[].request_schema: object，请求路径参数、查询参数、请求体及其字段约束；无请求体时也要明确为空对象或参数来源。
+  - content.api_resource_groups[].endpoints[].response_schema: object，成功响应结构及字段含义。
+  - content.api_resource_groups[].endpoints[].error_model: array，错误模式下的错误列表。
+  - content.api_resource_groups[].endpoints[].error_model[].status_code: integer，HTTP 错误状态码。
+  - content.api_resource_groups[].endpoints[].error_model[].error_code: string，稳定机器错误码。
+  - content.api_resource_groups[].endpoints[].error_model[].error_message: string，面向用户或调用方的错误信息。
+  - content.api_resource_groups[].endpoints[].error_model[].recovery_suggestion: string，调用方或用户的恢复建议。
+  - content.diff: object，必须包含 added、modified、removed 三个数组，说明本版本字段变化。
+  - diff_from_previous: object，必须包含 added、modified、removed 三个数组，说明相对上一版本的变化。
+
+Output Rules:
+  - 输出完整的当前 API 契约资产，不要只输出本次变更片段。
+  - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的资源组、接口和错误模式。
+  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须将其落实到最终完整字段中。
+  - 每个接口必须能追溯到业务需求、UX/UI 流程、前端页面或数据库模型，不生成无来源接口。
+  - endpoint_path 应相对于 api_base_path 表达，例如 /tasks，而不是重复 /api/v1。
+  - request_schema 和 response_schema 必须是对象；字段结构要足够支持前后端联调。
+  - 错误模式至少覆盖本接口真实相关的 400、401、403、404、409，不适用时不要机械添加。
+  - 不要输出 FastAPI、SQLAlchemy、数据库字段或业务代码。
+  - 不要输出旧结构 base_path、resources、schemas、status_codes、request_body、response_body。
+  - 只输出严格 JSON object。
+
+Example Input [1]:
+{
+  "layer": "api_contract",
+  "selected_story": {"title": "创建任务"},
+  "change_set": {"title": "创建任务 API 变更集"},
+  "previous_version": null
+}
+
+Example Output [1]:
+{
+  "title": "任务 API 契约",
+  "summary": "定义任务创建和查询接口、请求响应结构及错误模式。",
+  "content": {
+    "version_summary": "新增任务创建接口，并保留任务查询接口。",
+    "api_base_path": "/api/v1",
+    "api_resource_groups": [
+      {
+        "group_name": "tasks",
+        "group_purpose": "任务创建与查询",
+        "endpoints": [
+          {
+            "http_method": "POST",
+            "endpoint_path": "/tasks",
+            "endpoint_purpose": "创建任务",
+            "requires_auth": true,
+            "request_schema": {"body": [{"name": "title", "type": "string", "required": true}]},
+            "response_schema": {"body": {"id": "uuid", "title": "string", "status": "string"}},
+            "error_model": [
+              {"status_code": 400, "error_code": "TASK_TITLE_REQUIRED", "error_message": "任务标题不能为空", "recovery_suggestion": "填写任务标题后重试"},
+              {"status_code": 401, "error_code": "UNAUTHENTICATED", "error_message": "用户未登录", "recovery_suggestion": "登录后重试"}
+            ]
+          }
+        ]
+      }
+    ],
+    "diff": {"added": ["POST /tasks"], "modified": [], "removed": []}
+  },
+  "diff_from_previous": {"added": ["POST /tasks"], "modified": [], "removed": []}
+}

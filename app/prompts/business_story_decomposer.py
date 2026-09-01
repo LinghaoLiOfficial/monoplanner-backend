@@ -1,6 +1,7 @@
+from app.core.llm_prompt_language import normalize_llm_prompt_language
+from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.models.project import Project
 from app.models.requirement import Requirement
-from app.core.tech_stack import tech_stack_items_to_payload, tech_stack_items_to_text
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
 TEMPLATE_NAME = "business_story_decomposer"
@@ -86,4 +87,5 @@ def build_business_story_decomposition_prompt(
             requirement,
             current_business_stories,
         ),
+        language=normalize_llm_prompt_language(getattr(project, "llm_prompt_language", None)),
     )

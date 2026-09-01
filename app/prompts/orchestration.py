@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.llm_prompt_language import normalize_llm_prompt_language
 from app.prompts.renderer import RenderedPrompt, render_prompt_template
 
 ORDERED_AFFECTED_LAYERS = [
@@ -48,6 +49,7 @@ def build_change_set_prompt(
     selected_story: dict[str, Any],
     current_assets: dict[str, Any],
 ) -> RenderedPrompt:
+    language = normalize_llm_prompt_language(project_config.get("llm_prompt_language"))
     return render_prompt_template(
         "change_set",
         build_change_set_payload(
@@ -56,6 +58,7 @@ def build_change_set_prompt(
             selected_story=selected_story,
             current_assets=current_assets,
         ),
+        language=language,
     )
 
 
@@ -88,6 +91,7 @@ def build_design_asset_prompt(
     previous_version: dict[str, Any] | None,
     related_assets: dict[str, Any],
 ) -> RenderedPrompt:
+    language = normalize_llm_prompt_language(project_config.get("llm_prompt_language"))
     template_name = (
         "backend_implementation"
         if layer == "backend_services"
@@ -109,6 +113,7 @@ def build_design_asset_prompt(
             previous_version=previous_version,
             related_assets=related_assets,
         ),
+        language=language,
     )
 def build_blueprint_summary_payload(
     *,
@@ -133,6 +138,7 @@ def build_blueprint_summary_prompt(
     design_assets: dict[str, Any],
     latest_change_set: dict[str, Any],
 ) -> RenderedPrompt:
+    language = normalize_llm_prompt_language(project_config.get("llm_prompt_language"))
     return render_prompt_template(
         "blueprint_summary",
         build_blueprint_summary_payload(
@@ -141,6 +147,7 @@ def build_blueprint_summary_prompt(
             design_assets=design_assets,
             latest_change_set=latest_change_set,
         ),
+        language=language,
     )
 
 
@@ -177,6 +184,7 @@ def build_prompt_pack_prompt(
     new_versions: dict[str, Any],
     project_blueprint: dict[str, Any],
 ) -> RenderedPrompt:
+    language = normalize_llm_prompt_language(project_config.get("llm_prompt_language"))
     return render_prompt_template(
         "prompt_pack",
         build_prompt_pack_payload(
@@ -188,4 +196,5 @@ def build_prompt_pack_prompt(
             new_versions=new_versions,
             project_blueprint=project_blueprint,
         ),
+        language=language,
     )

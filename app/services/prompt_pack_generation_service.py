@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.llm_prompt_language import normalize_llm_prompt_language
 from app.llm.client import OpenAICompatibleLLMClient
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
@@ -143,7 +144,10 @@ class PromptPackGenerationService:
             summary=content["batch_summary"],
             content=content,
             diff_from_previous=content.get("diff_summary", {}),
-            prompt_text=_prompt_text_from_content(content),
+            prompt_text=_prompt_text_from_content(
+                content,
+                language=project.llm_prompt_language,
+            ),
             format="markdown",
         )
         self.db.add(pack)
@@ -192,7 +196,12 @@ class PromptPackGenerationService:
         return 1 if latest is None else latest.version + 1
 
 
-def _prompt_text_from_content(content: dict[str, Any]) -> str:
+def _prompt_text_from_content(
+    content: dict[str, Any],
+    *,
+    language: str | None = None,
+) -> str:
+    normalized_language = normalize_llm_prompt_language(language)
     frontend = content.get("frontend_prompt", {})
     backend = content.get("backend_prompt", {})
     parts = [f"# {content.get('batch_summary', 'Prompt Pack')}"]
@@ -200,7 +209,8 @@ def _prompt_text_from_content(content: dict[str, Any]) -> str:
     if isinstance(diff_summary, dict):
         ux_ui_lines = _diff_summary_lines(diff_summary, ("ux_design", "ui_design"))
         if ux_ui_lines:
-            parts.append("## UX/UI 差异\n\n" + "\n".join(ux_ui_lines))
+            heading = "UX/UI 差异" if normalized_language == "zh-CN" else "UX/UI Differences"
+            parts.append(f"## {heading}\n\n" + "\n".join(ux_ui_lines))
     if frontend.get("needed"):
         parts.append(f"## {frontend.get('title', 'Frontend')}\n\n{frontend.get('prompt', '')}")
     if backend.get("needed"):

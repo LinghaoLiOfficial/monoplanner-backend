@@ -34,6 +34,7 @@ def test_login_sets_cookie_and_me_returns_safe_user(client: TestClient) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["username"] == "testuser"
+    assert payload["preferred_locale"] == "zh-CN"
     assert "password_hash" not in payload
     assert "access_token" not in payload
 
@@ -121,6 +122,19 @@ def test_login_openapi_schema_uses_email_not_username(client: TestClient) -> Non
     assert "email" in login_schema["required"]
     assert "password" in login_schema["required"]
     assert "username" not in login_schema["properties"]
+
+
+def test_update_me_persists_preferred_locale(
+    db_session: Session,
+    client: TestClient,
+    test_user: User,
+) -> None:
+    response = client.patch("/api/v1/auth/me", json={"preferred_locale": "en"})
+
+    assert response.status_code == 200
+    assert response.json()["preferred_locale"] == "en"
+    db_session.refresh(test_user)
+    assert test_user.preferred_locale == "en"
 
 
 def test_unauthenticated_project_request_returns_401(

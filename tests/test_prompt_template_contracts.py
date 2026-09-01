@@ -11,8 +11,10 @@ from app.prompts.db_model_generator import build_db_model_generation_payload
 from app.prompts.orchestration import (
     build_blueprint_summary_payload,
     build_change_set_payload,
+    build_change_set_prompt,
     build_design_asset_payload,
     build_prompt_pack_payload,
+    build_prompt_pack_prompt,
 )
 from app.prompts.renderer import (
     PromptTemplateRenderError,
@@ -44,6 +46,7 @@ from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.prompts.templates.ui_design.output_schema import UIDesignOutput
 from app.prompts.templates.ux_design.output_schema import UXDesignOutput
 from app.services.orchestration_context import project_config_snapshot
+from app.services.orchestration_validators import validate_design_asset_payload
 
 REQUIRED_USER_SECTIONS = (
     "Input:",
@@ -85,33 +88,39 @@ EXPECTED_RESPONSE_MODELS = {
 
 def test_prompt_template_files_exist_and_follow_runtime_structure() -> None:
     for contract in PROMPT_TEMPLATE_CONTRACTS:
-        assert contract.template_path.is_file()
         assert contract.schema_path.is_file()
-        template_text = contract.template_path.read_text(encoding="utf-8")
-        assert "{{" in template_text
-        assert template_text.count("===SYSTEM===") == 1
-        assert template_text.count("===USER===") == 1
-        assert template_text.find("===SYSTEM===") < template_text.find("===USER===")
-        for section in REQUIRED_USER_SECTIONS:
-            assert section in template_text
-        for section in FORBIDDEN_USER_SECTIONS:
-            assert section not in template_text
-        expected_count = EXPECTED_EXAMPLE_COUNTS.get(contract.name, 1)
-        input_examples = re.findall(r"Example Input \[(\d+)\]:", template_text)
-        output_examples = re.findall(r"Example Output \[(\d+)\]:", template_text)
-        assert len(input_examples) == expected_count
-        assert output_examples == input_examples
+        for language, template_path in contract.template_paths.items():
+            assert template_path.is_file()
+            template_text = template_path.read_text(encoding="utf-8")
+            assert "{{" in template_text
+            assert template_text.count("===SYSTEM===") == 1
+            assert template_text.count("===USER===") == 1
+            assert template_text.find("===SYSTEM===") < template_text.find("===USER===")
+            for section in REQUIRED_USER_SECTIONS:
+                assert section in template_text
+            for section in FORBIDDEN_USER_SECTIONS:
+                assert section not in template_text
+            expected_count = EXPECTED_EXAMPLE_COUNTS.get(contract.name, 1)
+            input_examples = re.findall(r"Example Input \[(\d+)\]:", template_text)
+            output_examples = re.findall(r"Example Output \[(\d+)\]:", template_text)
+            assert len(input_examples) == expected_count, (contract.name, language)
+            assert output_examples == input_examples
 
 
 def test_registered_templates_render_to_non_empty_system_and_user() -> None:
     for contract in PROMPT_TEMPLATE_CONTRACTS:
-        rendered = render_prompt_template(contract.name, _template_variables(contract.name))
-        assert rendered.system
-        assert rendered.user
-        assert "Input:" in rendered.user
-        assert "Input Fields:" in rendered.user
-        assert "Output Fields:" in rendered.user
-        assert "Output Rules:" in rendered.user
+        for language in contract.template_paths:
+            rendered = render_prompt_template(
+                contract.name,
+                _template_variables(contract.name),
+                language=language,
+            )
+            assert rendered.system
+            assert rendered.user
+            assert "Input:" in rendered.user
+            assert "Input Fields:" in rendered.user
+            assert "Output Fields:" in rendered.user
+            assert "Output Rules:" in rendered.user
 
 
 def test_registered_templates_keep_runtime_response_models() -> None:
@@ -120,12 +129,50 @@ def test_registered_templates_keep_runtime_response_models() -> None:
 
 
 def test_ux_prompt_requires_readable_chinese_user_visible_names() -> None:
-    rendered = render_prompt_template("ux_design", _template_variables("ux_design"))
+    rendered = render_prompt_template(
+        "ux_design",
+        _template_variables("ux_design"),
+        language="zh-CN",
+    )
 
     assert "面向用户阅读的名称和值必须使用中文自然语言业务表达" in rendered.user
-    assert "不要把 screen_name、region_name、flow_name、primary_actor 等用户可见名称写成英文变量名" in rendered.user
+    assert (
+        "不要把 screen_name、region_name、flow_name、primary_actor 等用户可见名称写成英文变量名"
+        in rendered.user
+    )
     assert "paper_upload_flow" in rendered.user
     assert "论文上传流程" in rendered.user
+
+
+def test_ux_prompt_can_render_readable_english_user_visible_names() -> None:
+    rendered = render_prompt_template("ux_design", _template_variables("ux_design"), language="en")
+
+    assert "natural English" in rendered.user
+    assert "paper_upload_flow" in rendered.user
+    assert "Paper upload flow" in rendered.user
+
+
+def test_orchestration_prompt_builders_use_project_prompt_language() -> None:
+    project_config = {"project_name": "Demo", "prompt_preferences": [], "llm_prompt_language": "en"}
+    selected_story = {"title": "Story"}
+    change_set = {"title": "Change", "affected_layers": ["ux_design"]}
+
+    rendered_change_set = build_change_set_prompt(
+        project_config=project_config,
+        selected_story=selected_story,
+        current_assets={"ux_design": {}},
+    )
+    rendered_prompt_pack = build_prompt_pack_prompt(
+        project_config=project_config,
+        selected_story=selected_story,
+        change_set=change_set,
+        old_versions={},
+        new_versions={"ux_design": {}},
+        project_blueprint={},
+    )
+
+    assert "natural English" in rendered_change_set.user
+    assert "Codex-executable instructions" in rendered_prompt_pack.user
 
 
 def test_business_story_payload_does_not_inject_schema() -> None:
@@ -265,6 +312,8 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
                         "style_description": "清晰、工作台式、主操作突出。",
                         "signature_traits": ["紧凑表单", "错误就近展示"],
                     },
+                    "brand_anchor": "任务创建工作台",
+                    "style_tags": ["高密度", "快速录入", "可扫描"],
                     "design_principles": ["保持可读性", "状态反馈必须明确"],
                     "theme_configuration": {
                         "theme_types": {
@@ -273,18 +322,55 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
                         },
                         "default_theme": "light_mode",
                     },
+                    "evidence_policy": "区分 validated、normative、tbd 和 inferred。",
+                    "source_references": ["UX 设计", "变更集"],
+                    "tbd_items": ["深色模式 token 待验证"],
+                    "accessibility_rules": ["正常文本满足 WCAG AA"],
+                    "responsive_contract": ["移动端单栏堆叠"],
                     "color_system": ["primary 用于主操作"],
                     "typography_system": ["标题使用中等字重"],
                     "spacing_system": ["表单项保持紧凑间距"],
                     "shape_system": ["控件使用小圆角"],
                     "elevation_system": ["弹层使用轻量阴影"],
                     "interaction_visual_system": ["loading 状态保持按钮宽度"],
+                    "token_catalog": [
+                        {
+                            "group_name": "颜色系统",
+                            "description": "主操作和状态提示颜色。",
+                            "tokens": [
+                                {
+                                    "token_name": "primary",
+                                    "token_value": "#111111",
+                                    "semantic_role": "主操作",
+                                    "usage_context": "用于创建按钮和高亮状态",
+                                    "anti_usage": ["不要用于错误提示"],
+                                    "token_type": "color",
+                                    "css_variable": "--color-primary",
+                                    "validated_status": "normative",
+                                    "source_basis": ["项目配置"],
+                                    "contrast_notes": "按钮文字需保持可读",
+                                }
+                            ],
+                        }
+                    ],
+                    "interaction_state_matrix": [
+                        {
+                            "state_name": "loading",
+                            "visual_cues": ["按钮宽度保持不变"],
+                            "usage_context": ["提交表单"],
+                            "constraints": ["不能引发布局跳动"],
+                        }
+                    ],
                 },
                 "layout_rules": [
                     {
                         "target_screen": "任务创建页",
                         "desktop_layout": "表单居中，辅助说明右侧展示。",
                         "mobile_layout": "单栏布局，主按钮全宽。",
+                        "primary_action": "创建任务",
+                        "desktop_grid": "双栏布局",
+                        "mobile_reflow": "辅助说明移动到表单下方",
+                        "container_rules": ["最大宽度 960px"],
                     }
                 ],
                 "component_style_rules": [
@@ -299,6 +385,17 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
                             "danger_actions": ["清空表单"],
                         },
                         "style_rules": ["错误消息就近展示"],
+                        "states": [
+                            {
+                                "state_name": "focus-visible",
+                                "visual_cues": ["显示 3px focus ring"],
+                                "usage_context": ["键盘导航"],
+                                "constraints": ["不能只依赖颜色"],
+                            }
+                        ],
+                        "responsive_behavior": ["移动端按钮全宽"],
+                        "accessibility_notes": ["错误状态同时显示文本"],
+                        "implementation_hint": "映射到现有 Button 和 Input 组件",
                     }
                 ],
                 "diff": {"added": ["任务创建 UI 规则"], "modified": [], "removed": []},
@@ -317,7 +414,76 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
     assert visual_priority.primary_actions == ["创建任务"]
     assert visual_priority.secondary_actions == ["取消"]
     assert visual_priority.danger_actions == ["清空表单"]
+    assert output.content.visual_system.brand_anchor == "任务创建工作台"
+    assert output.content.visual_system.style_tags == ["高密度", "快速录入", "可扫描"]
+    assert output.content.visual_system.evidence_policy == "区分 validated、normative、tbd 和 inferred。"
+    assert output.content.visual_system.tbd_items == ["深色模式 token 待验证"]
+    assert output.content.visual_system.token_catalog[0].group_name == "颜色系统"
+    assert output.content.visual_system.token_catalog[0].tokens[0].token_value == "#111111"
+    assert output.content.visual_system.token_catalog[0].tokens[0].css_variable == "--color-primary"
+    assert output.content.visual_system.interaction_state_matrix[0].state_name == "loading"
+    assert output.content.layout_rules[0].primary_action == "创建任务"
     assert output.content.component_style_rules[0].style_rules == ["错误消息就近展示"]
+    assert output.content.component_style_rules[0].states[0].state_name == "focus-visible"
+    assert output.content.component_style_rules[0].implementation_hint == "映射到现有 Button 和 Input 组件"
+
+
+def test_ui_design_prompt_mentions_extended_visual_contract() -> None:
+    rendered = render_prompt_template("ui_design", _template_variables("ui_design"))
+
+    assert "brand_anchor" in rendered.user
+    assert "token_catalog" in rendered.user
+    assert "interaction_state_matrix" in rendered.user
+    assert "validated、normative、tbd、inferred" in rendered.user
+    assert "source_references" in rendered.user
+    assert "anti_usage" in rendered.user
+    assert "组件规则必须覆盖 default、hover、pressed、focus-visible、selected、disabled、loading、error" in rendered.user
+
+
+def test_ui_design_validator_does_not_add_visual_quality_summary() -> None:
+    payload = validate_design_asset_payload(
+        {
+            "title": "危险操作 UI 视觉设计",
+            "summary": "验证 UI 视觉设计规范化。",
+            "content": {
+                "version_summary": "新增危险操作视觉规则。",
+                "visual_system": {
+                    "theme_configuration": {
+                        "theme_types": {
+                            "light_mode": "默认浅色主题",
+                            "dark_mode": "已支持暗色主题",
+                        }
+                    },
+                    "token_catalog": [
+                        {
+                            "group_name": "颜色",
+                            "tokens": [
+                                {
+                                    "token_name": "brand-danger",
+                                    "token_value": "#ff385c",
+                                    "semantic_role": "危险操作",
+                                    "usage_context": "删除按钮",
+                                }
+                            ],
+                        }
+                    ],
+                },
+                "layout_rules": [{"target_screen": "删除页"}],
+                "component_style_rules": [
+                    {
+                        "component_name": "DeleteButton",
+                        "visual_priority": {"primary_actions": ["删除"]},
+                    }
+                ],
+            },
+            "diff_from_previous": {},
+        },
+        layer="ui_design",
+    )
+
+    assert "visual_quality_summary" not in payload["content"]
+    assert payload["content"]["visual_system"]["token_catalog"][0]["tokens"][0]["anti_usage"] == []
+    assert payload["content"]["layout_rules"] == [{"target_screen": "删除页"}]
 
 
 def test_frontend_pages_output_accepts_frontend_implementation_contract() -> None:

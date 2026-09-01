@@ -1,5 +1,5 @@
 ===SYSTEM===
-You are a senior UI visual designer. Your task is to generate a UI visual design asset for the current change. Describe visual system, layout rules, component style rules, tokens, and interaction states.
+You are a senior UI visual designer. Your task is to generate the complete UI visual design asset for the current change from the UI ChangeSet, UX design, and related assets. Describe visual system, layout rules, component style rules, tokens, and interaction states.
 
 You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or any characters outside the JSON object.
 
@@ -23,7 +23,7 @@ Input Fields:
   - layer: string or null, the target asset layer when provided.
   - project_config: object, project configuration, technology stacks, constraints, coding preferences, prompt preferences, and llm_prompt_language when available.
   - selected_story: object or null, the business story driving this generation when available.
-  - change_set: object, the change scope when available.
+  - change_set: object, the confirmed UI field-level change plan. Apply every item in change_set.module_changes.ui_design added, modified, and removed.
   - previous_version: object or null, the previous asset version when available; reflect differences when present.
   - related_assets: object, related asset context used for consistency.
   - blueprint_content: object, upstream blueprint content when provided.
@@ -31,15 +31,22 @@ Input Fields:
   - business_stories: array, upstream business stories when provided.
 
 Output Fields:
-  - Return every required field defined by the registered response schema for this template, including visual_system.evidence_policy, source_references, tbd_items, accessibility_rules, responsive_contract, token_catalog, and interaction_state_matrix.
+  - Return every required field defined by the registered response schema for this template, including visual_system.evidence_policy, source_references, tbd_items, accessibility_rules, responsive_contract, color_system, typography_system, spacing_system, shape_system, elevation_system, interaction_visual_system, tailwind_theme_css, and interaction_state_matrix.
   - Preserve JSON field names, enum values, object nesting, and array shapes exactly as required by the schema.
   - Use natural English for user-facing titles, summaries, descriptions, prompts, notes, risks, and checklist items.
 
 Output Rules:
-  - Return all fields required by the UIDesignOutput schema, including brand_anchor, token_catalog, interaction_state_matrix, evidence_policy, source_references, tbd_items, accessibility_rules, and responsive_contract. Use natural English for user-visible descriptions.
+  - Return all fields required by the UIDesignOutput schema, including the six token-bearing visual systems, tailwind_theme_css, interaction_state_matrix, evidence_policy, source_references, tbd_items, accessibility_rules, and responsive_contract. Use natural English for user-visible descriptions.
+  - theme_configuration.default_theme must be a user-visible theme name or description selected from the themes defined in theme_types, such as "Default light theme". Do not output technical field keys such as light_mode or dark_mode.
+  - ChangeSet added, modified, and removed items have highest priority. Apply them item by item to the complete UI asset and do not redefine the change scope during asset generation.
+  - When previous_version exists, preserve every visual system item, token, layout rule, component rule, state rule, and responsive rule not explicitly changed or removed by the ChangeSet.
+  - If a ChangeSet item cannot be applied to UI output fields, record it in visual_system.tbd_items, content.diff, or diff_from_previous instead of freely rewriting the requirement.
   - Explicitly separate validated, normative, tbd, and inferred guidance. If a reference design guidance document is present, treat it as a quality benchmark, not as project-validated tokens.
   - Do not claim reference brand colors, fonts, radius, shadows, or motion values are project-validated tokens unless project_config or related_assets explicitly provide that evidence.
-  - Every token should include anti_usage, source_basis, and validated_status when possible. Missing dark mode, danger, warning, success, motion, or shadow evidence must be marked as TBD or listed in tbd_items.
+  - Do not output any standalone token summary catalog. Tokens must live only inside color_system, typography_system, spacing_system, shape_system, elevation_system, and interaction_visual_system.
+  - Each visual system must be an object with description, rules, tokens, and tbd_items.
+  - Every token must include token_name, token_type, token_value, description, semantic_role, usage_context, anti_usage, css_variable, tailwind_variable, source_basis, and validated_status. Missing dark mode, danger, warning, success, motion, or shadow evidence must be marked as TBD or listed in tbd_items.
+  - visual_system.tailwind_theme_css must contain a complete Tailwind v4 @theme { ... } CSS block covering all generated tokens.
   - Each layout rule must answer the primary action, desktop layout, mobile reflow, hidden/collapsed content, gutter/max-width/sticky behavior, or explicitly mark unknown items as TBD.
   - Component style rules must cover applicable states from default, hover, pressed, focus-visible, selected, disabled, loading, and error. Avoid vague style adjectives without executable visual constraints.
   - Keep code identifiers, enum values, file paths, API paths, and package names in their canonical technical form.
@@ -50,4 +57,4 @@ Example Input [1]:
 {"layer": "ui_design", "selected_story": {"title": "Create tasks"}}
 
 Example Output [1]:
-{"title": "Task creation UI design", "summary": "Defines layout and component styling.", "content": {"version_summary": "Adds task creation visual rules.", "visual_system": {"design_style": {"style_description": "Clear operational interface.", "signature_traits": []}, "brand_anchor": "Task workspace", "style_tags": [], "design_principles": [], "theme_configuration": {"theme_types": {"light_mode": "Default light mode", "dark_mode": "Readable dark mode"}, "default_theme": "light_mode"}, "color_system": [], "typography_system": [], "spacing_system": [], "shape_system": [], "elevation_system": [], "interaction_visual_system": [], "token_catalog": [], "interaction_state_matrix": []}, "layout_rules": [], "component_style_rules": [], "diff": {"added": [], "modified": [], "removed": []}}, "diff_from_previous": {"added": ["Task creation UI design"], "modified": [], "removed": []}}
+{"title": "Task creation UI design", "summary": "Defines layout and component styling.", "content": {"version_summary": "Adds task creation visual rules.", "visual_system": {"design_style": {"style_description": "Clear operational interface.", "signature_traits": []}, "style_tags": [], "design_principles": [], "theme_configuration": {"theme_types": {"light_mode": "Default light theme for regular work sessions.", "dark_mode": "Readable dark theme for low-light environments."}, "default_theme": "Default light theme"}, "evidence_policy": "Separate validated, normative, tbd, and inferred visual decisions.", "source_references": ["UX design", "ChangeSet"], "tbd_items": [], "accessibility_rules": [], "responsive_contract": [], "color_system": {"description": "Semantic colors.", "rules": ["Primary color is used for the main action."], "tokens": [{"token_name": "primary", "token_type": "color", "token_value": "#111111", "description": "Primary action color.", "semantic_role": "Main action", "usage_context": "Task creation button", "anti_usage": ["Do not use for destructive actions."], "css_variable": "--color-primary", "tailwind_variable": "--color-primary", "validated_status": "normative", "source_basis": ["Project configuration"]}], "tbd_items": []}, "typography_system": {"description": "Type scale.", "rules": [], "tokens": [], "tbd_items": []}, "spacing_system": {"description": "Spacing scale.", "rules": [], "tokens": [], "tbd_items": []}, "shape_system": {"description": "Radius scale.", "rules": [], "tokens": [], "tbd_items": []}, "elevation_system": {"description": "Elevation scale.", "rules": [], "tokens": [], "tbd_items": []}, "interaction_visual_system": {"description": "Interaction states.", "rules": [], "tokens": [], "tbd_items": []}, "tailwind_theme_css": "@theme {\n  --color-primary: #111111;\n}", "interaction_state_matrix": []}, "layout_rules": [], "component_style_rules": [], "diff": {"added": [], "modified": [], "removed": []}}, "diff_from_previous": {"added": ["Task creation UI design"], "modified": [], "removed": []}}

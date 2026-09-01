@@ -100,6 +100,7 @@ def build_llm_db_model_content(
         system_prompt=prompt.system,
         user_payload=prompt.user,
         response_model=DbModelOutput,
+        task_key="db_model_generator",
     )
     return validate_db_model_content(content)
 

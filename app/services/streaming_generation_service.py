@@ -148,6 +148,7 @@ class StreamingGenerationSpec:
     save: Callable[[GenerationRun, Any], Any]
     serialize_resource: Callable[[Any], dict[str, Any]]
     response_model: type[BaseModel]
+    task_key: str
     requirement_id: UUID | None = None
     extra_params: dict[str, Any] | None = None
 
@@ -203,6 +204,7 @@ class StreamingGenerationService:
                     response_model=spec.response_model,
                     llm_client_factory=self.llm_client_factory,
                     extra_params=spec.extra_params,
+                    task_key=spec.task_key,
                 )
             except LLMJsonGenerationError as exc:
                 self._mark_run_failed(
@@ -502,6 +504,7 @@ class StreamingGenerationService:
                 ]
             },
             response_model=BusinessStoryDecompositionOutput,
+            task_key="business_story_decomposer",
             extra_params=JSON_OBJECT_RESPONSE_FORMAT,
         )
 
@@ -596,6 +599,7 @@ class StreamingGenerationService:
             save=save,
             serialize_resource=lambda blueprint: _model_to_dict(ProjectBlueprintRead, blueprint),
             response_model=ProjectBlueprintOutput,
+            task_key="blueprint_generator",
         )
 
     def build_api_contract_spec(self, project_id: UUID) -> StreamingGenerationSpec:
@@ -650,6 +654,7 @@ class StreamingGenerationService:
             save=save,
             serialize_resource=lambda draft: _model_to_dict(ApiContractDraftResponse, draft),
             response_model=ApiContractOutput,
+            task_key="api_contract_generator",
         )
 
     def build_db_model_spec(self, project_id: UUID) -> StreamingGenerationSpec:
@@ -711,6 +716,7 @@ class StreamingGenerationService:
             save=save,
             serialize_resource=lambda draft: _model_to_dict(DbModelDraftResponse, draft),
             response_model=DbModelOutput,
+            task_key="db_model_generator",
         )
 
     def _resolve_requirement(

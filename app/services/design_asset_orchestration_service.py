@@ -47,10 +47,10 @@ APPLIABLE_STATUSES = {"draft", "ready", "failed"}
 ASSET_GENERATION_ORDER = [
     "ux_design",
     "ui_design",
-    "frontend_pages",
     "api_contract",
-    "backend_services",
     "database_models",
+    "backend_services",
+    "frontend_pages",
 ]
 ASSET_PROGRESS_LABELS = {
     "ux_design": "UX 设计",
@@ -109,11 +109,19 @@ class DesignAssetOrchestrationService:
         self.db.commit()
 
         old_assets = latest_assets_snapshot(self.db, project.id)
+        related_assets = dict(old_assets)
+        related_assets.update(
+            _generated_batch_assets_snapshot(
+                self.db,
+                project.id,
+                batch_id=change_set.batch_id,
+                before_layer=layer,
+            )
+        )
         existing_asset = self._find_existing_asset(run, change_set, layer)
         if existing_asset is not None:
             asset = existing_asset
         else:
-            related_assets = dict(old_assets)
             prompt = build_design_asset_prompt(
                 layer=layer,
                 project_config=project_config_snapshot(project),
@@ -127,6 +135,7 @@ class DesignAssetOrchestrationService:
                 prompt.user,
                 response_model=_design_asset_response_model(layer),
                 llm_client_factory=self.llm_client_factory,
+                task_key=_design_asset_task_key(layer),
             )
             asset_payload = validate_design_asset_payload(parsed, layer=layer)
             asset = self._persist_asset(
@@ -290,6 +299,12 @@ def _design_asset_response_model(layer: str):
     return DesignAssetOutput
 
 
+def _design_asset_task_key(layer: str) -> str:
+    if layer == "backend_services":
+        return "backend_implementation"
+    return layer
+
+
 def _asset_ids(created_assets: dict[str, Any]) -> dict[str, str]:
     return {layer: str(asset.id) for layer, asset in created_assets.items()}
 
@@ -313,3 +328,36 @@ def _generated_asset_snapshot(payload: dict[str, Any]) -> dict[str, Any]:
         "diff_from_previous": payload["diff_from_previous"],
         "created_at": None,
     }
+
+
+def _generated_batch_assets_snapshot(
+    db: Session,
+    project_id: UUID,
+    *,
+    batch_id: UUID | None,
+    before_layer: str,
+) -> dict[str, Any]:
+    if batch_id is None:
+        return {}
+    allowed_layers = ASSET_GENERATION_ORDER[: ASSET_GENERATION_ORDER.index(before_layer)]
+    snapshots: dict[str, Any] = {}
+    for upstream_layer in allowed_layers:
+        model = ASSET_MODELS_BY_LAYER[upstream_layer]
+        asset = db.scalar(
+            select(model)
+            .where(
+                model.project_id == project_id,
+                model.change_set_id.in_(
+                    select(ChangeSet.id).where(
+                        ChangeSet.project_id == project_id,
+                        ChangeSet.batch_id == batch_id,
+                        ChangeSet.layer == upstream_layer,
+                    )
+                ),
+            )
+            .order_by(model.created_at.desc())
+            .limit(1)
+        )
+        if asset is not None:
+            snapshots[upstream_layer] = _asset_payload_snapshot(asset)
+    return snapshots

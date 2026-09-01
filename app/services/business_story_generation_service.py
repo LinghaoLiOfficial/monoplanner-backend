@@ -297,11 +297,13 @@ def _generate_business_story_json(
                 prompt.user,
                 extra_params=JSON_OBJECT_RESPONSE_FORMAT,
                 response_model=BusinessStoryDecompositionOutput,
+                task_key="business_story_decomposer",
             )
         return json_generator(
             prompt.system,
             prompt.user,
             response_model=BusinessStoryDecompositionOutput,
+            task_key="business_story_decomposer",
         )
     except TypeError:
         return json_generator(prompt.system, prompt.user)

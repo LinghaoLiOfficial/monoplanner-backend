@@ -1,0 +1,26 @@
+{
+  "defaults": {
+    "provider": "openai_compatible",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "api_key_env": "LLM_API_KEY",
+    "model": "qwen-plus",
+    "timeout": 60,
+    "stream_read_timeout": 300,
+    "use_response_format": true,
+    "structured_max_retries": 2,
+    "temperature": 0.2
+  },
+  "tasks": {
+    "ui_design": {
+      "model": "qwen-max",
+      "stream_read_timeout": 600
+    },
+    "prompt_pack": {
+      "model": "qwen-plus",
+      "temperature": 0.1
+    },
+    "project_description_options": {
+      "timeout": 30
+    }
+  }
+}

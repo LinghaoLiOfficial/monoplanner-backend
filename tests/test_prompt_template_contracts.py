@@ -175,6 +175,50 @@ def test_orchestration_prompt_builders_use_project_prompt_language() -> None:
     assert "Codex-executable instructions" in rendered_prompt_pack.user
 
 
+def test_change_set_prompt_requires_field_level_layer_specific_changes() -> None:
+    rendered_zh = render_prompt_template(
+        "change_set",
+        _template_variables("change_set"),
+        language="zh-CN",
+    )
+    rendered_en = render_prompt_template(
+        "change_set",
+        _template_variables("change_set"),
+        language="en",
+    )
+
+    assert "字段级变更对象" in rendered_zh.user
+    assert "current_assets.current_layer_asset.content" in rendered_zh.user
+    assert "UX → UI → API 契约 → 数据库模型 → 后端工程实现 → 前端工程实现" in rendered_zh.user
+    assert "content.api_resource_groups" in rendered_zh.user
+    assert "content.database_tables" in rendered_zh.user
+    assert "content.route_definitions" in rendered_zh.user
+    assert "field-level objects" in rendered_en.user
+    assert "current_assets.current_layer_asset.content" in rendered_en.user
+    assert (
+        "UX → UI → API contract → database model → backend implementation "
+        "→ frontend implementation"
+    ) in rendered_en.user
+
+
+def test_asset_prompts_apply_change_set_without_redefining_scope() -> None:
+    for template_name, layer_key in [
+        ("ux_design", "ux_design"),
+        ("ui_design", "ui_design"),
+        ("api_contract", "api_contract"),
+        ("database_models", "database_models"),
+        ("backend_implementation", "backend_services"),
+        ("frontend_pages", "frontend_pages"),
+    ]:
+        rendered = render_prompt_template(
+            template_name,
+            _template_variables(template_name),
+            language="en",
+        )
+        assert f"change_set.module_changes.{layer_key}" in rendered.user
+        assert "do not redefine" in rendered.user
+
+
 def test_business_story_payload_does_not_inject_schema() -> None:
     project = SimpleNamespace(name="Demo", description="Demo project")
     requirement = SimpleNamespace(raw_text="Create tasks")
@@ -312,7 +356,6 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
                         "style_description": "清晰、工作台式、主操作突出。",
                         "signature_traits": ["紧凑表单", "错误就近展示"],
                     },
-                    "brand_anchor": "任务创建工作台",
                     "style_tags": ["高密度", "快速录入", "可扫描"],
                     "design_principles": ["保持可读性", "状态反馈必须明确"],
                     "theme_configuration": {
@@ -320,39 +363,90 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
                             "light_mode": "默认浅色主题。",
                             "dark_mode": "低光环境下保持对比度。",
                         },
-                        "default_theme": "light_mode",
+                        "default_theme": "默认浅色主题",
                     },
                     "evidence_policy": "区分 validated、normative、tbd 和 inferred。",
                     "source_references": ["UX 设计", "变更集"],
                     "tbd_items": ["深色模式 token 待验证"],
                     "accessibility_rules": ["正常文本满足 WCAG AA"],
                     "responsive_contract": ["移动端单栏堆叠"],
-                    "color_system": ["primary 用于主操作"],
-                    "typography_system": ["标题使用中等字重"],
-                    "spacing_system": ["表单项保持紧凑间距"],
-                    "shape_system": ["控件使用小圆角"],
-                    "elevation_system": ["弹层使用轻量阴影"],
-                    "interaction_visual_system": ["loading 状态保持按钮宽度"],
-                    "token_catalog": [
-                        {
-                            "group_name": "颜色系统",
-                            "description": "主操作和状态提示颜色。",
-                            "tokens": [
-                                {
-                                    "token_name": "primary",
-                                    "token_value": "#111111",
-                                    "semantic_role": "主操作",
-                                    "usage_context": "用于创建按钮和高亮状态",
-                                    "anti_usage": ["不要用于错误提示"],
-                                    "token_type": "color",
-                                    "css_variable": "--color-primary",
-                                    "validated_status": "normative",
-                                    "source_basis": ["项目配置"],
-                                    "contrast_notes": "按钮文字需保持可读",
-                                }
-                            ],
-                        }
-                    ],
+                    "color_system": {
+                        "description": "主操作和状态提示颜色。",
+                        "rules": ["primary 用于主操作"],
+                        "tokens": [
+                            {
+                                "token_name": "primary",
+                                "token_type": "color",
+                                "token_value": "#111111",
+                                "description": "主操作颜色。",
+                                "semantic_role": "主操作",
+                                "usage_context": "用于创建按钮和高亮状态",
+                                "anti_usage": ["不要用于错误提示"],
+                                "css_variable": "--color-primary",
+                                "tailwind_variable": "--color-primary",
+                                "validated_status": "normative",
+                                "source_basis": ["项目配置"],
+                                "contrast_notes": "按钮文字需保持可读",
+                            }
+                        ],
+                        "tbd_items": [],
+                    },
+                    "typography_system": {
+                        "description": "标题与正文层级。",
+                        "rules": ["标题使用中等字重"],
+                        "tokens": [
+                            {
+                                "token_name": "body-default",
+                                "token_type": "typography",
+                                "token_value": {
+                                    "fontFamily": "system-ui",
+                                    "fontSize": "14px",
+                                    "fontWeight": 400,
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "normal",
+                                },
+                                "description": "默认正文。",
+                                "semantic_role": "正文",
+                                "usage_context": "用于表单说明文本",
+                                "anti_usage": [],
+                                "css_variable": "--text-body-default",
+                                "tailwind_variable": "--text-body-default",
+                                "validated_status": "normative",
+                                "source_basis": ["项目配置"],
+                            }
+                        ],
+                        "tbd_items": [],
+                    },
+                    "spacing_system": {
+                        "description": "表单间距。",
+                        "rules": ["表单项保持紧凑间距"],
+                        "tokens": [],
+                        "tbd_items": [],
+                    },
+                    "shape_system": {
+                        "description": "控件圆角。",
+                        "rules": ["控件使用小圆角"],
+                        "tokens": [],
+                        "tbd_items": [],
+                    },
+                    "elevation_system": {
+                        "description": "弹层阴影。",
+                        "rules": ["弹层使用轻量阴影"],
+                        "tokens": [],
+                        "tbd_items": [],
+                    },
+                    "interaction_visual_system": {
+                        "description": "交互状态。",
+                        "rules": ["loading 状态保持按钮宽度"],
+                        "tokens": [],
+                        "tbd_items": [],
+                    },
+                    "tailwind_theme_css": (
+                        "@theme {\n"
+                        "  --color-primary: #111111;\n"
+                        "  --text-body-default: 14px;\n"
+                        "}"
+                    ),
                     "interaction_state_matrix": [
                         {
                             "state_name": "loading",
@@ -408,36 +502,210 @@ def test_ui_design_output_accepts_new_visual_contract() -> None:
     visual_priority = output.content.component_style_rules[0].visual_priority
     assert theme_types.light_mode == "默认浅色主题。"
     assert theme_types.dark_mode == "低光环境下保持对比度。"
+    assert output.content.visual_system.theme_configuration.default_theme == "默认浅色主题"
     assert visual_priority.primary_content == ["任务标题"]
     assert visual_priority.secondary_content == ["任务描述"]
     assert visual_priority.tertiary_content == ["帮助文本"]
     assert visual_priority.primary_actions == ["创建任务"]
     assert visual_priority.secondary_actions == ["取消"]
     assert visual_priority.danger_actions == ["清空表单"]
-    assert output.content.visual_system.brand_anchor == "任务创建工作台"
     assert output.content.visual_system.style_tags == ["高密度", "快速录入", "可扫描"]
-    assert output.content.visual_system.evidence_policy == "区分 validated、normative、tbd 和 inferred。"
+    assert (
+        output.content.visual_system.evidence_policy
+        == "区分 validated、normative、tbd 和 inferred。"
+    )
     assert output.content.visual_system.tbd_items == ["深色模式 token 待验证"]
-    assert output.content.visual_system.token_catalog[0].group_name == "颜色系统"
-    assert output.content.visual_system.token_catalog[0].tokens[0].token_value == "#111111"
-    assert output.content.visual_system.token_catalog[0].tokens[0].css_variable == "--color-primary"
+    color_token = output.content.visual_system.color_system.tokens[0]
+    typography_token = output.content.visual_system.typography_system.tokens[0]
+    assert color_token.token_value == "#111111"
+    assert color_token.css_variable == "--color-primary"
+    assert typography_token.token_value["fontSize"] == "14px"
+    assert "@theme" in output.content.visual_system.tailwind_theme_css
     assert output.content.visual_system.interaction_state_matrix[0].state_name == "loading"
     assert output.content.layout_rules[0].primary_action == "创建任务"
     assert output.content.component_style_rules[0].style_rules == ["错误消息就近展示"]
     assert output.content.component_style_rules[0].states[0].state_name == "focus-visible"
-    assert output.content.component_style_rules[0].implementation_hint == "映射到现有 Button 和 Input 组件"
+    assert (
+        output.content.component_style_rules[0].implementation_hint
+        == "映射到现有 Button 和 Input 组件"
+    )
 
 
 def test_ui_design_prompt_mentions_extended_visual_contract() -> None:
     rendered = render_prompt_template("ui_design", _template_variables("ui_design"))
 
-    assert "brand_anchor" in rendered.user
-    assert "token_catalog" in rendered.user
+    assert "brand_anchor" not in rendered.user
+    assert "token_catalog" not in rendered.user
     assert "interaction_state_matrix" in rendered.user
+    assert "tailwind_theme_css" in rendered.user
+    assert (
+        "color_system、typography_system、spacing_system、shape_system、"
+        "elevation_system、interaction_visual_system"
+    ) in rendered.user
+    assert "不要输出 light_mode、dark_mode 或其它字段 key" in rendered.user
     assert "validated、normative、tbd、inferred" in rendered.user
     assert "source_references" in rendered.user
     assert "anti_usage" in rendered.user
-    assert "组件规则必须覆盖 default、hover、pressed、focus-visible、selected、disabled、loading、error" in rendered.user
+    assert (
+        "组件规则必须覆盖 default、hover、pressed、focus-visible、selected、disabled、"
+        "loading、error"
+    ) in rendered.user
+
+
+def test_downstream_prompts_read_visual_system_tokens_without_catalog() -> None:
+    frontend_pages = render_prompt_template(
+        "frontend_pages",
+        _template_variables("frontend_pages"),
+        language="zh-CN",
+    )
+    prompt_pack = render_prompt_template(
+        "prompt_pack",
+        _template_variables("prompt_pack"),
+        language="zh-CN",
+    )
+    change_set = render_prompt_template(
+        "change_set",
+        _template_variables("change_set"),
+        language="zh-CN",
+    )
+
+    for rendered in (frontend_pages, prompt_pack, change_set):
+        assert "token_catalog" not in rendered.user
+        assert "color_system" in rendered.user
+        assert "tailwind_theme_css" in rendered.user
+
+
+def test_ui_design_output_rejects_default_theme_field_key() -> None:
+    with pytest.raises(ValueError, match="default_theme must be a user-visible"):
+        UIDesignOutput.model_validate(
+            {
+                "title": "任务创建 UI 视觉设计",
+                "summary": "定义任务创建页的视觉系统、布局和组件样式。",
+                "content": {
+                    "version_summary": "新增任务创建视觉规则。",
+                    "visual_system": {
+                        "design_style": {
+                            "style_description": "清晰、工作台式、主操作突出。",
+                            "signature_traits": ["紧凑表单"],
+                        },
+                        "style_tags": [],
+                        "design_principles": [],
+                        "theme_configuration": {
+                            "theme_types": {
+                                "light_mode": "默认浅色主题。",
+                                "dark_mode": "低光环境下保持对比度。",
+                            },
+                            "default_theme": "light_mode",
+                        },
+                    },
+                    "layout_rules": [],
+                    "component_style_rules": [],
+                    "diff": {"added": [], "modified": [], "removed": []},
+                },
+                "diff_from_previous": {"added": [], "modified": [], "removed": []},
+            }
+        )
+
+
+def test_ui_design_output_accepts_legacy_token_catalog_before_normalization() -> None:
+    output = UIDesignOutput.model_validate(
+        {
+            "title": "任务创建 UI 视觉设计",
+            "summary": "定义任务创建页的视觉系统、布局和组件样式。",
+            "content": {
+                "version_summary": "新增任务创建视觉规则。",
+                "visual_system": {
+                    "design_style": {
+                        "style_description": "清晰、工作台式、主操作突出。",
+                        "signature_traits": [],
+                    },
+                    "style_tags": [],
+                    "design_principles": [],
+                    "theme_configuration": {
+                        "theme_types": {
+                            "light_mode": "默认浅色主题。",
+                            "dark_mode": "低光环境下保持对比度。",
+                        },
+                        "default_theme": "默认浅色主题",
+                    },
+                    "token_catalog": [
+                        {
+                            "group_name": "字体系统",
+                            "tokens": [
+                                {
+                                    "token_name": "body-default",
+                                    "token_value": {
+                                        "fontFamily": "system-ui",
+                                        "fontSize": "14px",
+                                        "fontWeight": 400,
+                                        "lineHeight": "20px",
+                                        "letterSpacing": "normal",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                },
+                "layout_rules": [],
+                "component_style_rules": [],
+                "diff": {"added": [], "modified": [], "removed": []},
+            },
+            "diff_from_previous": {"added": [], "modified": [], "removed": []},
+        }
+    )
+
+    legacy_token = output.content.visual_system.token_catalog[0].tokens[0]
+    assert legacy_token.token_value["fontSize"] == "14px"
+
+
+def test_ui_design_output_rejects_unknown_token_status() -> None:
+    with pytest.raises(ValueError, match="validated_status"):
+        UIDesignOutput.model_validate(
+            {
+                "title": "任务创建 UI 视觉设计",
+                "summary": "定义任务创建页的视觉系统、布局和组件样式。",
+                "content": {
+                    "version_summary": "新增任务创建视觉规则。",
+                    "visual_system": {
+                        "design_style": {
+                            "style_description": "清晰、工作台式、主操作突出。",
+                            "signature_traits": [],
+                        },
+                        "style_tags": [],
+                        "design_principles": [],
+                        "theme_configuration": {
+                            "theme_types": {
+                                "light_mode": "默认浅色主题。",
+                                "dark_mode": "低光环境下保持对比度。",
+                            },
+                            "default_theme": "默认浅色主题",
+                        },
+                        "color_system": {
+                            "description": "主操作颜色。",
+                            "rules": [],
+                            "tokens": [
+                                {
+                                    "token_name": "primary",
+                                    "token_type": "color",
+                                    "token_value": "#111111",
+                                    "description": "主操作颜色。",
+                                    "semantic_role": "主操作",
+                                    "usage_context": "用于创建按钮",
+                                    "anti_usage": [],
+                                    "validated_status": "guessed",
+                                    "source_basis": [],
+                                }
+                            ],
+                            "tbd_items": [],
+                        },
+                    },
+                    "layout_rules": [],
+                    "component_style_rules": [],
+                    "diff": {"added": [], "modified": [], "removed": []},
+                },
+                "diff_from_previous": {"added": [], "modified": [], "removed": []},
+            }
+        )
 
 
 def test_ui_design_validator_does_not_add_visual_quality_summary() -> None:
@@ -454,15 +722,34 @@ def test_ui_design_validator_does_not_add_visual_quality_summary() -> None:
                             "dark_mode": "已支持暗色主题",
                         }
                     },
+                    "color_system": {
+                        "tokens": [
+                            {
+                                "token_name": "brand-danger",
+                                "token_type": "color",
+                                "token_value": "#ff385c",
+                                "description": "危险操作颜色",
+                                "semantic_role": "危险操作",
+                                "usage_context": "删除按钮",
+                            }
+                        ]
+                    },
                     "token_catalog": [
                         {
-                            "group_name": "颜色",
+                            "group_name": "字体系统",
                             "tokens": [
                                 {
-                                    "token_name": "brand-danger",
-                                    "token_value": "#ff385c",
-                                    "semantic_role": "危险操作",
-                                    "usage_context": "删除按钮",
+                                    "token_name": "body-default",
+                                    "token_value": {
+                                        "fontFamily": "system-ui",
+                                        "fontSize": "14px",
+                                        "fontWeight": 400,
+                                        "lineHeight": "20px",
+                                        "letterSpacing": "normal",
+                                    },
+                                    "token_type": "typography",
+                                    "anti_usage": "不用于页面主标题",
+                                    "source_basis": "LLM legacy token_catalog output",
                                 }
                             ],
                         }
@@ -482,7 +769,20 @@ def test_ui_design_validator_does_not_add_visual_quality_summary() -> None:
     )
 
     assert "visual_quality_summary" not in payload["content"]
-    assert payload["content"]["visual_system"]["token_catalog"][0]["tokens"][0]["anti_usage"] == []
+    assert "token_catalog" not in payload["content"]["visual_system"]
+    assert payload["content"]["visual_system"]["color_system"]["tokens"][0]["anti_usage"] == []
+    assert (
+        payload["content"]["visual_system"]["typography_system"]["tokens"][0][
+            "token_value"
+        ]["fontSize"]
+        == "14px"
+    )
+    assert payload["content"]["visual_system"]["typography_system"]["tokens"][0][
+        "anti_usage"
+    ] == ["不用于页面主标题"]
+    assert payload["content"]["visual_system"]["typography_system"]["tokens"][0][
+        "source_basis"
+    ] == ["LLM legacy token_catalog output"]
     assert payload["content"]["layout_rules"] == [{"target_screen": "删除页"}]
 
 

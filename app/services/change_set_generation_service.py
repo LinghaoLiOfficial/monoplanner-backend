@@ -29,10 +29,10 @@ CHILD_RUN_TYPE = "generate_change_set_asset"
 LAYER_GENERATION_ORDER = [
     "ux_design",
     "ui_design",
-    "frontend_pages",
     "api_contract",
-    "backend_services",
     "database_models",
+    "backend_services",
+    "frontend_pages",
 ]
 
 
@@ -70,6 +70,12 @@ class ChangeSetGenerationService:
         project_config = project_config_snapshot(project)
         selected_story = story_snapshot(story) or {}
         current_assets = latest_assets_snapshot(self.db, project.id)
+        upstream_change_sets = _batch_change_set_snapshots(
+            self.db,
+            project.id,
+            batch_id,
+            before_layer=layer,
+        )
         prompt = build_change_set_prompt(
             layer=layer,
             project_config=project_config,
@@ -78,6 +84,7 @@ class ChangeSetGenerationService:
                 "layer": layer,
                 "current_layer_asset": current_assets.get(layer),
                 "related_assets": current_assets,
+                "upstream_change_sets": upstream_change_sets,
             },
         )
         parsed = generate_orchestration_json(
@@ -85,6 +92,7 @@ class ChangeSetGenerationService:
             prompt.user,
             response_model=ChangeSetOutput,
             llm_client_factory=self.llm_client_factory,
+            task_key="change_set",
         )
         parsed = _narrow_change_set_to_layer(parsed, layer)
         validated = validate_change_set_payload(parsed, expected_layer=layer)
@@ -191,3 +199,38 @@ def _narrow_change_set_to_layer(parsed: dict[str, Any], layer: str) -> dict[str,
     content = narrowed.get("content") if isinstance(narrowed.get("content"), dict) else {}
     narrowed["content"] = {**content, "layer": layer}
     return narrowed
+
+
+def _batch_change_set_snapshots(
+    db: Session,
+    project_id: UUID,
+    batch_id: UUID,
+    *,
+    before_layer: str,
+) -> list[dict[str, Any]]:
+    allowed_layers = LAYER_GENERATION_ORDER[: LAYER_GENERATION_ORDER.index(before_layer)]
+    if not allowed_layers:
+        return []
+    rows = db.scalars(
+        select(ChangeSet)
+        .where(
+            ChangeSet.project_id == project_id,
+            ChangeSet.batch_id == batch_id,
+            ChangeSet.layer.in_(allowed_layers),
+        )
+        .order_by(ChangeSet.created_at.asc())
+    ).all()
+    return [
+        {
+            "id": str(item.id),
+            "layer": item.layer,
+            "title": item.title,
+            "affected_layers": item.affected_layers,
+            "impact_summary": item.impact_summary,
+            "module_changes": item.module_changes,
+            "risks": item.risks,
+            "open_questions": item.open_questions,
+            "content": item.content,
+        }
+        for item in rows
+    ]

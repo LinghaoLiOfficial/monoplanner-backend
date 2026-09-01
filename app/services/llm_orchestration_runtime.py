@@ -22,12 +22,14 @@ def generate_orchestration_json(
     *,
     response_model: type[BaseModel],
     llm_client_factory: Callable[[], OpenAICompatibleLLMClient] | None = None,
+    task_key: str | None = None,
 ) -> dict[str, Any]:
     if llm_client_factory is None:
         return generate_structured_json(
             system_prompt,
             user_payload,
             response_model=response_model,
+            task_key=task_key,
         )
     try:
         raw = collect_llm_stream_text(

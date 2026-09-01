@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     llm_structured_max_retries: int = Field(
         default=2, ge=0, alias="LLM_STRUCTURED_MAX_RETRIES"
     )
+    llm_task_config_path: str | None = Field(default=None, alias="LLM_TASK_CONFIG_PATH")
     queue_worker_concurrency: int = Field(default=1, ge=1, alias="QUEUE_WORKER_CONCURRENCY")
     queue_poll_interval_seconds: float = Field(default=2.0, alias="QUEUE_POLL_INTERVAL_SECONDS")
     queue_stale_after_seconds: int = Field(default=900, alias="QUEUE_STALE_AFTER_SECONDS")

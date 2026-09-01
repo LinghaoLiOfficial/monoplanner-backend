@@ -15,6 +15,7 @@ from app.llm.client import (
     LLMResponseFormatError,
     OpenAICompatibleLLMClient,
 )
+from app.llm.task_config import create_llm_client, is_llm_task_configured
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,10 @@ class LLMJsonGenerationError(LLMResponseFormatError):
     """Raised when the LLM returns content that cannot be parsed as a JSON object."""
 
 
-def should_use_real_llm() -> bool:
-    return settings.llm_configured
+def should_use_real_llm(task_key: str | None = None) -> bool:
+    if task_key is None:
+        return settings.llm_configured
+    return is_llm_task_configured(task_key)
 
 
 def generate_json(
@@ -35,6 +38,7 @@ def generate_json(
     user_payload: dict[str, Any] | str,
     extra_params: dict[str, Any] | None = None,
     response_model: type[BaseModel] | None = None,
+    task_key: str | None = None,
 ) -> dict[str, Any]:
     if response_model is not None:
         from app.llm.structured_client import generate_structured_json
@@ -43,8 +47,10 @@ def generate_json(
             system_prompt,
             user_payload,
             response_model=response_model,
+            task_key=task_key,
+            extra_params=extra_params,
         )
-    client = OpenAICompatibleLLMClient()
+    client = create_llm_client(task_key) if task_key is not None else OpenAICompatibleLLMClient()
     raw = client.invoke(system_prompt, user_payload, extra_params=extra_params)
     return parse_json_object(raw)
 

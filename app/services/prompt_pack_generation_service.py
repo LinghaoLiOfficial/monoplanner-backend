@@ -129,6 +129,7 @@ class PromptPackGenerationService:
             prompt.user,
             response_model=PromptPackOutput,
             llm_client_factory=self.llm_client_factory,
+            task_key="prompt_pack",
         )
         content = validate_prompt_pack_payload(parsed)
         pack = ContextPack(

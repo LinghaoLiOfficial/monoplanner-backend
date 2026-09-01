@@ -209,6 +209,7 @@ def build_llm_context_pack_payloads(
         system_prompt=prompt.system,
         user_payload=prompt.user,
         response_model=ContextPackOutput,
+        task_key="context_pack",
     )
     packs = response.get("packs")
     if not isinstance(packs, list) or not packs:

@@ -102,6 +102,7 @@ class ProjectService:
                 prompt.system,
                 user_payload,
                 response_model=ProjectDescriptionOptionsOutput,
+                task_key="project_description_options",
             )
             return ProjectDescriptionOptionsRead.model_validate(parsed)
         except LLMConfigurationError as exc:

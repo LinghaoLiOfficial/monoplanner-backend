@@ -39,6 +39,7 @@ class LLMEmptyResponseError(LLMResponseFormatError):
 
 @dataclass(frozen=True)
 class LLMRequestMetadata:
+    task_key: str | None
     provider: str
     base_url: str
     request_url: str
@@ -46,6 +47,7 @@ class LLMRequestMetadata:
     timeout: float
     stream_read_timeout: float
     use_response_format: bool
+    temperature: float
     has_api_key: bool
 
 
@@ -59,7 +61,10 @@ class OpenAICompatibleLLMClient:
         stream_read_timeout: float | None = None,
         provider: str | None = None,
         use_response_format: bool | None = None,
+        temperature: float | None = None,
+        task_key: str | None = None,
     ) -> None:
+        self.task_key = (task_key or "").strip() or None
         self.provider = (provider if provider is not None else settings.llm_provider).strip()
         configured_base_url = base_url if base_url is not None else settings.llm_base_url
         self.base_url = (configured_base_url or "").strip()
@@ -76,10 +81,12 @@ class OpenAICompatibleLLMClient:
             if use_response_format is not None
             else settings.llm_use_response_format
         )
+        self.temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
 
     @property
     def metadata(self) -> LLMRequestMetadata:
         return LLMRequestMetadata(
+            task_key=self.task_key,
             provider=self.provider,
             base_url=self.base_url,
             request_url=build_chat_completions_url(self.base_url),
@@ -87,6 +94,7 @@ class OpenAICompatibleLLMClient:
             timeout=self.timeout,
             stream_read_timeout=self.stream_read_timeout,
             use_response_format=self.use_response_format,
+            temperature=self.temperature,
             has_api_key=bool(self.api_key),
         )
 
@@ -105,12 +113,15 @@ class OpenAICompatibleLLMClient:
         }
 
         logger.info(
-            "llm.request.start provider=%s base_url=%s model=%s timeout=%s use_response_format=%s",
+            "llm.request.start task_key=%s provider=%s base_url=%s model=%s timeout=%s "
+            "use_response_format=%s temperature=%s",
+            self.task_key,
             self.provider,
             self.base_url,
             self.model,
             self.timeout,
             self.use_response_format,
+            self.temperature,
         )
         try:
             response = httpx.post(
@@ -167,14 +178,16 @@ class OpenAICompatibleLLMClient:
         }
 
         logger.info(
-            "llm.stream.start provider=%s base_url=%s model=%s timeout=%s "
-            "stream_read_timeout=%s use_response_format=%s",
+            "llm.stream.start task_key=%s provider=%s base_url=%s model=%s timeout=%s "
+            "stream_read_timeout=%s use_response_format=%s temperature=%s",
+            self.task_key,
             self.provider,
             self.base_url,
             self.model,
             self.timeout,
             self.stream_read_timeout,
             self.use_response_format,
+            self.temperature,
         )
         try:
             with httpx.Client(timeout=self._stream_timeout()) as client:
@@ -209,7 +222,12 @@ class OpenAICompatibleLLMClient:
                 _excerpt(str(exc), 500),
             )
             raise LLMRequestError("LLM API stream request failed.") from exc
-        logger.info("llm.stream.success provider=%s model=%s", self.provider, self.model)
+        logger.info(
+            "llm.stream.success task_key=%s provider=%s model=%s",
+            self.task_key,
+            self.provider,
+            self.model,
+        )
 
     def _stream_timeout(self) -> httpx.Timeout:
         return httpx.Timeout(
@@ -228,10 +246,11 @@ class OpenAICompatibleLLMClient:
         if missing:
             logger.warning(
                 "llm.configuration.missing provider=%s base_url=%s model=%s "
-                "has_api_key=%s missing=%s",
+                "task_key=%s has_api_key=%s missing=%s",
                 self.provider,
                 self.base_url,
                 self.model,
+                self.task_key,
                 bool(self.api_key),
                 ",".join(missing),
             )
@@ -254,7 +273,7 @@ class OpenAICompatibleLLMClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
-            "temperature": DEFAULT_TEMPERATURE,
+            "temperature": self.temperature,
         }
         if self.use_response_format:
             request_body["response_format"] = DEFAULT_RESPONSE_FORMAT

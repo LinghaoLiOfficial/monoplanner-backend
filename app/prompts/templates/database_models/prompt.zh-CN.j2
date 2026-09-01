@@ -49,7 +49,8 @@ Output Fields:
 Output Rules:
   - 输出完整的当前数据库模型资产，不要只输出本次变更片段。
   - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的表和字段。
-  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须将其落实到最终完整字段中。
+  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须逐项应用 change_set.module_changes.database_models 到最终完整字段中，不得在资产生成阶段重新决定表和字段范围。
+  - 如果 ChangeSet 无法落实到数据库模型输出字段，必须在 content.diff 或 diff_from_previous 中标记未落实项，不要自由新增表字段。
   - 每张表和每个字段必须能追溯到业务需求、API 契约或后端工程设计，不生成无来源结构。
   - 默认使用 uuid 主键；外键字段使用 snake_case_id，并在字段 description 中说明关联对象。
   - 当前输出只包含数据库表和字段；不要输出 relationships、indexes、migration_notes、database、SQL、SQLAlchemy 或 Alembic 代码。

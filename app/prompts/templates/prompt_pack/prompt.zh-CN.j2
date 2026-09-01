@@ -26,9 +26,9 @@ Input Fields:
   - project_config: object，项目配置、技术栈和提示词偏好。
   - selected_story: object 或 null，触发本次实现指令的业务需求故事。
   - change_set: object，兼容字段，通常为本批次中的第一条分层 ChangeSet。
-  - change_sets: array，所有已生成并应用于本批次的分层 ChangeSet；每条代表一个 layer 的 added、modified、removed。
-  - old_versions: object，变更前设计资产快照。
-  - new_versions: object，变更后设计资产快照。
+  - change_sets: array，所有已生成并应用于本批次的分层字段级 ChangeSet；每条代表一个 layer 的 added、modified、removed，且每个条目可包含 field、selector、before、after、dependencies 和 acceptance_criteria。
+  - old_versions: object，变更前的当前最新资产快照。
+  - new_versions: object，变更后的当前最新资产快照。
   - prompt_preferences: array，用户配置的指令偏好。
 
 Output Fields:
@@ -50,11 +50,12 @@ Output Fields:
 Output Rules:
   - 只生成 Codex 可执行指令，不生成业务代码。
   - 不需要的一侧仍要输出完整 prompt section，但 needed=false，prompt 写简短原因。
-  - 前端 prompt 必须结合 change_sets 中 ux_design、ui_design、frontend_pages 的增删改，以及对应 new_versions。
+  - 前端 prompt 必须结合 change_sets 中 ux_design、ui_design、frontend_pages 的字段级增删改，以及对应 new_versions。
   - 前端 prompt 必须包含 UI 视觉验收要求：token/CSS variable/Tailwind 映射、组件状态覆盖、主 CTA 唯一性、移动端布局检查、focus-visible 与 loading/error 状态。
-  - 当前端涉及 UI 变化时，必须读取 new_versions.ui_design.content.visual_system.token_catalog、interaction_state_matrix、component_style_rules、layout_rules、tbd_items。
+  - 当前端涉及 UI 变化时，必须读取 new_versions.ui_design.content.visual_system.color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system、tailwind_theme_css、interaction_state_matrix、component_style_rules、layout_rules、tbd_items。
   - 如果 UI 设计存在 tbd_items，前端 prompt 必须明确说明不要自行补全这些视觉语义，需保持现有 token 或标注待确认。
-  - 后端 prompt 必须结合 change_sets 中 api_contract、backend_services、database_models 的增删改，以及对应 new_versions。
+  - 后端 prompt 必须结合 change_sets 中 api_contract、database_models、backend_services 的字段级增删改，以及对应 new_versions。
+  - 执行顺序通常为 backend_prompt 再 frontend_prompt；若只有前端变更则只输出 frontend_prompt。
   - 不要依赖 project_blueprint；本链路已经去除项目蓝图作为中间层。
   - 当 UX/UI 发生变化时，diff_summary 必须包含 ux_design/ui_design 摘要。
   - 只输出严格 JSON object，不要 Markdown 或解释文字。

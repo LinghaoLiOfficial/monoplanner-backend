@@ -1,6 +1,8 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+VALID_TOKEN_STATUSES = {"validated", "normative", "tbd", "inferred"}
 
 
 class UIDesignStyle(BaseModel):
@@ -17,24 +19,52 @@ class UIThemeConfiguration(BaseModel):
     theme_types: UIThemeTypes
     default_theme: str
 
+    @field_validator("default_theme")
+    @classmethod
+    def default_theme_must_be_user_visible(cls, value: str) -> str:
+        if value.strip() in {"light_mode", "dark_mode"}:
+            raise ValueError(
+                "default_theme must be a user-visible theme name or description, "
+                "not the technical theme_types field key."
+            )
+        return value
 
-class UIVisualToken(BaseModel):
-    token_name: str
-    token_value: str
-    semantic_role: str
-    usage_context: str
-    anti_usage: list[str] = Field(default_factory=list)
+
+class UIDesignToken(BaseModel):
+    token_name: str = ""
     token_type: str | None = None
+    token_value: str | dict[str, Any] = ""
+    description: str | None = None
+    semantic_role: str | None = None
+    usage_context: str | None = None
+    anti_usage: list[str] | str | None = Field(default_factory=list)
     css_variable: str | None = None
+    tailwind_variable: str | None = None
     validated_status: str | None = None
-    source_basis: list[str] = Field(default_factory=list)
+    source_basis: list[str] | str | None = Field(default_factory=list)
     contrast_notes: str | None = None
 
+    @field_validator("validated_status")
+    @classmethod
+    def validated_status_must_be_known(cls, value: str | None) -> str | None:
+        if value is not None and value not in VALID_TOKEN_STATUSES:
+            raise ValueError(
+                "validated_status must be one of validated, normative, tbd, inferred."
+            )
+        return value
 
-class UIVisualTokenGroup(BaseModel):
-    group_name: str
+
+class UIDesignTokenSystem(BaseModel):
     description: str | None = None
-    tokens: list[UIVisualToken] = Field(default_factory=list)
+    rules: list[str] = Field(default_factory=list)
+    tokens: list[UIDesignToken] = Field(default_factory=list)
+    tbd_items: list[str] = Field(default_factory=list)
+
+
+class UILegacyVisualTokenGroup(BaseModel):
+    group_name: str | None = None
+    description: str | None = None
+    tokens: list[UIDesignToken] = Field(default_factory=list)
 
 
 class UIInteractionStateRule(BaseModel):
@@ -46,7 +76,6 @@ class UIInteractionStateRule(BaseModel):
 
 class UIVisualSystem(BaseModel):
     design_style: UIDesignStyle
-    brand_anchor: str | None = None
     style_tags: list[str] = Field(default_factory=list)
     design_principles: list[str] = Field(default_factory=list)
     theme_configuration: UIThemeConfiguration
@@ -55,13 +84,16 @@ class UIVisualSystem(BaseModel):
     tbd_items: list[str] = Field(default_factory=list)
     accessibility_rules: list[str] = Field(default_factory=list)
     responsive_contract: list[str] = Field(default_factory=list)
-    color_system: list[str] = Field(default_factory=list)
-    typography_system: list[str] = Field(default_factory=list)
-    spacing_system: list[str] = Field(default_factory=list)
-    shape_system: list[str] = Field(default_factory=list)
-    elevation_system: list[str] = Field(default_factory=list)
-    interaction_visual_system: list[str] = Field(default_factory=list)
-    token_catalog: list[UIVisualTokenGroup] = Field(default_factory=list)
+    color_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
+    typography_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
+    spacing_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
+    shape_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
+    elevation_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
+    interaction_visual_system: UIDesignTokenSystem | list[str] = Field(
+        default_factory=UIDesignTokenSystem
+    )
+    tailwind_theme_css: str | None = None
+    token_catalog: list[UILegacyVisualTokenGroup] = Field(default_factory=list)
     interaction_state_matrix: list[UIInteractionStateRule] = Field(default_factory=list)
 
 

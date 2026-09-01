@@ -25,7 +25,7 @@ Input Fields:
   - selected_story: object 或 null，本次 API 变更对应的业务需求故事。
   - change_set: object，本次已确定的 API 契约变更范围；必须优先遵守其中的字段级变更。
   - previous_version: object 或 null，上一版本 API 契约完整资产；存在时必须在其基础上增删改，不得无依据重建其他接口。
-  - related_assets: object，UX、UI、前端和数据库等相关资产，仅用于保持接口与业务流程、页面和数据模型一致。
+  - related_assets: object，UX、UI、数据库等相关资产，仅用于保持接口与业务流程、页面和数据模型一致。
 
 Output Fields:
   - title: string，当前 API 契约资产标题。
@@ -54,7 +54,8 @@ Output Fields:
 Output Rules:
   - 输出完整的当前 API 契约资产，不要只输出本次变更片段。
   - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的资源组、接口和错误模式。
-  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须将其落实到最终完整字段中。
+  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须逐项应用 change_set.module_changes.api_contract 到最终完整字段中，不得在资产生成阶段重新决定接口范围。
+  - 如果 ChangeSet 无法落实到 API 输出字段，必须在 content.diff 或 diff_from_previous 中标记未落实项，不要自由新增接口。
   - 每个接口必须能追溯到业务需求、UX/UI 流程、前端页面或数据库模型，不生成无来源接口。
   - endpoint_path 应相对于 api_base_path 表达，例如 /tasks，而不是重复 /api/v1。
   - request_schema 和 response_schema 必须是对象；字段结构要足够支持前后端联调。

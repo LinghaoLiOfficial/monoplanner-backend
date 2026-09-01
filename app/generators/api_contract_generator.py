@@ -79,6 +79,7 @@ def build_llm_api_contract_content(
         system_prompt=prompt.system,
         user_payload=prompt.user,
         response_model=ApiContractOutput,
+        task_key="api_contract_generator",
     )
     return validate_api_contract_content(content)
 

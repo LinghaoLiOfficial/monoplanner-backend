@@ -3,11 +3,14 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.llm.client import (
     LLMRequestError,
     OpenAICompatibleLLMClient,
     extract_chat_completion_stream_delta,
 )
+from app.llm.structured_client import generate_structured_json
+from app.llm.task_config import clear_llm_task_config_cache, create_llm_client
 from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.generation_run import GenerationRun
 from app.services.llm_generation_runtime import LLMPartialStreamError
@@ -107,6 +110,76 @@ def test_orchestration_json_retries_incomplete_partial_stream(monkeypatch) -> No
 
     with pytest.raises(LLMPartialStreamError):
         generate_orchestration_json("system", {"task": "demo"}, response_model=OkOutput)
+
+
+def test_orchestration_json_uses_task_configured_client(monkeypatch, tmp_path) -> None:
+    config_path = tmp_path / "llm-task-mapping.json"
+    config_path.write_text(
+        '{"defaults":{"base_url":"https://default.test/v1","api_key":"key",'
+        '"model":"default-model"},"tasks":{"ui_design":{"model":"ui-model","timeout":42}}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "llm_task_config_path", str(config_path))
+    clear_llm_task_config_cache()
+    seen: dict[str, object] = {}
+
+    def stream(self, *_args, **_kwargs):
+        seen["task_key"] = self.metadata.task_key
+        seen["model"] = self.metadata.model
+        seen["timeout"] = self.metadata.timeout
+        yield '{"ok": true}'
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
+
+    assert generate_orchestration_json(
+        "system",
+        {"task": "demo"},
+        response_model=OkOutput,
+        llm_client_factory=lambda: create_llm_client("ui_design"),
+        task_key="ui_design",
+    ) == {"ok": True}
+    assert seen == {"task_key": "ui_design", "model": "ui-model", "timeout": 42}
+    clear_llm_task_config_cache()
+
+
+def test_structured_instructor_uses_task_model(monkeypatch, tmp_path) -> None:
+    config_path = tmp_path / "llm-task-mapping.json"
+    config_path.write_text(
+        '{"defaults":{"base_url":"https://default.test/v1","api_key":"key",'
+        '"model":"default-model","structured_max_retries":4},'
+        '"tasks":{"ui_design":{"model":"ui-model","temperature":0.4}}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "llm_task_config_path", str(config_path))
+    clear_llm_task_config_cache()
+    seen: dict[str, object] = {}
+
+    class FakeCompletion:
+        def create(self, **kwargs):
+            seen.update(kwargs)
+            return OkOutput(ok=True)
+
+    class FakeChat:
+        completions = FakeCompletion()
+
+    class FakeInstructorClient:
+        chat = FakeChat()
+
+    monkeypatch.setattr(
+        "app.llm.structured_client.instructor.from_openai",
+        lambda *_args, **_kwargs: FakeInstructorClient(),
+    )
+
+    assert generate_structured_json(
+        "system",
+        {"task": "demo"},
+        response_model=OkOutput,
+        task_key="ui_design",
+    ) == {"ok": True}
+    assert seen["model"] == "ui-model"
+    assert seen["max_retries"] == 4
+    assert seen["temperature"] == 0.4
+    clear_llm_task_config_cache()
 
 
 def test_regular_blueprint_endpoint_enqueues_and_worker_saves_resource(

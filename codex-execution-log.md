@@ -765,3 +765,24 @@
 - Actions: 扩展 `app/prompts/templates/ui_design/output_schema.py` 的证据、TBD、可访问性、响应式、token 来源和组件状态字段；在 `app/services/orchestration_validators.py` 为 `ui_design` 归一化 token/state/diff 并生成 `visual_quality_summary.warnings`；更新 UI、frontend_pages、prompt_pack 中英模板。
 - Result: `ui_designs.content` 继续用 JSONB 兼容保存新版结构，LLM 生成链路会强调 validated/normative/tbd/inferred 分级，并对品牌色误用为 danger、暗色模式缺少来源、token 缺 anti_usage 等风险产生结构化提示。
 - Verification: `uv run pytest tests/test_prompt_template_contracts.py tests/test_design_assets_phase_1_2.py tests/test_orchestration_phase_3_4.py -q` 通过。
+
+## 2026-09-02 00:29 +08 - LLM 任务级配置 mapping
+
+- Request: 实现后端各 LLM 任务可独立配置 URL、Key、模型和参数，并支持全局默认配置 fallback。
+- Actions: 新增 `app/llm/task_config.py` 负责 JSON mapping 加载、任务 key 校验、默认值合并、`api_key_env` 解析和工厂创建；扩展 LLM client metadata、temperature 和 task 日志；为 JSON、structured、orchestration 三条调用路径传入明确 task key；补充示例配置、`.env.example`、README 和回归测试。
+- Result: 后端 LLM 调用现在可按 prompt template task key 独立覆盖 `provider/base_url/api_key/model/timeout/stream_read_timeout/use_response_format/structured_max_retries/temperature/extra_params`，未配置字段回退到 mapping defaults，再回退到现有 `.env` 全局 `LLM_*`。
+- Verification: `uv run pytest tests/test_llm_task_config.py tests/test_streaming_generation.py tests/test_generation_queue.py tests/test_orchestration_phase_3_4.py` 通过；`uv run ruff check app/llm app/services/llm_generation_runtime.py app/services/llm_orchestration_runtime.py app/services/streaming_generation_service.py app/generators tests/test_llm_task_config.py tests/test_streaming_generation.py` 通过。
+
+## 2026-09-02 00:34 +08 - 设置本地 LLM 默认模型
+
+- Request: 直接配置全局默认大模型为 VectorEngine `gpt-5.5`。
+- Actions: 新增 `config/llm-task-mapping.local.json`，写入默认 `base_url`、`api_key`、`model`、超时和结构化参数；在 `.env` 增加 `LLM_TASK_CONFIG_PATH=config/llm-task-mapping.local.json`。
+- Result: 未单独配置的所有 LLM 任务都会继承 `https://api.vectorengine.cn/v1`、`key`、`gpt-5.5`。
+- Verification: `uv run python - <<'PY' ... get_llm_task_config('blueprint_generator') ... PY` 输出目标 base_url、api_key、model 且 `configured=True`。
+
+## 2026-09-02 00:36 +08 - 验证本地 LLM mapping 生效
+
+- Request: 测试当前 LLM 配置是否生效。
+- Actions: 通过 `get_llm_task_config()` 和 `create_llm_client()` 检查 `blueprint_generator`、`ui_design`、`prompt_pack` 三个任务的解析结果。
+- Result: 三个任务均从 `config/llm-task-mapping.local.json` 继承 VectorEngine 默认配置，最终请求 URL 为 `https://api.vectorengine.cn/v1/chat/completions`，模型为 `gpt-5.5`，`configured=True`。
+- Verification: `uv run python - <<'PY' ... PY` 通过。

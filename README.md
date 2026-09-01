@@ -35,6 +35,7 @@ LLM_MODEL=qwen-plus
 LLM_TIMEOUT_SECONDS=60
 LLM_STREAM_READ_TIMEOUT_SECONDS=300
 LLM_THINKING=false
+LLM_TASK_CONFIG_PATH=config/llm-task-mapping.local.json
 
 # Background generation queue
 QUEUE_WORKER_CONCURRENCY=1
@@ -52,6 +53,7 @@ LLM 配置说明：
 - `LLM_TIMEOUT_SECONDS`: 单次请求超时时间，单位秒，默认 `60`。
 - `LLM_STREAM_READ_TIMEOUT_SECONDS`: 流式响应连续无数据读取超时时间，单位秒，默认 `300`；应用变更集等长生成建议保持高于 `LLM_TIMEOUT_SECONDS`。
 - `LLM_THINKING`: 是否启用支持思考模式的模型参数，默认 `false`。
+- `LLM_TASK_CONFIG_PATH`: 可选 LLM 任务配置 mapping 文件路径。未配置或文件不存在时继续使用上方全局 `LLM_*` 设置；配置后可按 prompt template task key 覆盖 `base_url`、`api_key_env`、`model`、`timeout`、`stream_read_timeout`、`temperature` 等字段。参考 `config/llm-task-mapping.example.json`。
 
 队列配置说明：
 

@@ -18,6 +18,12 @@ from app.llm.client import (
     OpenAICompatibleLLMClient,
 )
 from app.llm.json_client import parse_json_object
+from app.llm.task_config import (
+    LLMTaskConfig,
+    create_llm_client,
+    get_llm_task_config,
+    is_llm_task_configured,
+)
 from app.services.llm_generation_runtime import (
     LLMPartialStreamError,
     collect_llm_stream_text,
@@ -36,13 +42,16 @@ def generate_structured_json(
     llm_client_factory: LLMClientFactory | None = None,
     max_retries: int | None = None,
     extra_params: dict[str, Any] | None = None,
+    task_key: str | None = None,
 ) -> dict[str, Any]:
-    if llm_client_factory is not None or not settings.llm_configured:
+    configured = settings.llm_configured if task_key is None else is_llm_task_configured(task_key)
+    if llm_client_factory is not None or not configured:
         return _generate_structured_json_from_stream(
             system_prompt,
             user_payload,
             response_model=response_model,
-            llm_client_factory=llm_client_factory or OpenAICompatibleLLMClient,
+            llm_client_factory=llm_client_factory
+            or _client_factory_for_task(task_key, configured=configured),
             extra_params=extra_params,
         )
     return _generate_structured_json_with_instructor(
@@ -50,6 +59,8 @@ def generate_structured_json(
         user_payload,
         response_model=response_model,
         max_retries=max_retries,
+        task_key=task_key,
+        extra_params=extra_params,
     )
 
 
@@ -59,27 +70,41 @@ def _generate_structured_json_with_instructor(
     *,
     response_model: type[BaseModel],
     max_retries: int | None,
+    task_key: str | None,
+    extra_params: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    _validate_configuration()
-    retries = settings.llm_structured_max_retries if max_retries is None else max_retries
+    config = _resolved_task_config(task_key)
+    _validate_configuration(config, task_key=task_key)
+    retries = (
+        config.structured_max_retries
+        if max_retries is None
+        else max_retries
+    )
     client = instructor.from_openai(
         openai.OpenAI(
-            base_url=settings.llm_base_url,
-            api_key=settings.llm_api_key,
-            timeout=settings.llm_stream_read_timeout_seconds,
+            base_url=config.base_url,
+            api_key=config.resolved_api_key,
+            timeout=config.stream_read_timeout,
         ),
         mode=instructor.Mode.JSON,
     )
+    request_kwargs: dict[str, Any] = dict(extra_params or {})
+    request_kwargs.pop("response_format", None)
     try:
         response = client.chat.completions.create(
-            model=settings.llm_model,
+            model=config.model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": _user_content(user_payload)},
             ],
             response_model=response_model,
             max_retries=retries,
-            temperature=DEFAULT_TEMPERATURE,
+            temperature=(
+                config.temperature
+                if config.temperature is not None
+                else DEFAULT_TEMPERATURE
+            ),
+            **request_kwargs,
         )
     except ValidationError as exc:
         logger.warning(
@@ -152,16 +177,41 @@ def _generate_structured_json_from_stream(
         ) from exc
 
 
-def _validate_configuration() -> None:
+def _resolved_task_config(task_key: str | None):
+    if task_key is None:
+        return LLMTaskConfig(
+            provider=settings.llm_provider,
+            base_url=settings.llm_base_url,
+            api_key=settings.llm_api_key,
+            model=settings.llm_model,
+            timeout=settings.llm_timeout_seconds,
+            stream_read_timeout=settings.llm_stream_read_timeout_seconds,
+            use_response_format=settings.llm_use_response_format,
+            structured_max_retries=settings.llm_structured_max_retries,
+            temperature=DEFAULT_TEMPERATURE,
+        )
+    return get_llm_task_config(task_key)
+
+
+def _client_factory_for_task(task_key: str | None, *, configured: bool) -> LLMClientFactory:
+    if task_key is None or not configured:
+        return OpenAICompatibleLLMClient
+    return lambda: create_llm_client(task_key)
+
+
+def _validate_configuration(config, *, task_key: str | None) -> None:
     missing = []
-    if not settings.llm_api_key:
+    if not config.resolved_api_key:
         missing.append("LLM_API_KEY")
-    if not settings.llm_base_url:
+    if not config.base_url:
         missing.append("LLM_BASE_URL")
-    if not settings.llm_model:
+    if not config.model:
         missing.append("LLM_MODEL")
     if missing:
-        raise LLMConfigurationError(f"Missing LLM configuration: {', '.join(missing)}.")
+        suffix = f" for task {task_key}" if task_key else ""
+        raise LLMConfigurationError(
+            f"Missing LLM configuration{suffix}: {', '.join(missing)}."
+        )
 
 
 def _user_content(user_payload: dict[str, Any] | str) -> str:

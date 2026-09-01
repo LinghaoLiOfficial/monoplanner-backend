@@ -4,6 +4,7 @@ from typing import Any
 
 VALID_IMPLEMENTATION_SCOPES = {"frontend_only", "backend_only", "fullstack", "non_code"}
 VALID_CHANGE_SET_STATUSES = {"draft", "ready", "applied", "discarded", "failed"}
+VALID_UI_TOKEN_STATUSES = {"validated", "normative", "tbd", "inferred"}
 VALID_AFFECTED_LAYERS = {
     "ux_design",
     "ui_design",
@@ -89,11 +90,10 @@ def _normalize_ui_design_content(content: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(content)
     normalized["diff"] = _diff_or_default(normalized.get("diff"))
     visual_system = _dict_or_empty(normalized.get("visual_system"))
-    token_catalog = _normalize_token_catalog(visual_system.get("token_catalog"))
     state_matrix = _normalize_interaction_state_matrix(
         visual_system.get("interaction_state_matrix")
     )
-    visual_system["token_catalog"] = token_catalog
+    legacy_token_catalog = _list_or_empty(visual_system.pop("token_catalog", None))
     visual_system["interaction_state_matrix"] = state_matrix
     for key in (
         "source_references",
@@ -101,6 +101,9 @@ def _normalize_ui_design_content(content: dict[str, Any]) -> dict[str, Any]:
         "accessibility_rules",
         "responsive_contract",
         "design_principles",
+    ):
+        visual_system[key] = _list_or_empty(visual_system.get(key))
+    for key in (
         "color_system",
         "typography_system",
         "spacing_system",
@@ -108,7 +111,11 @@ def _normalize_ui_design_content(content: dict[str, Any]) -> dict[str, Any]:
         "elevation_system",
         "interaction_visual_system",
     ):
-        visual_system[key] = _list_or_empty(visual_system.get(key))
+        visual_system[key] = _normalize_ui_token_system(visual_system.get(key))
+    _migrate_legacy_token_catalog(visual_system, legacy_token_catalog)
+    visual_system["tailwind_theme_css"] = _string_or_none(
+        visual_system.get("tailwind_theme_css")
+    )
     normalized["visual_system"] = visual_system
     normalized["layout_rules"] = _list_or_empty(normalized.get("layout_rules"))
     normalized["component_style_rules"] = _list_or_empty(
@@ -117,28 +124,111 @@ def _normalize_ui_design_content(content: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def _normalize_token_catalog(value: Any) -> list[dict[str, Any]]:
-    groups = _list_or_empty(value)
-    normalized_groups: list[dict[str, Any]] = []
-    for group in groups:
+def _migrate_legacy_token_catalog(
+    visual_system: dict[str, Any],
+    legacy_token_catalog: list[Any],
+) -> None:
+    for group in legacy_token_catalog:
         if not isinstance(group, dict):
             continue
-        normalized_tokens: list[dict[str, Any]] = []
+        group_name = _string_or_none(group.get("group_name")) or ""
         for token in _list_or_empty(group.get("tokens")):
             if not isinstance(token, dict):
                 continue
-            normalized_token = dict(token)
-            normalized_token["anti_usage"] = _list_or_empty(
-                normalized_token.get("anti_usage")
-            )
-            normalized_token["source_basis"] = _list_or_empty(
-                normalized_token.get("source_basis")
-            )
-            normalized_tokens.append(normalized_token)
-        normalized_group = dict(group)
-        normalized_group["tokens"] = normalized_tokens
-        normalized_groups.append(normalized_group)
-    return normalized_groups
+            token_type = _string_or_none(token.get("token_type"))
+            target_key = _ui_token_system_key(token_type, group_name, token)
+            normalized_token = _normalize_ui_token(token)
+            visual_system[target_key]["tokens"].append(normalized_token)
+
+
+def _ui_token_system_key(
+    token_type: str | None,
+    group_name: str,
+    token: dict[str, Any],
+) -> str:
+    probe = " ".join(
+        [
+            token_type or "",
+            group_name,
+            _string_or_none(token.get("token_name")) or "",
+            _string_or_none(token.get("semantic_role")) or "",
+        ]
+    ).lower()
+    if any(marker in probe for marker in ("typography", "font", "text", "字体")):
+        return "typography_system"
+    if any(marker in probe for marker in ("spacing", "space", "gap", "间距")):
+        return "spacing_system"
+    if any(marker in probe for marker in ("radius", "shape", "border", "圆角", "形状")):
+        return "shape_system"
+    if any(marker in probe for marker in ("shadow", "elevation", "阴影", "层级")):
+        return "elevation_system"
+    if any(marker in probe for marker in ("interaction", "motion", "state", "交互", "状态")):
+        return "interaction_visual_system"
+    return "color_system"
+
+
+def _normalize_ui_token_system(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        system = dict(value)
+        tokens_value = system.get("tokens")
+    else:
+        system = {"description": None, "rules": _list_or_empty(value), "tbd_items": []}
+        tokens_value = []
+
+    normalized_tokens: list[dict[str, Any]] = []
+    for token in _list_or_empty(tokens_value):
+        if not isinstance(token, dict):
+            continue
+        normalized_tokens.append(_normalize_ui_token(token))
+
+    system["description"] = _string_or_none(system.get("description"))
+    system["rules"] = _list_or_empty(system.get("rules"))
+    system["tokens"] = normalized_tokens
+    system["tbd_items"] = _list_or_empty(system.get("tbd_items"))
+    return system
+
+
+def _normalize_ui_token(token: dict[str, Any]) -> dict[str, Any]:
+    normalized_token = dict(token)
+    normalized_token["token_name"] = _string_or_default(
+        normalized_token.get("token_name"), "unnamed-token"
+    )
+    normalized_token["description"] = _string_or_none(
+        normalized_token.get("description")
+    ) or _string_or_none(normalized_token.get("$description"))
+    normalized_token["semantic_role"] = _string_or_none(
+        normalized_token.get("semantic_role")
+    )
+    normalized_token["usage_context"] = _string_or_none(
+        normalized_token.get("usage_context")
+    )
+    normalized_token["anti_usage"] = _ui_token_string_list(
+        normalized_token.get("anti_usage")
+    )
+    normalized_token["source_basis"] = _ui_token_string_list(
+        normalized_token.get("source_basis")
+    )
+    status = normalized_token.get("validated_status")
+    if status is not None and status not in VALID_UI_TOKEN_STATUSES:
+        raise OrchestrationValidationError(
+            "UI token validated_status must be one of "
+            "validated, normative, tbd, inferred."
+        )
+    return normalized_token
+
+
+def _ui_token_string_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        stripped = value.strip()
+        return [stripped] if stripped else []
+    if not isinstance(value, list):
+        return []
+    normalized: list[str] = []
+    for item in value:
+        text = _string_or_none(item)
+        if text:
+            normalized.append(text)
+    return normalized
 
 
 def _normalize_interaction_state_matrix(value: Any) -> list[dict[str, Any]]:
@@ -254,10 +344,28 @@ def _normalize_module_changes(
         if not isinstance(current, dict):
             current = {}
         normalized[layer] = {
-            "added": _list_or_empty(current.get("added")),
-            "modified": _list_or_empty(current.get("modified")),
-            "removed": _list_or_empty(current.get("removed")),
+            "added": _normalize_change_items(current.get("added")),
+            "modified": _normalize_change_items(current.get("modified")),
+            "removed": _normalize_change_items(current.get("removed")),
         }
+    return normalized
+
+
+def _normalize_change_items(value: Any) -> list[Any]:
+    items = _list_or_empty(value)
+    normalized: list[Any] = []
+    for item in items:
+        if not isinstance(item, dict):
+            normalized.append(item)
+            continue
+        normalized_item = dict(item)
+        normalized_item["selector"] = _dict_or_empty(normalized_item.get("selector"))
+        normalized_item["constraints"] = _list_or_empty(normalized_item.get("constraints"))
+        normalized_item["dependencies"] = _list_or_empty(normalized_item.get("dependencies"))
+        normalized_item["acceptance_criteria"] = _list_or_empty(
+            normalized_item.get("acceptance_criteria")
+        )
+        normalized.append(normalized_item)
     return normalized
 
 

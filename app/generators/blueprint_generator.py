@@ -26,6 +26,7 @@ def build_project_blueprint_content(
         prompt.system,
         prompt.user,
         response_model=ProjectBlueprintOutput,
+        task_key="blueprint_generator",
     )
     return validate_blueprint_content(content, project, business_stories)
 

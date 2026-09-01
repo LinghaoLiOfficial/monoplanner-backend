@@ -50,10 +50,10 @@ def _create_project_requirement_and_story(
         affected_layers=[
             "ux_design",
             "ui_design",
-            "frontend_pages",
             "api_contract",
-            "backend_services",
             "database_models",
+            "backend_services",
+            "frontend_pages",
         ],
         user_story="作为用户，我希望创建任务。",
         business_scope={"included": ["创建任务"], "excluded": []},
@@ -86,9 +86,55 @@ def _change_set_payload(*, layers: list[str] | None = None) -> dict:
         ],
         "impact_summary": "实现任务创建闭环。",
         "module_changes": {
-            "ux_design": {"added": [{"target": "任务创建流程"}], "unchanged": ["旧流程说明"]},
-            "ui_design": {"added": [{"target": "任务创建表单"}], "unchanged": ["旧视觉说明"]},
-            "api_contract": {"added": ["POST /tasks"], "unchanged": ["旧接口说明"]},
+            "ux_design": {
+                "added": [
+                    {
+                        "field": "content.business_flows",
+                        "selector": {"flow_name": "创建任务流程"},
+                        "before": None,
+                        "after": {"flow_name": "创建任务流程"},
+                        "reason": "支持用户创建任务。",
+                        "constraints": ["只描述体验流程"],
+                        "dependencies": [],
+                        "acceptance_criteria": ["存在可提交任务的流程"],
+                    }
+                ],
+                "unchanged": ["旧流程说明"],
+            },
+            "ui_design": {
+                "added": [
+                    {
+                        "field": "content.component_style_rules",
+                        "selector": {"component_name": "任务创建表单"},
+                        "before": None,
+                        "after": {"component_name": "任务创建表单"},
+                        "reason": "承接 UX 表单流程。",
+                        "constraints": ["覆盖 loading 和 error 状态"],
+                        "dependencies": ["ux_design: 创建任务流程"],
+                        "acceptance_criteria": ["表单组件状态完整"],
+                    }
+                ],
+                "unchanged": ["旧视觉说明"],
+            },
+            "api_contract": {
+                "added": [
+                    {
+                        "field": "content.api_resource_groups[].endpoints",
+                        "selector": {
+                            "group_name": "tasks",
+                            "http_method": "POST",
+                            "endpoint_path": "/tasks",
+                        },
+                        "before": None,
+                        "after": {"http_method": "POST", "endpoint_path": "/tasks"},
+                        "reason": "提供任务创建接口。",
+                        "constraints": ["request_schema 必须包含 title"],
+                        "dependencies": ["ux_design: 创建任务流程"],
+                        "acceptance_criteria": ["POST /tasks 契约可供前后端实现"],
+                    }
+                ],
+                "unchanged": ["旧接口说明"],
+            },
         },
         "risks": [],
         "open_questions": [],
@@ -209,7 +255,6 @@ def _ui_design_payload() -> dict:
                     "style_description": "清晰、工作台式、强调任务创建效率。",
                     "signature_traits": ["主操作突出", "紧凑表单", "错误就近展示"],
                 },
-                "brand_anchor": "任务创建工作台",
                 "style_tags": ["高密度", "快速录入", "状态可辨识"],
                 "design_principles": ["主操作突出", "错误状态必须有文本辅助"],
                 "theme_configuration": {
@@ -217,29 +262,59 @@ def _ui_design_payload() -> dict:
                         "light_mode": "默认浅色主题，适合日常办公。",
                         "dark_mode": "低光环境下保持表单和状态对比度。",
                     },
-                    "default_theme": "light_mode",
+                    "default_theme": "默认浅色主题",
                 },
-                "color_system": ["primary 用于创建任务主按钮", "error 用于校验失败"],
-                "typography_system": ["任务标题使用中等字重"],
-                "spacing_system": ["表单项保持紧凑垂直间距"],
-                "shape_system": ["输入框和按钮使用小圆角"],
-                "elevation_system": ["表单容器不使用重阴影"],
-                "interaction_visual_system": ["提交 loading 时按钮宽度保持稳定"],
-                "token_catalog": [
-                    {
-                        "group_name": "颜色系统",
-                        "description": "创建任务相关的主色与状态色。",
-                        "tokens": [
-                            {
-                                "token_name": "primary",
-                                "token_value": "#111111",
-                                "semantic_role": "主操作",
-                                "usage_context": "用于创建按钮与关键提示",
-                                "anti_usage": ["不要用于错误状态"],
-                            }
-                        ],
-                    }
-                ],
+                "color_system": {
+                    "description": "创建任务相关的主色与状态色。",
+                    "rules": ["primary 用于创建任务主按钮", "error 用于校验失败"],
+                    "tokens": [
+                        {
+                            "token_name": "primary",
+                            "token_type": "color",
+                            "token_value": "#111111",
+                            "description": "创建任务主按钮颜色。",
+                            "semantic_role": "主操作",
+                            "usage_context": "用于创建按钮与关键提示",
+                            "anti_usage": ["不要用于错误状态"],
+                            "css_variable": "--color-primary",
+                            "tailwind_variable": "--color-primary",
+                            "validated_status": "normative",
+                            "source_basis": ["项目配置"],
+                        }
+                    ],
+                    "tbd_items": [],
+                },
+                "typography_system": {
+                    "description": "任务标题与表单文本层级。",
+                    "rules": ["任务标题使用中等字重"],
+                    "tokens": [],
+                    "tbd_items": [],
+                },
+                "spacing_system": {
+                    "description": "任务表单间距。",
+                    "rules": ["表单项保持紧凑垂直间距"],
+                    "tokens": [],
+                    "tbd_items": [],
+                },
+                "shape_system": {
+                    "description": "表单控件形状。",
+                    "rules": ["输入框和按钮使用小圆角"],
+                    "tokens": [],
+                    "tbd_items": [],
+                },
+                "elevation_system": {
+                    "description": "表单容器层级。",
+                    "rules": ["表单容器不使用重阴影"],
+                    "tokens": [],
+                    "tbd_items": [],
+                },
+                "interaction_visual_system": {
+                    "description": "提交状态视觉。",
+                    "rules": ["提交 loading 时按钮宽度保持稳定"],
+                    "tokens": [],
+                    "tbd_items": [],
+                },
+                "tailwind_theme_css": "@theme {\n  --color-primary: #111111;\n}",
                 "interaction_state_matrix": [
                     {
                         "state_name": "loading",
@@ -425,7 +500,13 @@ def test_story_execute_generates_change_set(
     client: TestClient, db_session: Session, monkeypatch
 ) -> None:
     _project, _requirement, story = _create_project_requirement_and_story(client, db_session)
-    patch_llm_stream(monkeypatch, _change_set_payload())
+    captured_payloads: list[str] = []
+
+    def stream(_self, _system_prompt, user_payload, **_kwargs):
+        captured_payloads.append(user_payload)
+        return stream_json_payload(_change_set_payload())
+
+    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
 
     response = client.post(f"/api/v1/business-stories/{story.id}/execute")
 
@@ -453,13 +534,29 @@ def test_story_execute_generates_change_set(
     }
     assert {item.version for item in change_sets} == {1}
     assert len({item.batch_id for item in change_sets}) == 1
+    assert [item.layer for item in change_sets] == [
+        "ux_design",
+        "ui_design",
+        "api_contract",
+        "database_models",
+        "backend_services",
+        "frontend_pages",
+    ]
     ux_change_set = next(item for item in change_sets if item.layer == "ux_design")
     assert ux_change_set.title == "创建任务变更集"
     assert ux_change_set.source_story_id == story.id
     assert ux_change_set.status == "ready"
     assert ux_change_set.affected_layers == ["ux_design"]
     assert ux_change_set.module_changes["ux_design"]["added"]
+    first_change = ux_change_set.module_changes["ux_design"]["added"][0]
+    assert first_change["field"] == "content.business_flows"
+    assert first_change["selector"] == {"flow_name": "创建任务流程"}
+    assert first_change["before"] is None
+    assert first_change["dependencies"] == []
     assert "unchanged" not in ux_change_set.module_changes["ux_design"]
+    assert '"upstream_change_sets": []' in captured_payloads[0]
+    assert '"upstream_change_sets": [' in captured_payloads[2]
+    assert "创建任务变更集" in captured_payloads[2]
 
 
 def test_story_execute_rejects_other_story_while_change_set_generation_is_active(
@@ -543,7 +640,6 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     mocked_outputs = [
         _ux_design_payload(),
         _ui_design_payload(),
-        _frontend_pages_payload(),
         _asset_payload(
             "API 契约",
             {
@@ -579,17 +675,15 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
                 "diff": {"added": ["tasks"]},
             },
         ),
-        _backend_implementation_payload(),
         _asset_payload(
             "数据库模型",
             {
-                "database": {},
                 "database_tables": [],
-                "indexes": [],
-                "migration_notes": [],
                 "diff": {},
             },
         ),
+        _backend_implementation_payload(),
+        _frontend_pages_payload(),
         _prompt_pack_payload(),
     ]
 
@@ -610,24 +704,25 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     assert [_prompt_layer(payload) for payload in captured_payloads[:6]] == [
         "ux_design",
         "ui_design",
-        "frontend_pages",
         "api_contract",
-        "backend_services",
         "database_models",
+        "backend_services",
+        "frontend_pages",
     ]
     assert '"business_flows": [' in captured_payloads[1]
     assert '"business_flows": [' in captured_payloads[2]
     assert '"visual_system": {' in captured_payloads[2]
     assert '"layout_rules": [' in captured_payloads[2]
     assert '"component_style_rules": [' in captured_payloads[2]
-    assert '"route_definitions": [' in captured_payloads[3]
-    assert '"code_logic": [' in captured_payloads[3]
-    assert '"environment_variables": [' in captured_payloads[3]
-    assert '"design_theme": [' in captured_payloads[3]
-    assert '"dependencies": [' in captured_payloads[3]
+    assert '"api_resource_groups": [' in captured_payloads[3]
     assert "related_assets.api_contract" in captured_payloads[4]
     assert "content.directory_structure" in captured_payloads[4]
     assert "content.llm_interaction_templates" in captured_payloads[4]
+    assert '"route_definitions": [' in captured_payloads[5]
+    assert '"code_logic": [' in captured_payloads[5]
+    assert '"environment_variables": [' in captured_payloads[5]
+    assert '"design_theme": [' in captured_payloads[5]
+    assert '"dependencies": [' in captured_payloads[5]
     assert '"new_versions":' in captured_payloads[-1]
     assert '"business_flows": [' in captured_payloads[-1]
     assert '"visual_system": {' in captured_payloads[-1]

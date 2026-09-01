@@ -26,9 +26,9 @@ Input Fields:
   - project_config: object, project configuration, technology stacks, prompt preferences, and llm_prompt_language when available.
   - selected_story: object or null, the business story driving these implementation instructions.
   - change_set: object, compatibility field, usually the first layered ChangeSet in the batch.
-  - change_sets: array, all layered ChangeSets generated and applied in this batch.
-  - old_versions: object, asset snapshots before the change.
-  - new_versions: object, asset snapshots after the change.
+  - change_sets: array, all layered field-level ChangeSets generated and applied in this batch. Each item represents one layer's added, modified, and removed changes; change items may contain field, selector, before, after, dependencies, and acceptance_criteria.
+  - old_versions: object, latest current asset snapshots before the change.
+  - new_versions: object, latest current asset snapshots after the change.
   - prompt_preferences: array, user-configured instruction preferences.
 
 Output Fields:
@@ -50,11 +50,12 @@ Output Fields:
 Output Rules:
   - Generate Codex-executable instructions only; do not generate business code.
   - Always output complete frontend_prompt and backend_prompt sections. If a side is not needed, set needed=false and write a short English reason in prompt.
-  - Frontend instructions must use change_sets for ux_design, ui_design, and frontend_pages plus corresponding new_versions.
+  - Frontend instructions must use field-level changes from change_sets for ux_design, ui_design, and frontend_pages plus corresponding new_versions.
   - Frontend instructions must include UI visual acceptance requirements: token/CSS variable/Tailwind mapping, component state coverage, one primary CTA per task area, mobile layout checks, focus-visible behavior, and loading/error states.
-  - When frontend work includes UI changes, read new_versions.ui_design.content.visual_system.token_catalog, interaction_state_matrix, component_style_rules, layout_rules, and tbd_items.
+  - When frontend work includes UI changes, read new_versions.ui_design.content.visual_system.color_system, typography_system, spacing_system, shape_system, elevation_system, interaction_visual_system, tailwind_theme_css, interaction_state_matrix, component_style_rules, layout_rules, and tbd_items.
   - If the UI design contains tbd_items, the frontend prompt must tell implementers not to fill those visual semantics ad hoc; keep existing tokens or mark the item for confirmation.
-  - Backend instructions must use change_sets for api_contract, backend_services, and database_models plus corresponding new_versions.
+  - Backend instructions must use field-level changes from change_sets for api_contract, database_models, and backend_services plus corresponding new_versions.
+  - Execution order is usually backend_prompt then frontend_prompt; for frontend-only work, output only frontend_prompt in execution_order.
   - Do not depend on project_blueprint; this workflow removed the project blueprint as an intermediate layer.
   - When UX/UI changed, diff_summary must include ux_design/ui_design summaries.
   - Output a strict JSON object only.

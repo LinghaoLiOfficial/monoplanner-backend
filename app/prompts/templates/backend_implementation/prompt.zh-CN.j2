@@ -23,7 +23,7 @@ Input Fields:
   - layer: string，固定为 backend_services，内部 layer 名保持兼容；公开语义必须是 backend_implementation。
   - project_config: object，项目配置、后端技术栈和全局生成约束。
   - selected_story: object 或 null，触发本次变更的敏捷业务需求故事。
-  - change_set: object，已确定的变更范围和模块影响。
+  - change_set: object，已确定的后端工程实现字段级变更计划；必须逐项应用 change_set.module_changes.backend_services 中的 added、modified、removed。
   - previous_version: object 或 null，旧后端工程实现；存在时必须体现差异。
   - related_assets: object，必须读取 api_contract、database_models、project_blueprint，并可参考 ux_design、ui_design、frontend_pages。
 
@@ -42,7 +42,10 @@ Output Fields:
 
 Output Rules:
   - 必须使用 backend_implementation 语义组织 content，不要输出旧主结构 services、cross_cutting_rules、api_mappings、database_mappings、external_services、internal_utilities、install_commands、risks。
+  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须逐项落实到完整后端工程实现资产中，不得在资产生成阶段重新决定后端范围。
   - 必须读取 related_assets.api_contract 和 related_assets.database_models，让路由、schema、事务和错误处理与接口和数据模型一致。
+  - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的目录、逻辑、工具类、LLM 模板、环境变量和依赖。
+  - 如果 ChangeSet 无法落实到后端输出字段，必须在 content.diff 或 diff_from_previous 中标记未落实项，不要自由改写需求。
   - LLM 交互模板只在该需求确实涉及大模型调用、prompt、结构化输出或解析规则时填写；否则返回空数组。
   - 环境变量和依赖包必须并入本资产，不要拆到 backend_tools。
   - previous_version 存在时，diff_from_previous 必须真实反映新增、修改、删除。

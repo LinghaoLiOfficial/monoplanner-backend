@@ -53,12 +53,12 @@ Output Rules:
   - before 必须来自当前 layer 最新资产中的现状；新增时 before 为 null；删除时 after 为 null；无法确认旧值时 before 写 null 并在 reason 或 open_questions 说明。
   - after 必须是目标状态或目标字段片段，不要输出完整目标资产快照。
   - dependencies 必须引用所依赖的上游 layer、字段路径、接口路径、表字段或 ChangeSet 标题；没有依赖则为空数组。
-  - 当前 layer 为 ux_design 时，字段路径只能围绕 content.low_fidelity_screen_structure、content.low_fidelity_screen_structure[].interaction_regions、content.business_flows、content.business_flows[].steps、content.business_flows[].steps[].branches、content.diff。
-  - 当前 layer 为 ui_design 时，字段路径只能围绕 content.visual_system.design_style、content.visual_system.color_system、content.visual_system.typography_system、content.visual_system.spacing_system、content.visual_system.shape_system、content.visual_system.elevation_system、content.visual_system.interaction_visual_system、content.visual_system.tailwind_theme_css、interaction_state_matrix、layout_rules、component_style_rules、accessibility_rules、responsive_contract、tbd_items、content.diff。
+  - 当前 layer 为 ux_design 时，字段路径只能围绕 content.low_fidelity_screen_structure、content.low_fidelity_screen_structure[].interaction_regions、content.business_flows、content.business_flows[].steps、content.business_flows[].steps[].step_results、content.diff。
+  - 当前 layer 为 ui_design 时，字段路径只能围绕 content.visual_system.design_style、content.visual_system.theme_configuration、content.visual_system.color_configuration、content.visual_system.font_configuration、content.visual_system.spacing_configuration、content.visual_system.shape_configuration、content.visual_system.shadow_configuration、content.diff。
   - 当前 layer 为 api_contract 时，字段路径只能围绕 content.api_base_path、content.api_resource_groups、endpoints、request_schema、response_schema、error_model、content.diff；selector 必须能定位 group_name、http_method、endpoint_path、status_code 或 error_code。
   - 当前 layer 为 database_models 时，字段路径只能围绕 content.database_tables、content.database_tables[].fields、content.diff；selector 必须能定位 table_name 和必要 field_name。
   - 当前 layer 为 backend_services 时，字段路径只能围绕 content.directory_structure、code_logic、utility_classes、llm_interaction_templates、environment_variables、dependencies、content.diff；selector 使用 path、target、name、template_name 或 package_name。
-  - 当前 layer 为 frontend_pages 时，字段路径只能围绕 content.route_definitions、directory_structure、code_logic、environment_variables、design_theme、dependencies、content.diff；selector 使用 path、target、name 或 package_name，并且必须读取 UX、UI、API 和后端约束。
+  - 当前 layer 为 frontend_pages 时，字段路径只能围绕 content.route_definitions、content.directory_structure、content.layout_library、content.component_library、content.dependency_package_management、content.page_code_logic、content.frontend_interfaces、content.environment_variables、content.diff；selector 使用 path、target、name 或 package_name，并且必须读取 UX、UI、API 和后端约束。
   - 若当前 layer 没有必要变更，输出空 added/modified/removed，并在 impact_summary 中说明“本层无需变更”的业务原因。
   - content.layer 必须等于当前 layer。
   - content.dependencies 可汇总本层依赖的上游资产和 ChangeSet。

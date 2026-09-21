@@ -1,7 +1,7 @@
 ===SYSTEM===
-You are a senior frontend architect. Your task is to generate the complete frontend implementation design asset from the frontend implementation ChangeSet, UX, UI, API contract, and backend constraints. Cover routes, directories, code logic, environment variables, theme usage, and dependencies.
+You are a senior frontend architect. Generate the complete frontend implementation asset from the frontend ChangeSet, UX, UI, API contract, and backend constraints. Only use the frontend implementation fields defined in `新特征设计.md`.
 
-You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or any characters outside the JSON object.
+You must output a strict JSON object only. Do not output Markdown, explanatory prose, comments, or business code.
 
 ===USER===
 Input:
@@ -19,39 +19,38 @@ Input:
   - {{ related_assets | tojson_pretty }}
 
 Input Fields:
-  - task: string, the generation task name when provided.
-  - layer: string or null, the target asset layer when provided.
-  - project_config: object, project configuration, technology stacks, constraints, coding preferences, prompt preferences, and llm_prompt_language when available.
-  - selected_story: object or null, the business story driving this generation when available.
-  - change_set: object, the confirmed frontend implementation field-level change plan. Apply every item in change_set.module_changes.frontend_pages added, modified, and removed.
-  - previous_version: object or null, the previous asset version when available; reflect differences when present.
-  - related_assets: object, related asset context used for consistency.
-  - blueprint_content: object, upstream blueprint content when provided.
-  - api_contract_content: object or null, upstream API contract content when provided.
-  - business_stories: array, upstream business stories when provided.
+  - task: string, fixed task name generate_design_asset.
+  - layer: string, fixed to frontend_pages.
+  - project_config: object, project configuration and frontend stack.
+  - selected_story: object or null, the business story driving this generation.
+  - change_set: object, apply every item in change_set.module_changes.frontend_pages added, modified, and removed.
+  - previous_version: object or null, the previous frontend implementation asset.
+  - related_assets: object, read ux_design, ui_design, api_contract, and backend_services.
 
 Output Fields:
-  - Return every required field defined by the registered response schema for this template. content.design_theme must capture theme configuration, CSS variables, Tailwind token mapping, component state classes, and responsive breakpoint mapping.
-  - Preserve JSON field names, enum values, object nesting, and array shapes exactly as required by the schema.
-  - Use natural English for user-facing titles, summaries, descriptions, prompts, notes, risks, and checklist items.
+  - title: string, frontend implementation asset title.
+  - summary: string, frontend implementation summary.
+  - content.version_summary: string, version summary.
+  - content.environment_variables: array with variable_name, variable_description, default_value.
+  - content.route_definitions: array with route_name, route_path, route_params, route_target_component.
+  - content.directory_structure: array with path and purpose.
+  - content.layout_library: string, layout library description.
+  - content.component_library: string, component library description.
+  - content.dependency_package_management: array with package_name and package_description.
+  - content.page_code_logic: array with target and logic_description.
+  - content.frontend_interfaces: array with interface_name and interface_description.
+  - content.diff: object with added, modified, removed.
+  - diff_from_previous: object with added, modified, removed.
 
 Output Rules:
-  - Return all fields required by the FrontendPagesOutput schema. Use natural English for names and explanations; keep file paths and identifiers code-like.
-  - Read related_assets.ux_design, related_assets.ui_design, related_assets.api_contract, and related_assets.backend_services.
-  - ChangeSet added, modified, and removed items have highest priority. Apply them item by item to the complete frontend implementation asset and do not redefine frontend scope during asset generation.
-  - When previous_version exists, preserve every route, directory entry, code logic item, environment variable, theme mapping, and dependency not explicitly changed or removed by the ChangeSet.
-  - If a ChangeSet item cannot be applied to frontend output fields, record it in content.diff or diff_from_previous instead of freely rewriting the requirement.
-  - content.design_theme must explicitly use implementable rules from related_assets.ui_design.content.visual_system.color_system, typography_system, spacing_system, shape_system, elevation_system, interaction_visual_system, tailwind_theme_css, interaction_state_matrix, component_style_rules, and layout_rules.
-  - Explain how UI tokens map to CSS variables, Tailwind classes/tokens, or existing design-system components. Mark unknown mappings as TBD instead of inventing them.
-  - Translate UI states into frontend implementation requirements for applicable default, hover, pressed, focus-visible, selected, disabled, loading, and error states.
-  - Translate responsive UI contracts into breakpoints, column changes, mobile reflow, touch targets, and sticky/fixed area guidance.
-  - If the UI design contains tbd_items, design_theme must tell implementers not to fill those visual semantics in ad hoc.
-  - Keep code identifiers, enum values, file paths, API paths, and package names in their canonical technical form.
-  - Do not invent highly specific file paths unless the context supports them.
+  - Output only the fields above. Do not output pages, components, data_flow, internal_utilities, install_commands, design_theme, dependencies, required, page_name, dynamic_params, or permission_requirement.
+  - Route definitions may only use route_name, route_path, route_params, and route_target_component.
+  - Environment variables may only use variable_name, variable_description, and default_value.
+  - Do not repeat large UX/UI prose and do not generate business code.
   - Output a strict JSON object only.
 
 Example Input [1]:
-{"layer": "frontend_pages", "selected_story": {"title": "Create tasks"}}
+{"layer":"frontend_pages","related_assets":{"ux_design":{"summary":"low-stock flow"},"ui_design":{"summary":"inventory visual system"},"api_contract":{"summary":"inventory API"},"backend_services":{"summary":"inventory service"}}}
 
 Example Output [1]:
-{"title": "Task creation frontend implementation", "summary": "Defines route and component implementation.", "content": {"version_summary": "Adds task creation frontend design.", "route_definitions": [], "directory_structure": [], "code_logic": [], "environment_variables": [], "design_theme": [], "dependencies": [], "diff": {"added": [], "modified": [], "removed": []}}, "diff_from_previous": {"added": ["Task creation frontend implementation"], "modified": [], "removed": []}}
+{"title":"Low-stock frontend implementation","summary":"Defines the frontend implementation for the low-stock page.","content":{"version_summary":"Adds the low-stock page implementation plan.","environment_variables":[{"variable_name":"NEXT_PUBLIC_API_BASE_URL","variable_description":"Frontend API base URL","default_value":""}],"route_definitions":[{"route_name":"Low-stock inventory page","route_path":"/inventory/low-stock","route_params":[],"route_target_component":"LowStockPage"}],"directory_structure":[{"path":"src/app/inventory/low-stock/page.tsx","purpose":"Page entry point"}],"layout_library":"Compact list layout.","component_library":"Inventory row and status components.","dependency_package_management":[{"package_name":"lucide-react","package_description":"Action icons"}],"page_code_logic":[{"target":"LowStockPage","logic_description":"Load the list and handle empty, error, and replenishment states."}],"frontend_interfaces":[],"diff":{"added":["low-stock page"],"modified":[],"removed":[]}},"diff_from_previous":{"added":["low-stock frontend implementation"],"modified":[],"removed":[]}}

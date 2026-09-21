@@ -104,10 +104,10 @@ def _change_set_payload(*, layers: list[str] | None = None) -> dict:
             "ui_design": {
                 "added": [
                     {
-                        "field": "content.component_style_rules",
-                        "selector": {"component_name": "任务创建表单"},
+                        "field": "content.visual_system.color_configuration",
+                        "selector": {"name": "任务创建表单"},
                         "before": None,
-                        "after": {"component_name": "任务创建表单"},
+                        "after": {"color_configuration": "任务创建主操作颜色"},
                         "reason": "承接 UX 表单流程。",
                         "constraints": ["覆盖 loading 和 error 状态"],
                         "dependencies": ["ux_design: 创建任务流程"],
@@ -220,10 +220,20 @@ def _ux_design_payload() -> dict:
                     "steps": [
                         {
                             "step_order": 1,
-                            "involved_elements": ["标题输入框", "提交按钮"],
-                            "user_action": "输入任务标题并提交",
+                            "involved_elements": [
+                                {
+                                    "screen": "任务创建页",
+                                    "region": "表单区域",
+                                    "element": "标题输入框",
+                                },
+                                {
+                                    "screen": "任务创建页",
+                                    "region": "表单区域",
+                                    "element": "提交按钮",
+                                },
+                            ],
                             "system_feedback": "显示创建中状态",
-                            "branches": [
+                            "step_results": [
                                 {
                                     "branch_status": "success",
                                     "branch_description": "任务保存成功",
@@ -237,7 +247,6 @@ def _ux_design_payload() -> dict:
                             ],
                         }
                     ],
-                    "ux_notes": ["表单错误需可被读屏识别"],
                 }
             ],
             "diff": {"added": ["task-create-flow"]},
@@ -255,8 +264,6 @@ def _ui_design_payload() -> dict:
                     "style_description": "清晰、工作台式、强调任务创建效率。",
                     "signature_traits": ["主操作突出", "紧凑表单", "错误就近展示"],
                 },
-                "style_tags": ["高密度", "快速录入", "状态可辨识"],
-                "design_principles": ["主操作突出", "错误状态必须有文本辅助"],
                 "theme_configuration": {
                     "theme_types": {
                         "light_mode": "默认浅色主题，适合日常办公。",
@@ -264,87 +271,38 @@ def _ui_design_payload() -> dict:
                     },
                     "default_theme": "默认浅色主题",
                 },
-                "color_system": {
+                "color_configuration": {
                     "description": "创建任务相关的主色与状态色。",
                     "rules": ["primary 用于创建任务主按钮", "error 用于校验失败"],
-                    "tokens": [
+                    "colors": [
                         {
-                            "token_name": "primary",
-                            "token_type": "color",
-                            "token_value": "#111111",
-                            "description": "创建任务主按钮颜色。",
-                            "semantic_role": "主操作",
-                            "usage_context": "用于创建按钮与关键提示",
-                            "anti_usage": ["不要用于错误状态"],
-                            "css_variable": "--color-primary",
-                            "tailwind_variable": "--color-primary",
-                            "validated_status": "normative",
-                            "source_basis": ["项目配置"],
+                            "color_name": "primary",
+                            "hex_value": "#111111",
+                            "color_description": "创建任务主按钮颜色。",
                         }
                     ],
-                    "tbd_items": [],
                 },
-                "typography_system": {
+                "font_configuration": {
                     "description": "任务标题与表单文本层级。",
                     "rules": ["任务标题使用中等字重"],
-                    "tokens": [],
-                    "tbd_items": [],
+                    "fonts": [],
                 },
-                "spacing_system": {
+                "spacing_configuration": {
                     "description": "任务表单间距。",
                     "rules": ["表单项保持紧凑垂直间距"],
-                    "tokens": [],
-                    "tbd_items": [],
+                    "spacings": [],
                 },
-                "shape_system": {
+                "shape_configuration": {
                     "description": "表单控件形状。",
                     "rules": ["输入框和按钮使用小圆角"],
-                    "tokens": [],
-                    "tbd_items": [],
+                    "shapes": [],
                 },
-                "elevation_system": {
+                "shadow_configuration": {
                     "description": "表单容器层级。",
                     "rules": ["表单容器不使用重阴影"],
-                    "tokens": [],
-                    "tbd_items": [],
+                    "shadows": [],
                 },
-                "interaction_visual_system": {
-                    "description": "提交状态视觉。",
-                    "rules": ["提交 loading 时按钮宽度保持稳定"],
-                    "tokens": [],
-                    "tbd_items": [],
-                },
-                "tailwind_theme_css": "@theme {\n  --color-primary: #111111;\n}",
-                "interaction_state_matrix": [
-                    {
-                        "state_name": "loading",
-                        "visual_cues": ["按钮宽度保持不变"],
-                        "usage_context": ["提交表单"],
-                        "constraints": ["不能导致布局跳动"],
-                    }
-                ],
             },
-            "layout_rules": [
-                {
-                    "target_screen": "任务创建页",
-                    "desktop_layout": "表单居中显示，辅助说明位于右侧",
-                    "mobile_layout": "单栏表单，主按钮全宽",
-                }
-            ],
-            "component_style_rules": [
-                {
-                    "component_name": "TaskForm",
-                    "visual_priority": {
-                        "primary_content": ["任务标题"],
-                        "secondary_content": ["任务描述"],
-                        "tertiary_content": ["字段帮助文本"],
-                        "primary_actions": ["创建任务"],
-                        "secondary_actions": ["取消"],
-                        "danger_actions": [],
-                    },
-                    "style_rules": ["紧凑表单", "错误就近展示", "移动端主按钮全宽"],
-                }
-            ],
             "diff": {"added": ["TaskForm rules"]},
         },
     )
@@ -355,12 +313,19 @@ def _frontend_pages_payload() -> dict:
         "前端工程实现",
         {
             "version_summary": "新增任务创建前端工程实现",
+            "environment_variables": [
+                {
+                    "variable_name": "NEXT_PUBLIC_API_BASE_URL",
+                    "variable_description": "后端 API 基础地址",
+                    "default_value": "",
+                }
+            ],
             "route_definitions": [
                 {
-                    "path": "/tasks/new",
-                    "page_name": "任务创建页",
-                    "dynamic_params": [],
-                    "permission_requirement": "已登录用户",
+                    "route_name": "任务创建页",
+                    "route_path": "/tasks/new",
+                    "route_params": [],
+                    "route_target_component": "TaskPage",
                 }
             ],
             "directory_structure": [
@@ -368,29 +333,16 @@ def _frontend_pages_payload() -> dict:
                 {"path": "components/tasks/TaskForm.tsx", "purpose": "任务表单组件"},
                 {"path": "lib/api/tasks.ts", "purpose": "任务 API client"},
             ],
-            "code_logic": [
-                {
-                    "target": "TaskForm",
-                    "state_management": ["保存标题、描述、提交状态和错误信息"],
-                    "events": ["提交表单时调用创建任务 API"],
-                    "data_flow": ["TaskForm -> POST /tasks"],
-                    "error_handling": ["接口失败时展示错误并允许重试"],
-                }
+            "layout_library": "表单和摘要并列布局。",
+            "component_library": "表单、按钮和提示组件组合。",
+            "dependency_package_management": [
+                {"package_name": "lucide-react", "package_description": "表单操作图标"}
             ],
-            "environment_variables": [
-                {
-                    "name": "NEXT_PUBLIC_API_BASE_URL",
-                    "purpose": "后端 API 基础地址",
-                    "required": True,
-                }
+            "page_code_logic": [
+                {"target": "TaskForm", "logic_description": "提交表单并处理加载与错误状态。"}
             ],
-            "design_theme": ["primary token 用于创建任务主按钮"],
-            "dependencies": [
-                {
-                    "package_name": "lucide-react",
-                    "purpose": "表单操作图标",
-                    "required": False,
-                }
+            "frontend_interfaces": [
+                {"interface_name": "TaskFormProps", "interface_description": "表单输入契约。"}
             ],
             "diff": {"added": ["task-form"]},
         },
@@ -453,10 +405,10 @@ def _blueprint_summary_payload() -> dict:
             "key_interaction_principles": ["提交时显示清晰状态"],
         },
         "ui_summary": {
-            "design_principles": ["主操作突出"],
-            "component_language": ["紧凑表单"],
+            "visual_system": ["主操作突出"],
+            "color_configuration": ["primary 用于创建任务主按钮"],
         },
-        "frontend_summary": {"pages": ["任务页"]},
+        "frontend_summary": {"routes": ["/tasks/new"]},
         "backend_summary": {"services": ["TaskService"]},
         "architecture_notes": ["保持分层"],
         "risks": [],
@@ -721,8 +673,8 @@ def test_change_set_apply_generates_assets_and_prompt_pack_without_blueprint(
     assert '"route_definitions": [' in captured_payloads[5]
     assert '"code_logic": [' in captured_payloads[5]
     assert '"environment_variables": [' in captured_payloads[5]
-    assert '"design_theme": [' in captured_payloads[5]
-    assert '"dependencies": [' in captured_payloads[5]
+    assert '"page_code_logic": [' in captured_payloads[5]
+    assert '"frontend_interfaces": [' in captured_payloads[5]
     assert '"new_versions":' in captured_payloads[-1]
     assert '"business_flows": [' in captured_payloads[-1]
     assert '"visual_system": {' in captured_payloads[-1]

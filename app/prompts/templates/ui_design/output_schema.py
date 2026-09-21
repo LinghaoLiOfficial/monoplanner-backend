@@ -1,21 +1,23 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
-
-VALID_TOKEN_STATUSES = {"validated", "normative", "tbd", "inferred"}
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class UIDesignStyle(BaseModel):
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class UIDesignStyle(StrictModel):
     style_description: str
     signature_traits: list[str] = Field(default_factory=list)
 
 
-class UIThemeTypes(BaseModel):
+class UIThemeTypes(StrictModel):
     light_mode: str
     dark_mode: str
 
 
-class UIThemeConfiguration(BaseModel):
+class UIThemeConfiguration(StrictModel):
     theme_types: UIThemeTypes
     default_theme: str
 
@@ -24,119 +26,90 @@ class UIThemeConfiguration(BaseModel):
     def default_theme_must_be_user_visible(cls, value: str) -> str:
         if value.strip() in {"light_mode", "dark_mode"}:
             raise ValueError(
-                "default_theme must be a user-visible theme name or description, "
-                "not the technical theme_types field key."
+                "default_theme must be a user-visible theme name or description, not the technical field key."
             )
         return value
 
 
-class UIDesignToken(BaseModel):
-    token_name: str = ""
-    token_type: str | None = None
-    token_value: str | dict[str, Any] = ""
-    description: str | None = None
-    semantic_role: str | None = None
-    usage_context: str | None = None
-    anti_usage: list[str] | str | None = Field(default_factory=list)
-    css_variable: str | None = None
-    tailwind_variable: str | None = None
-    validated_status: str | None = None
-    source_basis: list[str] | str | None = Field(default_factory=list)
-    contrast_notes: str | None = None
-
-    @field_validator("validated_status")
-    @classmethod
-    def validated_status_must_be_known(cls, value: str | None) -> str | None:
-        if value is not None and value not in VALID_TOKEN_STATUSES:
-            raise ValueError(
-                "validated_status must be one of validated, normative, tbd, inferred."
-            )
-        return value
+class UIColorEntry(StrictModel):
+    color_name: str
+    hex_value: str
+    color_description: str
 
 
-class UIDesignTokenSystem(BaseModel):
-    description: str | None = None
+class UIColorConfiguration(StrictModel):
+    description: str
     rules: list[str] = Field(default_factory=list)
-    tokens: list[UIDesignToken] = Field(default_factory=list)
-    tbd_items: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    colors: list[UIColorEntry] = Field(default_factory=list)
 
 
-class UILegacyVisualTokenGroup(BaseModel):
-    group_name: str | None = None
-    description: str | None = None
-    tokens: list[UIDesignToken] = Field(default_factory=list)
+class UIFontEntry(StrictModel):
+    font_name: str
+    font_family: str
+    font_size: str
+    font_weight: str
+    font_description: str
 
 
-class UIInteractionStateRule(BaseModel):
-    state_name: str
-    visual_cues: list[str] = Field(default_factory=list)
-    usage_context: list[str] = Field(default_factory=list)
-    constraints: list[str] = Field(default_factory=list)
+class UIFontConfiguration(StrictModel):
+    description: str
+    rules: list[str] = Field(default_factory=list)
+    fonts: list[UIFontEntry] = Field(default_factory=list)
 
 
-class UIVisualSystem(BaseModel):
+class UISpacingEntry(StrictModel):
+    spacing_name: str
+    spacing_size: str
+
+
+class UISpacingConfiguration(StrictModel):
+    description: str
+    rules: list[str] = Field(default_factory=list)
+    spacings: list[UISpacingEntry] = Field(default_factory=list)
+
+
+class UIShapeEntry(StrictModel):
+    shape_name: str
+    shape_size: str
+
+
+class UIShapeConfiguration(StrictModel):
+    description: str
+    rules: list[str] = Field(default_factory=list)
+    shapes: list[UIShapeEntry] = Field(default_factory=list)
+
+
+class UIShadowEntry(StrictModel):
+    shadow_name: str
+    shadow_size: str
+
+
+class UIShadowConfiguration(StrictModel):
+    description: str
+    rules: list[str] = Field(default_factory=list)
+    shadows: list[UIShadowEntry] = Field(default_factory=list)
+
+
+class UIVisualSystem(StrictModel):
     design_style: UIDesignStyle
-    style_tags: list[str] = Field(default_factory=list)
-    design_principles: list[str] = Field(default_factory=list)
     theme_configuration: UIThemeConfiguration
-    evidence_policy: str | None = None
-    source_references: list[str] = Field(default_factory=list)
-    tbd_items: list[str] = Field(default_factory=list)
-    accessibility_rules: list[str] = Field(default_factory=list)
-    responsive_contract: list[str] = Field(default_factory=list)
-    color_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
-    typography_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
-    spacing_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
-    shape_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
-    elevation_system: UIDesignTokenSystem | list[str] = Field(default_factory=UIDesignTokenSystem)
-    interaction_visual_system: UIDesignTokenSystem | list[str] = Field(
-        default_factory=UIDesignTokenSystem
-    )
-    tailwind_theme_css: str | None = None
-    token_catalog: list[UILegacyVisualTokenGroup] = Field(default_factory=list)
-    interaction_state_matrix: list[UIInteractionStateRule] = Field(default_factory=list)
+    color_configuration: UIColorConfiguration
+    font_configuration: UIFontConfiguration
+    spacing_configuration: UISpacingConfiguration
+    shape_configuration: UIShapeConfiguration
+    shadow_configuration: UIShadowConfiguration
 
 
-class UILayoutRule(BaseModel):
-    target_screen: str
-    desktop_layout: str
-    mobile_layout: str
-    primary_action: str | None = None
-    desktop_grid: str | None = None
-    mobile_reflow: str | None = None
-    container_rules: list[str] = Field(default_factory=list)
-
-
-class UIVisualPriority(BaseModel):
-    primary_content: list[str] = Field(default_factory=list)
-    secondary_content: list[str] = Field(default_factory=list)
-    tertiary_content: list[str] = Field(default_factory=list)
-    primary_actions: list[str] = Field(default_factory=list)
-    secondary_actions: list[str] = Field(default_factory=list)
-    danger_actions: list[str] = Field(default_factory=list)
-
-
-class UIComponentStyleRule(BaseModel):
-    component_name: str
-    visual_priority: UIVisualPriority
-    style_rules: list[str] = Field(default_factory=list)
-    states: list[UIInteractionStateRule] = Field(default_factory=list)
-    responsive_behavior: list[str] = Field(default_factory=list)
-    accessibility_notes: list[str] = Field(default_factory=list)
-    implementation_hint: str | None = None
-
-
-class UIDesignContent(BaseModel):
+class UIDesignContent(StrictModel):
     version_summary: str
     visual_system: UIVisualSystem
-    layout_rules: list[UILayoutRule] = Field(default_factory=list)
-    component_style_rules: list[UIComponentStyleRule] = Field(default_factory=list)
     diff: dict[str, list[Any]] = Field(
         default_factory=lambda: {"added": [], "modified": [], "removed": []}
     )
 
 
-class UIDesignOutput(BaseModel):
+class UIDesignOutput(StrictModel):
     title: str
     summary: str
     content: UIDesignContent

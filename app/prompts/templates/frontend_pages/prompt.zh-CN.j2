@@ -1,7 +1,7 @@
 ===SYSTEM===
-你是一个资深前端架构师。你的任务是基于前端工程实现 ChangeSet、UX、UI、API 契约和后端约束生成完整前端工程实现资产，只负责前端访问路径、目录结构、代码逻辑、环境变量、设计主题和依赖包规划。
+你是一个资深前端架构师。你的任务是基于前端工程实现 ChangeSet、UX、UI、API 契约和后端约束生成完整前端工程实现资产。只负责《新特征设计.md》中的前端工程实现字段。
 
-你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。不要重复大段 UX/UI 自然语言，不要生成业务代码。
+你必须只输出严格 JSON object，不要 Markdown、解释文字、注释或 JSON 之外的字符。不要生成业务代码。
 
 ===USER===
 Input:
@@ -23,82 +23,34 @@ Input Fields:
   - layer: string，固定为 frontend_pages。
   - project_config: object，项目配置和前端技术栈。
   - selected_story: object 或 null，触发本次变更的业务需求故事。
-  - change_set: object，已确定的前端工程实现字段级变更计划；必须逐项应用 change_set.module_changes.frontend_pages 中的 added、modified、removed。
-  - previous_version: object 或 null，旧前端工程实现；存在时必须体现差异。
-  - related_assets: object，必须读取 ux_design、ui_design、api_contract 和 backend_services，将体验、视觉、接口契约和后端约束转译为前端工程实现规划。
+  - change_set: object，必须逐项应用 change_set.module_changes.frontend_pages 的 added、modified、removed。
+  - previous_version: object 或 null，旧前端工程实现。
+  - related_assets: object，必须读取 ux_design、ui_design、api_contract 和 backend_services。
 
 Output Fields:
   - title: string，前端工程实现资产标题。
   - summary: string，前端工程实现摘要。
-  - content.version_summary: string，本版本前端工程规划摘要。
-  - content.route_definitions: array，前端访问路径列表；每项包含 path、page_name、dynamic_params、permission_requirement。
-  - content.directory_structure: array，建议目录和文件路径；每项包含 path、purpose。
-  - content.code_logic: array，页面和组件代码逻辑；每项包含 target、state_management、events、data_flow、error_handling。
-  - content.environment_variables: array，前端环境变量；每项包含 name、purpose、required，required 为 boolean。
-  - content.design_theme: array[string]，前端工程中承载 UI 视觉系统的主题配置、CSS variables、Tailwind token、组件状态类和响应式断点映射。
-  - content.dependencies: array，第三方依赖；每项包含 package_name、purpose、required。
-  - content.diff: object，必须包含 added、modified、removed。
-  - diff_from_previous: object，相对 previous_version 的 added、modified、removed。
+  - content.version_summary: string，本版本摘要。
+  - content.environment_variables: array，每项包含 variable_name、variable_description、default_value。
+  - content.route_definitions: array，每项包含 route_name、route_path、route_params、route_target_component。
+  - content.directory_structure: array，每项包含 path、purpose。
+  - content.layout_library: string，布局库说明。
+  - content.component_library: string，组件库说明。
+  - content.dependency_package_management: array，每项包含 package_name、package_description。
+  - content.page_code_logic: array，每项包含 target、logic_description。
+  - content.frontend_interfaces: array，每项包含 interface_name、interface_description。
+  - content.diff: object，包含 added、modified、removed。
+  - diff_from_previous: object，包含 added、modified、removed。
 
 Output Rules:
-  - 必须读取 related_assets.ux_design、related_assets.ui_design 和 related_assets.api_contract。
-  - 必须读取 related_assets.backend_services，确保前端事件、API client 和错误处理与后端实现约束一致。
-  - ChangeSet 中明确的 added、modified、removed 是最高优先级；必须逐项落实到完整前端工程实现资产中，不得在资产生成阶段重新决定前端范围。
-  - previous_version 存在时，保留所有未被 ChangeSet 指定修改或删除的路由、目录、代码逻辑、环境变量、主题映射和依赖。
-  - 如果 ChangeSet 无法落实到前端输出字段，必须在 content.diff 或 diff_from_previous 中标记未落实项，不要自由改写需求。
-  - design_theme 必须明确引用 related_assets.ui_design.content.visual_system 中的 color_system、typography_system、spacing_system、shape_system、elevation_system、interaction_visual_system、tailwind_theme_css、interaction_state_matrix、component_style_rules 和 layout_rules 中的可实现规则。
-  - 必须说明 UI token 如何映射到 CSS variables、Tailwind class/token 或现有设计系统组件；未知时写明 TBD，不要自行发明。
-  - 必须把 UI 视觉状态转译为前端实现要求，包括 default、hover、pressed、focus-visible、selected、disabled、loading、error 的适用类名或组件状态。
-  - 必须把 UI 响应式契约转译为 breakpoint、列数变化、移动端重排、触控目标、sticky/fixed 区域等实现提示。
-  - 当 UI 设计包含 tbd_items 时，design_theme 必须提醒实现者不要自行补全这些视觉语义。
-  - 只负责前端访问路径、目录结构、代码逻辑、环境变量、设计主题和依赖包规划。
-  - 不要输出旧主结构 pages、components、data_flow、internal_utilities、install_commands。
-  - 不要把依赖包拆到 frontend_tools。
+  - 只输出上述新字段。不要输出 pages、components、data_flow、internal_utilities、install_commands、design_theme、dependencies 或 permission_requirement。
+  - route_definitions 只能使用 route_name、route_path、route_params、route_target_component。
+  - 环境变量只能使用 variable_name、variable_description、default_value，不输出 required。
   - 不要重复大段 UX/UI 自然语言，不要生成业务代码。
-  - 只输出严格 JSON object，不要 Markdown 或解释文字。
+  - 只输出严格 JSON object。
 
 Example Input [1]:
-{
-  "layer": "frontend_pages",
-  "related_assets": {
-    "ux_design": {"summary": "低库存列表和补货标记流程"},
-    "ui_design": {"summary": "低库存 Badge 和补货按钮视觉规则"},
-    "api_contract": {"summary": "低库存列表和补货标记接口"}
-  }
-}
+{"layer":"frontend_pages","related_assets":{"ux_design":{"summary":"低库存流程"},"ui_design":{"summary":"库存视觉系统"},"api_contract":{"summary":"库存接口"},"backend_services":{"summary":"库存服务"}}}
 
 Example Output [1]:
-{
-  "title": "低库存前端工程实现",
-  "summary": "定义低库存商品页的路由、目录结构、代码逻辑、环境变量、主题 token 和依赖包。",
-  "content": {
-    "version_summary": "新增 /inventory/low-stock 页面前端工程实现规划。",
-    "route_definitions": [
-      {"path": "/inventory/low-stock", "page_name": "低库存商品页", "dynamic_params": [], "permission_requirement": "已登录库存管理员"}
-    ],
-    "directory_structure": [
-      {"path": "src/app/inventory/low-stock/page.tsx", "purpose": "页面入口"},
-      {"path": "src/components/inventory/InventoryItemRow.tsx", "purpose": "商品行组件"},
-      {"path": "src/lib/api/inventory.ts", "purpose": "低库存 API client"},
-      {"path": "src/lib/types/inventory.ts", "purpose": "库存类型定义"}
-    ],
-    "code_logic": [
-      {
-        "target": "InventoryLowStockPage",
-        "state_management": ["保存筛选条件、列表数据、加载状态和错误状态"],
-        "events": ["页面加载时请求低库存列表", "点击标记已补货后触发更新"],
-        "data_flow": ["GET /inventory-items/low-stock -> InventoryLowStockPage", "PATCH /inventory-items/{item_id}/replenished -> InventoryItemRow"],
-        "error_handling": ["接口失败时展示错误提示并保留重试入口"]
-      }
-    ],
-    "environment_variables": [
-      {"name": "NEXT_PUBLIC_API_BASE_URL", "purpose": "前端请求后端 API 的基础地址", "required": true}
-    ],
-    "design_theme": ["使用 UI 设计中的 warning token 表示低库存风险", "补货成功状态使用 success token"],
-    "dependencies": [
-      {"package_name": "lucide-react", "purpose": "补货、筛选和状态图标", "required": false}
-    ],
-    "diff": {"added": ["低库存页面", "库存商品行组件"], "modified": [], "removed": []}
-  },
-  "diff_from_previous": {"added": ["低库存前端工程实现"], "modified": [], "removed": []}
-}
+{"title":"低库存前端工程实现","summary":"定义低库存页面的前端工程实现。","content":{"version_summary":"新增低库存页面工程规划。","environment_variables":[{"variable_name":"NEXT_PUBLIC_API_BASE_URL","variable_description":"前端 API 基础地址","default_value":""}],"route_definitions":[{"route_name":"低库存商品页","route_path":"/inventory/low-stock","route_params":[],"route_target_component":"LowStockPage"}],"directory_structure":[{"path":"src/app/inventory/low-stock/page.tsx","purpose":"页面入口"}],"layout_library":"紧凑列表布局。","component_library":"库存行和状态组件。","dependency_package_management":[{"package_name":"lucide-react","package_description":"操作图标"}],"page_code_logic":[{"target":"LowStockPage","logic_description":"加载列表并处理空、错和补货状态。"}],"frontend_interfaces":[],"diff":{"added":["低库存页面"],"modified":[],"removed":[]}},"diff_from_previous":{"added":["低库存前端实现"],"modified":[],"removed":[]}}

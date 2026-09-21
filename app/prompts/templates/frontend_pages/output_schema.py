@@ -1,54 +1,61 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class FrontendRouteDefinition(BaseModel):
-    path: str
-    page_name: str
-    dynamic_params: list[str] = Field(default_factory=list)
-    permission_requirement: str
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
-class FrontendDirectoryEntry(BaseModel):
+class FrontendEnvironmentVariable(StrictModel):
+    variable_name: str
+    variable_description: str
+    default_value: str
+
+
+class FrontendRouteDefinition(StrictModel):
+    route_name: str
+    route_path: str
+    route_params: list[str] = Field(default_factory=list)
+    route_target_component: str
+
+
+class FrontendDirectoryEntry(StrictModel):
     path: str
     purpose: str
 
 
-class FrontendCodeLogicItem(BaseModel):
-    target: str
-    state_management: list[str] = Field(default_factory=list)
-    events: list[str] = Field(default_factory=list)
-    data_flow: list[str] = Field(default_factory=list)
-    error_handling: list[str] = Field(default_factory=list)
-
-
-class FrontendEnvironmentVariable(BaseModel):
-    name: str
-    purpose: str
-    required: bool = True
-
-
-class FrontendDependency(BaseModel):
+class FrontendDependencyPackage(StrictModel):
     package_name: str
-    purpose: str
-    required: bool = True
+    package_description: str
 
 
-class FrontendPagesContent(BaseModel):
+class FrontendPageCodeLogic(StrictModel):
+    target: str
+    logic_description: str
+
+
+class FrontendInterfaceDefinition(StrictModel):
+    interface_name: str
+    interface_description: str
+
+
+class FrontendPagesContent(StrictModel):
     version_summary: str
+    environment_variables: list[FrontendEnvironmentVariable] = Field(default_factory=list)
     route_definitions: list[FrontendRouteDefinition] = Field(default_factory=list)
     directory_structure: list[FrontendDirectoryEntry] = Field(default_factory=list)
-    code_logic: list[FrontendCodeLogicItem] = Field(default_factory=list)
-    environment_variables: list[FrontendEnvironmentVariable] = Field(default_factory=list)
-    design_theme: list[str] = Field(default_factory=list)
-    dependencies: list[FrontendDependency] = Field(default_factory=list)
+    layout_library: str = ""
+    component_library: str = ""
+    dependency_package_management: list[FrontendDependencyPackage] = Field(default_factory=list)
+    page_code_logic: list[FrontendPageCodeLogic] = Field(default_factory=list)
+    frontend_interfaces: list[FrontendInterfaceDefinition] = Field(default_factory=list)
     diff: dict[str, list[Any]] = Field(
         default_factory=lambda: {"added": [], "modified": [], "removed": []}
     )
 
 
-class FrontendPagesOutput(BaseModel):
+class FrontendPagesOutput(StrictModel):
     title: str
     summary: str
     content: FrontendPagesContent

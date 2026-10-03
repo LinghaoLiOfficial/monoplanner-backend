@@ -43,7 +43,9 @@ def validate_change_set_payload(parsed: dict[str, Any], *, expected_layer: str |
         "open_questions": _list_or_empty(parsed.get("open_questions")),
         "recommended_prompt_strategy": _dict_or_empty(parsed.get("recommended_prompt_strategy")),
         "content": _dict_or_empty(parsed.get("content")),
-        "diff": _dict_or_empty(parsed.get("diff") or parsed.get("diff_from_previous")),
+        "diff_from_previous": _dict_or_empty(
+            parsed.get("diff") or parsed.get("diff_from_previous")
+        ),
     }
 
 

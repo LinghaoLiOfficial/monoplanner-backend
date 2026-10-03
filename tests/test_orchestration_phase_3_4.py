@@ -454,11 +454,13 @@ def test_story_execute_generates_change_set(
     _project, _requirement, story = _create_project_requirement_and_story(client, db_session)
     captured_payloads: list[str] = []
 
-    def stream(_self, _system_prompt, user_payload, **_kwargs):
+    def generate(_system_prompt, user_payload, **_kwargs):
         captured_payloads.append(user_payload)
-        return stream_json_payload(_change_set_payload())
+        return _change_set_payload()
 
-    monkeypatch.setattr("app.llm.client.OpenAICompatibleLLMClient.stream", stream)
+    monkeypatch.setattr(
+        "app.services.change_set_generation_service.generate_orchestration_json", generate
+    )
 
     response = client.post(f"/api/v1/business-stories/{story.id}/execute")
 
@@ -499,6 +501,7 @@ def test_story_execute_generates_change_set(
     assert ux_change_set.source_story_id == story.id
     assert ux_change_set.status == "ready"
     assert ux_change_set.affected_layers == ["ux_design"]
+    assert ux_change_set.diff_from_previous == {"added": ["task create"]}
     assert ux_change_set.module_changes["ux_design"]["added"]
     first_change = ux_change_set.module_changes["ux_design"]["added"][0]
     assert first_change["field"] == "content.business_flows"

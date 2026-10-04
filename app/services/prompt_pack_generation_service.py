@@ -28,6 +28,7 @@ from app.services.project_service import ProjectService
 from app.services.prompt_pack_core import generate_prompt_pack_content
 
 RUN_TYPE = "generate_prompt_pack"
+CONTEXT_PACK_TITLE_MAX_LENGTH = 255
 
 
 class PromptPackGenerationService:
@@ -129,6 +130,7 @@ class PromptPackGenerationService:
                 **kwargs,
             ),
         )
+        batch_summary = content["batch_summary"]
         pack = ContextPack(
             project_id=project.id,
             blueprint_id=None,
@@ -138,8 +140,8 @@ class PromptPackGenerationService:
             change_set_id=change_set.id,
             generation_run_id=run.id,
             role="prompt_pack",
-            title=content["batch_summary"],
-            summary=content["batch_summary"],
+            title=_context_pack_title(batch_summary),
+            summary=batch_summary,
             content=content,
             diff_from_previous=content.get("diff_summary", {}),
             prompt_text=_prompt_text_from_content(
@@ -192,6 +194,12 @@ class PromptPackGenerationService:
             .limit(1)
         )
         return 1 if latest is None else latest.version + 1
+
+
+def _context_pack_title(summary: str) -> str:
+    if len(summary) <= CONTEXT_PACK_TITLE_MAX_LENGTH:
+        return summary
+    return f"{summary[: CONTEXT_PACK_TITLE_MAX_LENGTH - 3].rstrip()}..."
 
 
 def _prompt_text_from_content(

@@ -17,6 +17,7 @@ from app.models.generation_run import GenerationRun
 from app.models.ui_design import UIDesign
 from app.models.ux_design import UXDesign
 from app.services.orchestration_validators import validate_change_set_payload
+from app.services.prompt_pack_generation_service import _context_pack_title
 from tests.llm_stream_helpers import patch_llm_stream, stream_json_payload
 from tests.queue_helpers import run_generation_job_in_new_session
 
@@ -1061,3 +1062,12 @@ def test_prompt_pack_generate_only_creates_context_pack(
     db_session.expire_all()
     assert len(db_session.scalars(select(ContextPack)).all()) == 1
     assert len(db_session.scalars(select(FrontendPageStructure)).all()) == 0
+
+
+def test_context_pack_title_is_bounded_for_database_column() -> None:
+    summary = "实现完整的前后端任务创建流程" * 30
+
+    title = _context_pack_title(summary)
+
+    assert len(title) == 255
+    assert title.endswith("...")

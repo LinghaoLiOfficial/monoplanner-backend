@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。\n\n持续有效约束与验收条件：title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。\n\n持续有效约束与验收条件：title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

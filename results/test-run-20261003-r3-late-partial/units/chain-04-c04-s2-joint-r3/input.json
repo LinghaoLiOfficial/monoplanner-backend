@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-04",
+  "step_id": "c04-s2",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：停止接受请求 title，出现该键即 422，即使与 name 同时出现。创建 name 必填、更新可省略；响应继续同时提供 title/name。",
+  "preserved_constraints": "name 的类型、长度及 null 限制不变；禁止静默忽略旧键。"
+}

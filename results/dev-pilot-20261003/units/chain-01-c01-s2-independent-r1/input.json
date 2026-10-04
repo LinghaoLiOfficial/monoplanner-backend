@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-01",
+  "step_id": "c01-s2",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+  "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。"
+}

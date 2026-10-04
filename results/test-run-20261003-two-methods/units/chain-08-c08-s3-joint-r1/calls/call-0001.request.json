@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:03:19.545641+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Decide required scope from the requirement. Do not invent unresolved contract decisions. First enumerate every explicit contract fact from the requirement and preserved constraints; repeat each shared fact clearly in both applicable side prompts, and state any side-specific omission explicitly.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：恢复增加严格 7×24 小时窗口，由服务器 UTC 时间判定；`now-deleted_at < 604800秒` 可恢复，等于或大于边界时 410 `detail=\"Restore window expired\"`。\n\n持续有效约束与验收条件：不自动物理清理；未删除 409、不存在 404、无权 403 保留。先存在性和授权，后状态及时间检查；前端以服务端判定为准。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "50b176a58f451e6467d3219ad805c88ae4dc8325c2dfbc7adc2dcefd108d850d"
+}

@@ -1,0 +1,894 @@
+{
+  "schema_version": "requirement-contract-answers-v2",
+  "dataset_id": "monoplanner-contract-v2-pilot",
+  "steps": {
+    "c01-s1": [
+      {
+        "fact_id": "request-title-trim",
+        "expected_value": "U+0020",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-length-unit",
+        "expected_value": "unicode_code_point",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-min-length",
+        "expected_value": 3,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-max-length",
+        "expected_value": 80,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "create-title-required",
+        "expected_value": true,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-required",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-nullable",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-omission",
+        "expected_value": "unchanged",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      }
+    ],
+    "c01-s2": [
+      {
+        "fact_id": "request-title-trim",
+        "expected_value": "U+0020",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-length-unit",
+        "expected_value": "unicode_code_point",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-min-length",
+        "expected_value": 3,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-max-length",
+        "expected_value": 120,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s2"
+        ]
+      },
+      {
+        "fact_id": "create-title-required",
+        "expected_value": true,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-required",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-nullable",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-omission",
+        "expected_value": "unchanged",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-description-max-length",
+        "expected_value": 500,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s2"
+        ]
+      },
+      {
+        "fact_id": "request-description-trim",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s2"
+        ]
+      }
+    ],
+    "c01-s3": [
+      {
+        "fact_id": "request-title-trim",
+        "expected_value": "U+0020",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-length-unit",
+        "expected_value": "unicode_code_point",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-min-length",
+        "expected_value": 3,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-max-length",
+        "expected_value": 80,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s3"
+        ]
+      },
+      {
+        "fact_id": "create-title-required",
+        "expected_value": true,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-required",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-nullable",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-title-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "update-title-omission",
+        "expected_value": "unchanged",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s1"
+        ]
+      },
+      {
+        "fact_id": "request-description-max-length",
+        "expected_value": 500,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s2"
+        ]
+      },
+      {
+        "fact_id": "request-description-trim",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c01-s2"
+        ]
+      },
+      {
+        "fact_id": "read-existing-overlength-title-allowed",
+        "expected_value": true,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s3"
+        ]
+      },
+      {
+        "fact_id": "update-omitted-title-revalidate",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c01-s3"
+        ]
+      }
+    ],
+    "c02-s1": [
+      {
+        "fact_id": "request-skip-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-skip-minimum",
+        "expected_value": 0,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-skip-default",
+        "expected_value": 0,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-limit-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-limit-minimum",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-limit-maximum",
+        "expected_value": 50,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-limit-default",
+        "expected_value": 20,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-count-scope",
+        "expected_value": "authorized_filtered_before_pagination",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-empty-page-data",
+        "expected_value": [],
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      }
+    ],
+    "c02-s2": [
+      {
+        "fact_id": "request-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-count-scope",
+        "expected_value": "authorized_filtered_before_pagination",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-empty-page-data",
+        "expected_value": [],
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-skip-accepted",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-limit-accepted",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-minimum",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-default",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-minimum",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-maximum",
+        "expected_value": 50,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-default",
+        "expected_value": 20,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "pagination-offset",
+        "expected_value": "(page-1)*page_size",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      }
+    ],
+    "c02-s3": [
+      {
+        "fact_id": "request-invalid-status",
+        "expected_value": 422,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-count-scope",
+        "expected_value": "authorized_filtered_before_pagination",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "response-empty-page-data",
+        "expected_value": [],
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s1"
+        ]
+      },
+      {
+        "fact_id": "request-skip-accepted",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-limit-accepted",
+        "expected_value": false,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-minimum",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-default",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-minimum",
+        "expected_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-maximum",
+        "expected_value": 100,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      },
+      {
+        "fact_id": "request-page-size-default",
+        "expected_value": 25,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      },
+      {
+        "fact_id": "pagination-offset",
+        "expected_value": "(page-1)*page_size",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable",
+        "sources": [
+          "requirement:c02-s2"
+        ]
+      },
+      {
+        "fact_id": "response-page-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      },
+      {
+        "fact_id": "response-page-value",
+        "expected_value": "effective_page",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      },
+      {
+        "fact_id": "response-page-size-type",
+        "expected_value": "integer",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      },
+      {
+        "fact_id": "response-page-size-value",
+        "expected_value": "effective_page_size",
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit",
+        "sources": [
+          "requirement:c02-s3"
+        ]
+      }
+    ]
+  }
+}

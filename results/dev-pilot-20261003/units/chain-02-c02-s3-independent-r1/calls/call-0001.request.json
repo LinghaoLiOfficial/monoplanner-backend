@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T22:03:21.329753+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate frontend implementation instructions only. Decide scope from the requirement. Do not use another side's output.\nReturn JSON matching this schema:\n{\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。\n\n持续有效约束与验收条件：page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "ce818ef9d8fc39292d47df55b597c15a8112c0dd0275560552f1d5b824a64c9d"
+}

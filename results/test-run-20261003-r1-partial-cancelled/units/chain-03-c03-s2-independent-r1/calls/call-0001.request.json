@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T22:58:14.553262+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate frontend implementation instructions only. Decide scope from the requirement. Do not use another side's output. Cover every applicable requirement and preserved constraint explicitly, including unchanged shared API facts; do not omit a fact merely because it is implemented by the other side.\nReturn JSON matching this schema:\n{\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：超级用户仍可读取他人条目，但 PUT、DELETE 他人条目返回 403，`detail=\"Read-only access\"`；前端他人条目只读。\n\n持续有效约束与验收条件：超级用户对本人条目可写；普通用户他人资源 404；不存在资源仍 404；创建 owner_id 仍为当前用户。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "99e710433b11eba9a45391ae755a0c019c0c416c0bdb225b3b5d31ddd5c39d1a"
+}

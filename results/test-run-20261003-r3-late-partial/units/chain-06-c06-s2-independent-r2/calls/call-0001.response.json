@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:56:05.926572+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039344-TOLRnteyH4LyR7u0034d",
+    "object": "chat.completion",
+    "created": 1791039344,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"前端实施指令（仅前端相关，基于后端将为“上述两种错误”在 error payload 中新增由后端生成的 request_id 字段这一约定；不假定未决契约或额外字段）：\\n\\n1) 范围与原则\\n- 只对现有的错误显示逻辑做最小改动：不改变现有对“是否为错误”的判定（仍沿用当前的 HTTP 状态 / code / message 判定逻辑）。\\n- 仅在错误路径且后端返回 body.request_id 为非空字符串时展示该 request_id。成功响应或不相关的错误不展示也不存储该字段。\\n- 不解析、拼接或暴露请求凭据或用户输入；不得把 request_id 作为凭据或与用户数据组合后记录或传输。\\n- 保持后端约定的 code、message、HTTP 状态不变；前端仅读取并展示 request_id（如果存在），不依赖它作业务决策。\\n\\n2) 数据模型与类型\\n- 在客户端当前的 error response 类型中添加可选字段（optional） request_id: string | undefined/nullable。但仅在渲染错误时读取并校验非空字符串。\\n- 示例（TypeScript）：interface ApiError { code: string; message: string; /* 其它现有字段 */ request_id?: string; }\\n\\n3) 展示位置与样式（UI/UX 要点）\\n- 在现有错误提示区域（例如错误横幅、错误模态或 inline 错误文本）内以次要信息的形式追加一行“请求 ID”展示位置，靠近错误描述，便于用户在反馈时引用。\\n- 文案可本地化，例如：“请求 ID: <id>” 或 “Request ID: <id>”。\\n- 为便于反馈，提供一个小的“复制”按钮/图标，复制到剪贴板并显示短暂确认（例如“已复制”）。\\n- 视觉风格应低干扰（例如小字号、次要色），同时保证可见性。\\n\\n4) 可访问性\\n- 使用语义元素或 aria-label，确保屏幕阅读器用户能获取 request_id 信息与复制操作。例如：aria-live 用于复制成功提示，复制按钮含有 aria-label=\\\"复制请求 ID\\\"。\\n\\n5) 安全与隐私约束\\n- 不将 request_id 写入浏览器永久存储（localStorage/sessionStorage/indexedDB）或 URL 查询串；仅在内存中短期保存用于当前错误显示与复制。\\n- 不自动把 request_id 发送到任何第三方分析或监控服务，除非用户明确触发带该 ID 的“反馈/发送到客服”操作并明确提示会包含该 ID。\\n- 展示前对 request_id 做最小校验：必须为非空字符串；不得尝试解析或从中提取任何凭据或用户输入。若不满足非空字符串则忽略并不显示。\\n- 对展示内容进行适当 HTML/JS 转义，避免 XSS 风险（不要将后端字符串直接 innerHTML）。\\n\\n6) 行为细节与错误处理\\n- 错误到达客户端时，按现有逻辑判定为错误；若 error.response?.request_id 存在且 typeof === 'string' 且 .trim().length > 0，则在 UI 中显示该 ID。\\n- 若后端未返回 request_id 或返回空字符串，则不显示也不报错。\\n- 若后端异常地在成功响应中包含 request_id（理论不应发生），前端不展示——保持仅在错误路径展示的约定。\\n\\n7) 与用户反馈流程的集成\\n- 在“提交问题/向客服报告”对话中，默认将 request_id 以只读字段展示给用户以便他们确认和提交（仅当用户点击提交时随反馈一并发送）；在 UI 上需提示该 ID 用于后端日志查找。\\n- 明确文案：该 ID 用于帮助技术定位，不包含密码或敏感凭据。\\n\\n8) 日志与调试（前端侧）\\n- 前端调试日志（仅开发环境或受控的本地日志）可短暂输出 request_id 以便定位问题，但不要在生产客户端日志中持久化或上报第三方分析平台。\\n\\n9) 测试要求\\n- 单元测试：模拟错误响应（两类后端将新增 request_id 的错误），验证当 request_id 存在且非空时 UI 显示并能复制；模拟相同错误但未返回 request_id，验证 UI 不显示该字段。\\n- 回归测试：模拟成功响应携带 request_id（后端不应这样做），验证前端仍不显示（确保仅在错误路径显示）。\\n- E2E 测试：在真实错误流中确认 request_id 的可见性、复制功能、以及提交反馈时该字段随用户同意发送。\\n- 安全测试：验证不会将 request_id 写入 URL、localStorage、第三方分析，且展示时已做转义防止 XSS。\\n\\n10) 文档与交付\\n- 在前端代码库的 API 接口文档/类型定义处注记：该字段为后端在两个特定错误响应中提供的只读、由 server 生成的可展示 request_id，仅在错误路径显示。\\n- 在变更说明中标明：不依赖该字段作为错误判定，且不会改变 HTTP 状态/code/message。\\n\\n11) 回退策略与兼容性\\n- 若后端尚未同时在所有环境中返回 request_id，前端必须以向后兼容方式处理（即安全忽略缺失字段），不会造成错误或阻塞用户体验。\\n\\n12) 示例伪代码（参考实现要点）\\n- 判定错误（使用现有逻辑）→ 如果是错误且 typeof response.request_id === 'string' 且 response.request_id.trim().length>0 → showErrorWithRequestId(message, request_id)\\n- showErrorWithRequestId 应负责转义、渲染、提供复制并在反馈对话中显示为只读。\\n\\n验收准则（前端可用于自检）\\n- 对于后端返回的两类错误：UI 显示 request_id（非空）且可复制；并在反馈提交时可随用户同意发送。\\n- 成功响应与其他错误仍不展示该字段（包括当后端异常在成功响应中包含该字段时，前端不展示）。\\n- 不在客户端持久化或在 URL 中暴露 request_id；展示时已防 XSS；不会把该字段自动上报给第三方分析。\\n\\n注意：以上均假设后端会在这两类错误的 JSON error payload 中附加 request_id 字段。前端不应更改后端既有的 error 判定或状态码/字段含义；如后端就 \\\"哪些错误返回 request_id\\\"、字段名称或格式细节提出额外契约，需与后端明确并在本实现中更新相应处理逻辑。\"\n}",
+          "refusal": null,
+          "reasoning": "**Investigating error handling**\n\nI’m looking at how to implement error detection logic effectively. First, I need to parse the JSON body and determine if there’s an error based on existing criteria, such as failure HTTP status codes. If there's a valid request_id, I'll show it in the error UI with proper labels, while ensuring I escape any user input. I'll also provide guidelines for UI placement. Finally, I need to validate that the request_id isn’t included in URLs or logs to ensure user safety and privacy.**Considering error UI implementation**\n\nI'm focusing on ensuring that error information is only stored temporarily in the error UI and console, without saving it long-term in client storage. I think it might be useful to allow copying to the clipboard. For analytics, I have to be careful not to send any user PII to analytics systems; data should only be sent to support forms with user consent.\n\nI also want to set up unit tests for error scenarios, ensure backwards compatibility, and consider extending the TypeScript error response interface without altering the backend contract.**Implementing request_id handling**\n\nI’m considering adding an optional 'request_id' field to the client type, but it should only be used in error scenarios. It's critical to prioritize security by escaping this information, avoiding its inclusion in logs or URLs, and ensuring it’s not treated as a credential or mixed with user input.\n\nFor edge cases, I need to make sure that if the backend sends a request_id during success, it won’t be displayed—only shown when error detection confirms an actual error. I'll provide pseudocode that outlines this detection pattern without specifying exact status codes. I also need to craft a JSON example featuring 'prompt' in Chinese while keeping the instructions concise.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Investigating error handling**\n\nI’m looking at how to implement error detection logic effectively. First, I need to parse the JSON body and determine if there’s an error based on existing criteria, such as failure HTTP status codes. If there's a valid request_id, I'll show it in the error UI with proper labels, while ensuring I escape any user input. I'll also provide guidelines for UI placement. Finally, I need to validate that the request_id isn’t included in URLs or logs to ensure user safety and privacy.**Considering error UI implementation**\n\nI'm focusing on ensuring that error information is only stored temporarily in the error UI and console, without saving it long-term in client storage. I think it might be useful to allow copying to the clipboard. For analytics, I have to be careful not to send any user PII to analytics systems; data should only be sent to support forms with user consent.\n\nI also want to set up unit tests for error scenarios, ensure backwards compatibility, and consider extending the TypeScript error response interface without altering the backend contract.**Implementing request_id handling**\n\nI’m considering adding an optional 'request_id' field to the client type, but it should only be used in error scenarios. It's critical to prioritize security by escaping this information, avoiding its inclusion in logs or URLs, and ensuring it’s not treated as a credential or mixed with user input.\n\nFor edge cases, I need to make sure that if the backend sends a request_id during success, it won’t be displayed—only shown when error detection confirms an actual error. I'll provide pseudocode that outlines this detection pattern without specifying exact status codes. I also need to craft a JSON example featuring 'prompt' in Chinese while keeping the instructions concise.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRd9g3QU9vZ2ATypHBOmbUd1SDobVwxaQLlKKZfYWXNffyEPLmLw2fynjwrxDmUgtXoXAGyBjSp2jyBr7RAynES7s2AKMQZOQZ3sz79vcOZsd_4lHxkSnZoXz6ecFhuYEBKH_2QbLRT9pUqzXVrdilPwP6muVLz6DU_l4HSLAos_D4eC-qwCqLCS1nxURj67yqj8PPxe4N9y1vDUFjR0a5xpxGXMlqNCiTrcinx3KFrOp_ADhFHY71Bl88dKY8Zhm9AGLoY_OI0R6YhcRluTVBQViXNbyBOiFGWJs6XZlZ6QN5GkV699QcVNqMq8KTp4t4gxRL0pFN-MFdnWN8xA8jPnqNiwVLKFf-le4v-LmzJcXbMb5PbAMwIi94RFtEXoZalSGQvtjbygeAMSSJ8vLCdvf4WIji0Uj2FdVBc0wMNmvIv7RnDP5I4uet52AOnOKcdg_vBD0k_3Jrw1dY-LtOJM5Ip2MkwW8JoN0vRWsB9gNLzsfU_rKPAP14O9m_ZmyAuiPWnNAgiovw5QcY6s2A8cfEEDVr5q4ohsOKICY6haqlX7Xz5dCf1F5dc2CHxLqtOzYBvDdhP0zAK7yWiB6HgOAhb0JUYinzWRO8VyF66gcDErcA6GhT7M7zxaSrnh_XZdVylpA-NTs6bndcqS_sLWvkhtGfrcypHUOU7QYYifVHF2KQvPLLtOQUKh0TZcLpcX1rPhq_qiC97GqO6gGjoRalw0o1WQ7HgGs5kG_vryzMK3Nh9JONYHEtJ_KJetskw9lPF5V4n3fZ5CRn2wKGCIoHNyBI0w7K_LvK_Wjfh_fzlW3PRNMAPbj5f3mO0nEkDKUsy7-0IIbNQVT4pqFcSRQLKHr6CB-0wxdccfOyyCTU1_PGHFL7Yqi-X5kJ1EBjv8JTLhvdfyRc75QrU2oZQ58MDdr3dwSbrsniqjsWJN9fWXfHI_F2HC0xBhDqqv7WMqsvVSa9hVmCQxjwwHyII8FULzC-xxluEGFDN1JkgRTzQTWxQ81HlfILucijAyViUQ-mt46FiGbbd51nYUgBVywhzcj43TzGw_0aCQr56zR7WT62HpiCBmjXqmkRqItylASL0j9cUOuE7YSy4l-Fr8-8EtU8Q6Ts1WoxpQOADa8Q01l6XjILH6gu8WNiMmqMXpiWYwT7W0CRk2L7HbMbMnvtq99Be2WmuvJdWYh9AX5x6-p4OnXjTNSnOcXER_hXxVhc_vz4nbyQmPUx8YP1hCTewNnm7IRZtt9e2s-DfKg_Z6GYFh7pgRB5iQuqq5a6yrBkMPFq6K9RPAgRklM0-nkKzbOQXO9N7JCn1IWkeP4-uaiSyN4HNIuefGbxC27Wiv5Sr5vs5rw6HN55ofEZ8RgNvp1eBdaiNGZYk9wp5Xt_QArf9kSqO5avQoU8zrfdbhjN_onydS8sMySIICMBSUIDKyxU_ex7r8o2spvUFqMRFVqSrgEgaPUXitsARrOsHv69e0LYuCoSToE82A9eme7Iarf0dA2bmMdZcg4V7wREFr69P15040hOHjt6Q5wm1YGl4JCyWPOy0WCnPoOlIc1bJqRGk3G3O3jCIbm7p-U8ntNraRVUl78FZ30J3rws6Cn7L-xyGWPKdsQRqg-Wmqk7z8y8opmqbU629nocWyeYj3GrI8skdeKTgI8pIgGY_lOcf3Ig58_J1YcsK8dOfFYAJ3QNHhlmmTXebEGNyIScGUkHkbgTKPNGy9bfFbrskPLo3arDolA4eiFrGIr-JOxX0qrnkl0I55grk2oHw1MZJ0avNAH4BjQ3ub86V0PXwyHAF9KhBdACIKF2pcDBAMYajoQxMCkquPxYMavdSKiwG8gRaiql0ryNA8PLuUUM2fSvs1BLVgADBeDZRqgpU8drha7mO92mW_JbplxYC5MZWwEa100xCjrkeIGTZo_pnomI63Y25SjOdBYZmYdb2OmgkQeWp1xK8nZftNvE_sgafsstnaIx7Az2VMrblG4MzGVs68libBZy7ntH_nnNLeU0xZya46HiZOxj6DRN4m-a7mERunXEP0XAhPYDsDoA6GMpYKaLOBD5urURVeqzPZNQCfFVlZZlmy1KlrntkHMcUUYW8zui1eyONh8vF01FOlBFD8CdNgq6GV4EtjMu00UQLKQvbnxjxlj3D7rCqR2yJcjqyF6uC_B3rHW5MrFqIXvdYUtFvqyQ6A8no5OfiFwhNMWpFHyJt0pscyNruQOTgsvrg0sPc98xmBjEH6eHRdF2-jfv79hagJxkrzproDd6gdy6N005nv9X9XboPjEoui-DkVola4WXYOKbFDKnM-ibfddZYHDjaiiEIDBCJFk7PDIhyY5mcxxtYSKMjhI-YJzCZ1YM8Xw0sqWxjup6GvF9kgR-s2vVsdAAaIubEb6M-VkCI_EBMK-Hdlhe0hHfAU9qfn4gSh_MVpu-pXgsHBcPSKmN1akoVF3cC7iPCH_4_p5tR34ZpnenfBFQWED98vXCVEmTVe_NLMETnN8AscDRG86ZDKUoJUGi2ewhMkNzDocSEYAsa6tYuuOlNv9tjNDR_RHTFlE_GuXHpfaG3UBsKvpeD-2YHOm9S93L_HQBP0yBl1EUKvAK61Oie_i3SJ1x9ZbNO0myUxpPNmo7N_LUAYq-6mNFLarljPmb0Hd4AxZWd6ccdvPvqQD3PFEz8twgyfpx9eI9IxtH230rW-RDb1TefyYGEN_cY1cHpdpjslkL59tB4cT916Ihu73kefDrM1i1LCSrtfic_Niq4Cv8f3j7hwDRLGUzC3B5NPhEWKIwoCBS36quzNtMycwp-cu7jCdZq7cyxGa3i_80m9eWppxflCjikQaO4VukkBY87oKIrvtNTTU1uh4ax5A_fyGSeUsoarngdb6r77Wo7-Yw95WXeiJTlU4pTnkn1CdUkj7tDkEm5chJTtWVi8DdXGeXOQXur5AA9pe0JRWxSuTG0ZYV3n3s8MFND_PBSRMCvM6N1rSIGqJGwcEx6LnHVCH_R3YUYVJs0Ld8QOT1Ts42BE1f2VpzaR2JF_BzE61vPswDluLuQEG9uxSC6-E_32g4rnTJNbfDqFY2MpFLrtAT_Q7B9nO-xb3lo0DZkvH7mGVzdTpaYvrBksFQnYa8npYhBrpPZI7ZKFCS-7tQPtphAzIlgoUmfz67pO78EY9CQmIJt4J4Az3nWVjufOdP6z4SGX3GCAEua5uxEz5QES6II0Q9OqQ4PqHyFAXGjNTev7L1opC_ymdYLYC_GyISCfNkUSz87Gh70CfLvxcDK5pFzU6vLFO5DIrSMugaB1V8082VahPmTXXt0MiuJJObK25jhKmKwhfq5dmR91q0rcr-4ELvkK6fefxvWvkG9ygWepveySP3Dbgl7f2vWG2dtCyE1q9KosGpYOux1E6gobZ7ylw4T8ts88y81YZwCygj3Q5FGJSqxX1w2EPrcjLdqtCLbRhj88ak2wTMG2t2qu-NiFMRAHDIDMwu4WvvsTgLTfwtS5vuBhBWO1S1DSwKkIGTGQNWbvccR1J3Lp8G5Zq7RZHxI26Q6J9g6t2YQqa93ZQ0yvc36x8y9DXlb4v_20RWFWB9UmczXHvj8nbRoFZLyuw6pHFIUMOBdr9-VEamhmFCew8vnkgoZqBzdtrLZD7XzkSl0ZkyfWRmJ0WTipkWGxYFQyFVFZGCVx0JO8GJ2y6JGlc6Mhp4PiisR5RWQk2WqQ85glG_nEGbWQSCocVs9PPw5H70RH9XNjuWxKL6TXtjJ2QZZ0NTPLNuQ1GuQJowgk6fJDQJsB2UtzR65B2_KyAxuiGSiY26w61zr0SzeTF-gyDzAr549Ji7dEBbNSOJ1y6mwiSul4kNHZ_QuHQY0AJnIMqh5KR2TgKz10L_gt2P1uuI5D76nKSpp6YvvAKQEcDW_7B4ONar5p3fpJ-JwJgpTZ7JbKIOdcexkcVxE59gE6K9QW7y9pzuUcMkYJQPO8tAmUBChqXu0lWI4i-J6LDsvgS0X-znfMp6HVjoCrB27kc02AFIj6CnxEsf7iTkSRFo1FIk9Pp3KN3zhx2ieXUkte0yqwAGmgO3omx9MFVdDKAeyino4-YgGCFwr-DhGdJt3B2ZYN9ZJqtFgsYuVGyg9YQtBDbOm4tZfBGTVSjyF28Du9asA5L-KWq2E8ljAZcaId9UxUrw4Z_GMi2SVDeOa7E64Uv4gftKvrKwrPnDWXGeKsT4EsIJFQqQDBBEnS_zmksxwAmEcofkkv11E6fwhxKdkoLYtariz8KLhHlnAcrQGflRyq4w5KuO0Ng55-HQZi_o526XZeOHtsGL0gjHOSoFhkUofjBUrZHGzVwFKMpn57yw3Ogt3LO1tw73yLJVpLC_2LxCmsgo0-vH837qBaGGD7bPS4CwFnyiGJRXoTCMUhHCjJxBqS9cDlYLknSYNVAQyPsgEMkbXBWOFvCPDVQrGoBHMBPdtR8SO4WlRVWd2KznjZk2p1rYWzcZX3W-SSDdE0sglSKggjgMHhHr46LgGLK7jkF-tmaGjarSQN7KJT423NN9_1LN_dEiTks6UIP1vNkcNMDa-9yraqwbbB5YviKM0IAoB7e7DLogYVNOs9Sy9if2A9XxMJ6M3kE65CsaX9QLQYTFLDWOcuGxoTZQGR3lbijNR8UEvxO-QYEUFruk7IPteo6srK_O8zgPHnPRE_7ve71N8CQfmY7m6hicprWuExw9KnUYZijhhfkFpSksZECN_BsSuJViN2Lohj03gH8U8nrnpRE9Q89oQQEUPtdGKGGbwUzQVa5Yp_f97znP8HI340Iobjd2yqhXGuFaf4ia3Mwx_3qA90xYohr8dCbYumJN7YKL9SXcFRzVuoJv0u5t2-7W2cI0kuzOz2Yidq5QDLdsz4i_fFGcRySoxeDvCZVNTUqxztS3TRlmXAM2SUeftY6F7r9TkhlnTnHaKUeAjjWDWPHOMWw88HjLlxUcoeNE5cAEfX_Xs9nz6KED8pKIqIM8w_XwRKjBeTGquco00EQcDXZUQQtXlbzQwlVwclnMHQt0gEf3cs7P-kkhTrPEdhoC2EqWMEuiFxsPflfFC0gMctGv1UbP2VDXYN-MsT9zN1X3RjF79KGSCNHxt2r2ksZo-NnvXk1-3e5Fx9fzk2s4n9TVZeSiALHL9ZQ8YTt5JgUtJ1dofB7_5-vdjDNiBX5dcxWr7mfzI86GpBQgK4WTwsQJPIuVXDiTeWNVyBQzxeWy6sz5xQSqNeXfyObrztBRi0mSAySXDU_2t-VkNOmTJWFhLYZwfCSHpjNUpHIJ9Wlr8qst8MdjfELhDnVxY_aIYqxvlq2p-sOcToNYVTXjpGer3Hgl53dcHpaJjOPsvWrZE8HebGtVJozk8nLRHyIjybGlWBnVK4xbW63LOo1GJxflic6PXYQf7jFJ958CgHyvopT9O5FkR2EdOXhVzBNj10h2rGgoKm4dQyYYhdt6679Gzh-No7rc-PWCIfvsgJZjilOOi8mEq1uJWPaiB9Q1QDrfoqFEMxDi8BIw9c3AAagYxiLP3nj08_HVhi4e9e-0wQqtWzaOwRWtGjsN5uWHIbkFhOhX-acgTLDp7fXxtb_OA3mBBJi3KJ8Kp5ICkGSH_3rLDeLXfMWSOnzTzE3xxuykzgF7fld8mstNqZFW_EzHF1LV7pfHcev3ZbCwt5cxpbsg1jqbSK6H9_7zGRCF86WX_VN0_VGaRAVbt3GSPJ0X4yxQhIom-hhxR5gGK6IU9OZUYvvoWT8whombZT-Z_Xy5657uChqP3o8qX69GNWlP8cIZV0Rc3X_XYgcOJ87jRejXDev18ETsPhxG-TbwRKEPvFj-JEYCw3YWJL3MUYG4wqDTklpC3jBbBBpqRhXaGBzxH_G6n3-SeKfqrBswRY8_RXj3UBryFbjB3NbMfVY1__GiANJVFQTJBSaLkL24sh726mYwNlqACX4Mxne_oKIifQKh5am8tSHr8knGupR-ekCNLE6HvJey9QeudhLVMN4SgpskWMPRauDO1AGa1ge3a5sxTVMY7VNYZWq-KN0ZXq_Z_pLCf1gA0LkJjhNNUh2aMJ8VyJ3ZKtHCUq5XZeah1KbxnePpuc9vOiY5lEHc51FX7ICAoUP9qaGoNR6qSO93iP7QQuYEGTBtxxn9K0UNO2EjFTMwKUYol-aO4Cy8kl-Gi-kTI-ftK_vvHTjyW7A9vrMGveE823gzzyUWm094oL0x4QNvE9gxTG_1tCS4PM1UucNpCyvP5vz2--vXh76BWqwgmA06hn-oMhGzE0l-1K_xoTkGlf6PTs4dXexXzsngU8DRUeUObl-rrZkLaFtGbBc0C6gPJcLR32Qi3m-w_YD47FCFYub7k9knlwep4bnFc2q0dBZoWKKQoGww0IP0ZyTIzGE0Xx8-jY37Te6pH1xkSfwQ9mo8Gbm6BqbHMOVqxsUMqmLvU9I5_Oe_kX-X8ZpLbQzUxEq8DnIBjamLGmCtAvJtx0AR5Sy664l-rI1ToLh8luy_4eLSHsPyEbJ6OxOw-XyQkQvU3n3AgFnIa_CFuKzBviG-T1OEXCm58tgN8K1aeNcvtcCPsDy68b9I-04TRgI0bKm67dRJU_jMfiXL3rPUMa2WsVw835300oEPDURyx_b_8kQW796Cn6Om67dVQDFrOfn_54R36VEkkgpelMJ5bfQ-H9LWH7LJ5eoSs-g1v7eRPdnxmdljjLOWE8-tSY05BxveJfjHV0Cs5zGIP4ieLovq4-ujigr_r919Jh2_nkGuB6627NehNS5gL6qWgTBaKbPCJrwZjjb0PjO7R135pp8PFxPOnIf0yyH4N6DpDUtlY2v-VEv-Axc52Ynt1YQURI4GriHv1WVj5kjUtLbgavH36jgCxUXJ0oiVa9gqUsrkI99PJmKZP1UZCiqNLiUa9U-06kgzkIME-DnrwhW9P0G7k_3qu3lSLvV30iMf_IP0XSnPja9-PPLGgMRQWKo9YbJCgjPZcTeOUWKONGVJ5i2CdGKJu2R9gg-mDZ6Mr7CiNSU2gNVWFhFC9aF2N6GEDYCy5LoZ07FQSc3D9M0bTkKHQVLrf5MQORyNM0VWAyHOp0h6AQi_XZdCd9hqvGZjYrOch7pVs3WNJphsgc3QVOLzNWOEpQAMDd2NF2VkM_XJTdVEP32Pq2u5iL09YPTW8CPRF-IGb_9xUf407lOBSHyCahod4SWBOG-xQT7K4VgOnzx4ssjI0w34_s-AU9bYDLbwsNZAbbqyP5Lnrws3jsXRyJNYKTG1FGQwhRBdFCLjtnNxEnBdYPNVDrQN2WrjNIZnYIgrYkNEIReiYc1mY9b2qABjbgpjn9PlyryVaxF09u0WuYHDjpcsUCKeB22C5rXfOku-2kTzkZ36au-rDagNRtDsWcHkgqxIuA-XUbuNUzvnmDr3K34Hzw21F51_HfsOGeexp68Yf-XBGPZxVaeY0QzSA6BR2t-VgLQDqkoQUf2tzXZcsLtNQBRWkGCHKpHbG96wCAQBmPE6yJvWAsThf22OpLQsF_mxHC0nw1XLUpUTG2gC4TA4eQiJ5JoUMcYDaizPqz4H2tSs-PyngPALryW8VKkYpnAtifYZ5jSsGV01vLK1qpqP1BoQasI3X_nQvYRQJ9MdixY8ZAswwougIuoAvduOfGDcBoXN746Pw5w9QhXIc-URCiDy2VkqvhTgJOczBn4-fVX3v7MgQuDxeZSuUsC3YOy5RLnWMEdYPeNZMXwUCcY4Y50RUQ_tv2I0bdu3hy2pdSRD-WSH09F9qgZYNspiHuU-EhDWqTQKEeaAkonX2kKQPVTQn6skWocINV9SB-KSWQOG0da_O6blwydycRNNzG6WgNtEGoE25rusxnFJIoqATZUuNQnOIfOOiwCcvdUuRGOOgHl3CADOxkPXG5pjKY05ig_20LrmRnDmszX3dTFjjV8662vTOxZz0V3SEwKgALn1YhEXGVVoMCPlIsueSqD8MmbWNlGkLMNLDeuN3D8-FM1zPnJarU4DE4CDYG9H5jC4B6e1HEVhN9ltIZXo0nQ_8FI7pb-0HYGJxPNTcQwEZHw3a2pUHOMm0iaAEwQLO4enKX5xXlEI5-x-bUr96Ys0BGnXB-uB5mStwBT_eLllqBuYHpJaICgc9-BdnGqJjqDCjlTYEYf0AzezeQAvy42GHYj49bR0rJ7IHuOa6vhIEc4fCBpGyFwCnQsg9LG7KQsy3kTzs4Ort_sVBMsS_f0G-PuEsp8WzS-epwoUqYdnsuEU-eJSfWgD6pp9-jt3XDr0bWw1a3oOmgccR7hmo8lLyncDH1hhunp3TiJ5aA-WJqoHn0mmXlc4_YZ8kZQGjkorr860bwL7PVIaWrQ-jXph_od68MAMsiErazMg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0114ce1bfdde47b7016ac117710dd087d1b9ed80e99801c9d0",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 200,
+      "completion_tokens": 2602,
+      "total_tokens": 2802,
+      "cost": 0.005254,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.005254,
+        "upstream_inference_prompt_cost": 5e-05,
+        "upstream_inference_completions_cost": 0.005204
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 960,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 2602,
+    "total_tokens": 2802,
+    "cost": 0.005254,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.005254,
+      "upstream_inference_prompt_cost": 5e-05,
+      "upstream_inference_completions_cost": 0.005204
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 960,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

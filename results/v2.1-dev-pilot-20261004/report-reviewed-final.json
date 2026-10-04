@@ -1,0 +1,343 @@
+{
+  "protocol": "requirement-contract-v2-pilot",
+  "planned_units": 12,
+  "completed_units": 12,
+  "failed_units": 0,
+  "total_model_calls": 6,
+  "structural_valid_rate": 1.0,
+  "marker_coverage_rate": 1.0,
+  "exact_statement_coverage_rate": 1.0,
+  "rows": [
+    {
+      "unit_id": "c01-s1-joint-r1",
+      "step_id": "c01-s1",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 18,
+        "marker_covered": 18,
+        "statement_covered": 18,
+        "derivable": 0
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 9
+        }
+      }
+    },
+    {
+      "unit_id": "c01-s1-rule-r1",
+      "step_id": "c01-s1",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 18,
+        "marker_covered": 18,
+        "statement_covered": 18,
+        "derivable": 0
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 9
+        }
+      }
+    },
+    {
+      "unit_id": "c01-s2-joint-r1",
+      "step_id": "c01-s2",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 6,
+        "marker_covered": 6,
+        "statement_covered": 6,
+        "derivable": 8
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "not_evaluable",
+        "C_evaluable": null,
+        "C_observed": 0,
+        "strict_success": false,
+        "label_counts": {
+          "uncertain": 1,
+          "consistent": 2
+        }
+      }
+    },
+    {
+      "unit_id": "c01-s2-rule-r1",
+      "step_id": "c01-s2",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 6,
+        "marker_covered": 6,
+        "statement_covered": 6,
+        "derivable": 8
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 3
+        }
+      }
+    },
+    {
+      "unit_id": "c01-s3-joint-r1",
+      "step_id": "c01-s3",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 6,
+        "marker_covered": 6,
+        "statement_covered": 6,
+        "derivable": 10
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 3
+        }
+      }
+    },
+    {
+      "unit_id": "c01-s3-rule-r1",
+      "step_id": "c01-s3",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 6,
+        "marker_covered": 6,
+        "statement_covered": 6,
+        "derivable": 10
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 3
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s1-joint-r1",
+      "step_id": "c02-s1",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 20,
+        "marker_covered": 20,
+        "statement_covered": 20,
+        "derivable": 0
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 10
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s1-rule-r1",
+      "step_id": "c02-s1",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 20,
+        "marker_covered": 20,
+        "statement_covered": 20,
+        "derivable": 0
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 10
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s2-joint-r1",
+      "step_id": "c02-s2",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 20,
+        "marker_covered": 20,
+        "statement_covered": 20,
+        "derivable": 3
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 10
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s2-rule-r1",
+      "step_id": "c02-s2",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 20,
+        "marker_covered": 20,
+        "statement_covered": 20,
+        "derivable": 3
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 10
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s3-joint-r1",
+      "step_id": "c02-s3",
+      "method": "joint",
+      "status": "completed",
+      "calls": 1,
+      "coverage": {
+        "must_be_explicit": 12,
+        "marker_covered": 12,
+        "statement_covered": 12,
+        "derivable": 11
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 6
+        }
+      }
+    },
+    {
+      "unit_id": "c02-s3-rule-r1",
+      "step_id": "c02-s3",
+      "method": "rule",
+      "status": "completed",
+      "calls": 0,
+      "coverage": {
+        "must_be_explicit": 12,
+        "marker_covered": 12,
+        "statement_covered": 12,
+        "derivable": 11
+      },
+      "structural_issues": [],
+      "semantic": {
+        "status": "evaluated",
+        "C_evaluable": 0,
+        "C_observed": 0,
+        "strict_success": true,
+        "label_counts": {
+          "consistent": 6
+        }
+      }
+    }
+  ],
+  "semantic_metrics": {
+    "C_evaluable": 0,
+    "C_observed": 0,
+    "evaluable_rate": 0.9166666666666666,
+    "strict_success_rate": 0.9166666666666666,
+    "label_counts": {
+      "consistent": 81,
+      "uncertain": 1
+    },
+    "explicit_semantic_coverage_rate": 0.9878048780487805,
+    "omission_rate": 0.0,
+    "uncertain_rate": 0.012195121951219513,
+    "common_error_rate": 0.0,
+    "status": "complete"
+  },
+  "reviewer": "Li Linghao",
+  "method_summary": {
+    "rule": {
+      "planned_units": 6,
+      "completed_units": 6,
+      "marker_coverage_rate": 1.0,
+      "exact_statement_coverage_rate": 1.0,
+      "explicit_semantic_coverage_rate": 1.0,
+      "evaluable_units": 6,
+      "strict_success_units": 6,
+      "C_evaluable": 0,
+      "C_observed": 0,
+      "label_counts": {
+        "consistent": 41
+      }
+    },
+    "joint": {
+      "planned_units": 6,
+      "completed_units": 6,
+      "marker_coverage_rate": 1.0,
+      "exact_statement_coverage_rate": 1.0,
+      "explicit_semantic_coverage_rate": 0.975609756097561,
+      "evaluable_units": 5,
+      "strict_success_units": 5,
+      "C_evaluable": 0,
+      "C_observed": 0,
+      "label_counts": {
+        "consistent": 40,
+        "uncertain": 1
+      }
+    }
+  },
+  "paired_rule_vs_joint": {
+    "pairs": 6,
+    "joint_minus_rule_marker_covered": 0,
+    "joint_minus_rule_statement_covered": 0,
+    "joint_strict_wins": 0,
+    "rule_strict_wins": 1
+  }
+}

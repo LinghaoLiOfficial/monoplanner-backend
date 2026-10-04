@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-06",
+  "step_id": "c06-s2",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：上述两种错误的 error 内新增必填非空字符串 request_id，由后端生成并关联服务端日志，前端可展示用于反馈。",
+  "preserved_constraints": "code、message、状态码不变；成功响应及其他错误不新增该字段；request_id 不包含凭据或用户输入内容。"
+}

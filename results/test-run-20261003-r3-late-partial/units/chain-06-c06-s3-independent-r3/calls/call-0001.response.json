@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:56:43.222382+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039381-spvfyWpDbTRb4mhEy8Iw",
+    "object": "chat.completion",
+    "created": 1791039381,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"前端实现指令（仅前端，范围：消费 API 返回的 error 对象并在 UI/业务逻辑中使用的所有代码路径）\\n\\n目标概述\\n- 将当前使用的 error.message 字段全部改为 error.detail，并从前端代码中删除对旧字段 error.message 的依赖与引用。\\n- 保留并继续使用 request_id 字段（不得删除或改变语义）。\\n- 错误信息必须仍然位于响应的 error 对象内 —— 不能将其改为顶层 detail 字段。\\n- 前端业务判断和分支仍以 error.code（或响应中的 code 字段）为准，绝不使用自然语言文本（detail）做逻辑判断或路由。\\n\\n实施步骤\\n1) 类型与接口更新\\n   - 在所有 API 类型定义（TypeScript 接口、Flow 类型或 JS 文档注释）中，将 error.message 重命名为 error.detail，并删除旧字段的类型定义。\\n   - 确保 error 对象类型仍然表示为 { code: string|number, detail: string, request_id?: string, ... }（不要将 detail 提升到顶层响应结构）。\\n\\n2) API 客户端与解析层修改\\n   - 在统一的 HTTP 客户端/响应解析层中，替换对 response.error.message 的读取为 response.error.detail。\\n   - 删除所有对 response.error.message 的访问或引用（查找全仓/工程搜索并替换）。\\n   - 不要实现对 message 的自动回退或映射（除非后端明确要求并另行确认）。\\n\\n3) UI 层与用户可见文本\\n   - 所有展示给用户的错误文本（toast、模态、错误页等）从 error.detail 中读取并显示。\\n   - 保证展示环节仅用于显示，不用于控制流程或条件判断。\\n\\n4) 业务逻辑/控制流保持不变\\n   - 所有基于错误类型的判断（例如 retry、重定向登录、表单错误字段映射等）必须继续以 error.code（或约定的 code 字段）为条件实现。\\n   - 明确禁止将 error.detail 的自然语言文本作为条件判断依据；在代码审查中重点检查此类误用。\\n\\n5) 保持 error 对象嵌套结构\\n   - 验证并确保解析/渲染代码都从 response.error.detail 读取；不要将响应的 error 对象解构并将 detail 放到响应顶层变量名为 detail（避免将错误误写为顶层 detail）。\\n\\n6) 日志与监控\\n   - 在开发环境或日志收集点中，继续记录 request_id 与 code，必要时记录 detail 作为可读性信息，但不要将其用作索引或主键。\\n\\n7) 测试与验证\\n   - 单元测试：更新所有涉及旧 message 字段的单元测试，改为断言使用 detail 字段。新增用例确保在响应中提供 error.detail 时前端能正确显示。\\n   - 集成/端到端测试：模拟 API 返回 error 对象包含 detail 与 request_id，验证：\\n     a) UI 显示使用的是 error.detail；\\n     b) 业务分支逻辑仍以 error.code 决定；\\n     c) 错误仍位于 response.error 下，页面/组件中不存在顶层 detail；\\n     d) request_id 在错误发生时仍可用于日志或错误页面展示（如需要）。\\n   - 回归测试：确保删除旧字段后不引入运行时异常（例如 undefined 访问）。\\n\\n8) 部署前核对（与后端确认点）\\n   - 在部署前与后端确认：API 响应中已经把相关 error.message 字段更名为 error.detail 并移除了旧字段；request_id 未被删除。\\n   - 在未收到后端确认前，避免在生产环境强制删除代码路径——应先在 QA 环境进行联调验证。\\n\\n验收条件（前端交付需要满足）\\n- 源代码库中不再存在对 response.error.message 的读取或引用。\\n- 前端类型定义和编译器/静态检查通过（没有遗留的 message 类型）。\\n- 在 QA 联调中，用模拟/真实响应验证：\\n  1) 错误文本在 UI 由 response.error.detail 提供并正确显示；\\n  2) request_id 仍然可用并未被移除；\\n  3) 错误仍位于 response.error 对象内，代码路径中不存在顶层 detail；\\n  4) 行为/路由/重试等逻辑仍以 response.error.code 为判断依据，不依赖 detail 文本。\\n- 单元测试与集成测试覆盖并通过上述场景。\\n\\n附加注意事项（必须遵守）\\n- 不要基于 error.detail 的文本内容做任何业务判断（例如字符串匹配、语言判断等）。\\n- 不要在客户端隐式创建或维持对旧字段 message 的兼容层（除非后端团队明确要求并给出迁移窗口）。\\n- 全量替换前请做好搜索替换记录，代码审查时重点确认没有残留使用旧字段的片段。\"\n}",
+          "refusal": null,
+          "reasoning": "**Clarifying frontend implementation**\n\nI could mention coordinating with the backend to confirm the deployment, but the user only asked for frontend implementation instructions. So, the scope here is to focus on the frontend code that consumes API responses. I need to update the code to read `error.detail` and remove any references to `error.message`, while keeping the request_id usage the same. Since the user said no guessing or fallbacks, I should suggest asserting `error.detail`'s presence and throwing a visible error if needed. Coordination with the backend is a reasonable step here.**Creating frontend instructions**\n\nThe user is asking for frontend instructions, so I'll create a JSON object that includes the necessary elements. It needs a property set to true, and a \"prompt\" that contains string instructions in Chinese since the user provided that. I'll outline step-by-step actions: modifying parsing code, updating type definitions to rename `message` to `detail`, updating error handling in the API client, making sure the UI only displays `error.detail`, and ensuring the error object is nested correctly. I’ll also include unit tests, assertions, logging, and documentation updates. I want to avoid making assumptions beyond what the user stated and keep this as concise as possible. Let's formulate those Chinese instructions!**Clarifying implementation steps**\n\nI need to provide clear steps for the user, highlighting which files require modifications, tests needed, and an acceptance checklist. Importantly, I must ensure that there's no fallback coding involved. It’s crucial to explicitly mention that the error remains a nested object within the structure and not at the top level. I'll also make sure to return the necessary values set to true. Alright, let's get this done!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Clarifying frontend implementation**\n\nI could mention coordinating with the backend to confirm the deployment, but the user only asked for frontend implementation instructions. So, the scope here is to focus on the frontend code that consumes API responses. I need to update the code to read `error.detail` and remove any references to `error.message`, while keeping the request_id usage the same. Since the user said no guessing or fallbacks, I should suggest asserting `error.detail`'s presence and throwing a visible error if needed. Coordination with the backend is a reasonable step here.**Creating frontend instructions**\n\nThe user is asking for frontend instructions, so I'll create a JSON object that includes the necessary elements. It needs a property set to true, and a \"prompt\" that contains string instructions in Chinese since the user provided that. I'll outline step-by-step actions: modifying parsing code, updating type definitions to rename `message` to `detail`, updating error handling in the API client, making sure the UI only displays `error.detail`, and ensuring the error object is nested correctly. I’ll also include unit tests, assertions, logging, and documentation updates. I want to avoid making assumptions beyond what the user stated and keep this as concise as possible. Let's formulate those Chinese instructions!**Clarifying implementation steps**\n\nI need to provide clear steps for the user, highlighting which files require modifications, tests needed, and an acceptance checklist. Importantly, I must ensure that there's no fallback coding involved. It’s crucial to explicitly mention that the error remains a nested object within the structure and not at the top level. I'll also make sure to return the necessary values set to true. Alright, let's get this done!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwReiosUxUyZjLZqnwlRxUuJaDZFAs4yOF_HyRkCYkvDlNAjS1IXxtpYm6NwBVKyN4dCL1mSt3VIOr0mgjzsOFshwfvv2thEN61dq8WZOjHo4NeRhDIk6bhu5FCMP_rcaN_2H97kEEozGvBxxzdS2gPY6C9xtCcbzjmJWTbI60X8rP_wBBWX9o-l4B7ZkgSNV9TjF1ipNvlpoCr0hCkI2bhJDDbkHmRT2NZwaAL74Ch3_jPgO3zzAnzf2ZyYJSxRa9g6cJKXHluEJmJxa1ACJSEeQWGvfb9CpNH9uYtTYzR1pFgk5d-Q96wBW3O1tqRyz4BPvQPYBBR9h0wiRvyNSO13dLFH4wSIey2O487mbEeB6zE8rewvpgO_HRkAQoQ3SvWyONUGJ8fyeAUqcoCbBKfG2q12V1y6JZ4_9AQtmK5nac16CO4HZuqsxnAcjsUvxCV4bda-cc_IQSJXNPsJvU9on6u74FK2-7AnhdVAMa1ns_A1coMlD5BeDo_LXa6xMWkLuyRxtgGNgthM8RhVfaLUn-E7lTYisp67cYyj8L29G_AHHadim1FLrMelt8Cij8kw3vDZUeYcgKhI7sUeSDeuuz1SCBWMxmpexXa-GslDk7v_zkb7xvAS4gmJuestdcozBgEH9AImB0f32XkvjJ-ZVwE0ZiwPsDiIxglu_43e6hKbmA5m0Ruz7WxUQxNF84X6PdcH9CQpr5vpSsd3lpiRcpVW3_VfSvgWqE68LUKZPNoc0HJ8TBjjr-_Mralfq-Sia0RF3nbPo-KOgxfbPADVfLjoqPCTPhSZIDnaRfnHpDlbqRKoafm_-iomxs3va1aRc81f1_S-eVuzSTrIbs9wpjildjHHmjy6mPvpmGYpWRRetj3Wt1PdPJSOIzCDGRyiULteRvbmJJB5fRdb-dEwZ5_OhHu0fZSbD7nXID0QzYING7a3LtqB1BZz2JD24Elw8ZfcY8eq2H2wwocHO4nviL1KWnGcO7Co7CNvqDZE6xfDjxc1y3hiCu0g4l1g9PzPt313kSdVymhqd_0JqFUVVXQfVk4E8vYlfd9mZy_ZpqxHhig4MayNw62sYJE-mhIw4XIWkebK6MtFH-u0gkrcFgw4gKATqXrjiZFlOIhKrDx39THbvSjNfX67yGyOzIIHqhXpv9d-s0P5my_Ffw779yE0WVTGj9WqdK3Aq6PASKg7znc03ZXdUDfYIIMZcevQtxGsfV6miegeRTMz0scOWYtZBEunjoW8fSSQatWaFo7xnRNDxteF8ft2ujbEWSqfBWSjtlwxfROebKc5hIBzO79bqT1L-0g2IfNFYJXdV6dnN5tmIARlzewlHpmtBv_8Mtk5XQHn3bDWqhX4tEWGxJtEzdOtj_R60QOluzUichUgQDpUT0zs398xCOtlay2cs3rajYoyZCujDlTgNpjox1y5kFkrfKdp50NeWzLc4p4mGHp91Y3eqOgs6MrZVyPasq-NLUT_wMPtgTn4I64g0EF5N-z77IYT27CFAd0LbjsBC6pKW62OLE-FheQafbZvWYuoSM4fge1XDc0hkHHmUYwojQv9indRLOvLvOgDMgCxtxg-5NJaB6TptyqlvGUAqTNleBqrunTe9NlOSJEJHfLs42CisF19vlt-QmfZSt4TeFNLipm6_Xz2ClnDsy6ZoJHqxfYhAc27wE7GRbMg5oN1ycLk7RVXTd9p7x_WzrsYEBjQTi24UDRA2tiaGXu4k5NxDDO9i5k5SzSW89kD9hYOYedU3FpFhbsQWQUwZAl3KN0szYQ4mRizlsq2CEZgGdGkFmvpx6P9DpXecOI1vPcsooknbBjtA09DaHSJmt2IcvzM-U2wxXmz6Cs8pOiz9vZH900zoIYC7o_m9a2qfbd73LpauEq_5913jEgcLPiVLbITaePv3klUPBMcS0AiapisVWf-43_yEiJ48lrz7oS3vhCMrquhKTqvjVo7xrB4nhEE2tj1D5JDgyhWJUA-IxxhNYhOXRggIc5Oqa-pk7K45kMtjES8q-bT8_7AYIQx_oSl27Nfn1YhtnK6YY-hWmQHKMMW0cu8QMtNNwLO8B6Uf1V8l6T8B7r8OnQsBkaAmlWq0wy_ZwBDXYjrzQgTvajmd4bqQLXeF8eznnxfq-8wgeoV9d5shI2DSuwwhmmynC7i3s7Kww0rcZBpyyEE3WR9LtyXIsL_FL0wsBXf-BMqTdaCG7FKOGE996D0p8m3tUVHzGOsyCFZPn5lT-Fs361n3WxTb6cTEj61178pOw8unt1c8H2ypbNtpFZ75fdXrajym083uk8UTZ8ZElKz_wqZLqZ441-oR5uR45egAvR-bV78BV7Khz6QlT8wfw36Bl7tn1rEgaRdF2IuhpTfbwDv3wfU785uRt9rfkL-JphR2UTOGldsN4DBKlCzO-DPpkM2CEbzeD7VUOtkYxckD-S9wxfb33tX-0Bbqk2yTKudFGNCjVdPcOl5URoJpnrtPW4C0rC1RRasnvCrTcQXMoh4A94YfDi8BpywI__X9OgaEvZ97sTBr63_o1Z-g0vznA5Fvbm0UoQWwMQ1G5YbQVAkhqQGqB7_oEWriNFkmgKwXiPeBbvZewR9q6LMbXc3A9z3grhrpjxGmRfsTaX59tmmQ6qbmdn08BCni0Skce6HBi6bT-v-anywLRQg5qbHXLUxIp6uucKlZNK7Oy9jwE6jhFS4V_yOjFB9DGE9zzqr63nmDS0PJHG9iFD5VGMlj0PVDJT7LoBy53c0ztEkCq3nVrnbl-Nwy6mbzUZlcr7iKerjbqDLIbGCx98prkkqNIdXQgVp3R--mN33cbIkASZfTdpgue5v0ydQ2meyARHPeNeSx_UurgiLrGBrleUUeSJYNQfGgD3Iya9mQKKGF7HsQQdsvXGs5yYga2DS3bT_FQhV8Oau6BRVz0-y-U5ZbcRkZDJIXz8o8bz0BgZ1vTxqMqmqg3e_uwsoABlEkUq1GczHEJtLhVh3lFhEeyxG1BRH5v8o-QZvCgsdLHSla3ZT0F8ZVm51PHtsgzB8iCeovoiaAduVj-FiSC9Q25BLj-EttaGndV8LHBLxfjQOriZ0rtl8q211rqTsMFn45T4ZIqgXeBmBFjWzrTQTqV3J21NwEaS7lL6dfIuplAyP05ZlK7Vb0pUBKCWSnNWYhL626MzaSG3l7g2rvN_hv6XgIPiX1MwPoA70wGgJ8u-2V_yzpLsXhCpti0X4fCRRD7v0eDWyywThsSdEjc9Y8dnUfJAHbw1tjxeUEpYdZRxIeCb2nV_XX5dZK3TDj5ipxj7JG4A0-aDHOsslAwGgaf3JZaHTim-2JBNxZXhUSZwhS-91t7bSNGEZ8wKMS8echuo2tP7xm_JHMsjmSnHMWRCrGJDJU50atXIfAs5ppnNthtt6h7lg3VTsKMpPtW-gn7jGyJ9j4Z-J6swyO6RFPj2HcuPnNqG069b6XKkYDRlRTOgLbLQl2_9Xx8h_XgPTITnK5IGQ2haUQ-66d3TEKHboT0ByRnE6tOzsjxis_e19WfWnrIhgg_HkCQju71Itp9J8djwT4_zxNF9gZ9B05Tgdmcxr-SO8xbv2Gop7QebyKn9IFEWsd4dAGudEVjQHM0C1zay_iCOzq6NUCqN_9tPVy3dDnkIhL5lHJaqWYPr_RScOLgPV0T5pmb1U4RnKPhz4eDxCbWVBYV-G0ihP3QZJH9kPooix9AmRj3W2NslmwSku4sgI4rvEMuSGhU7z8_PTkuZhblD7ZNsKH-JFQAcz6MS3fsEEdAzCUE_Ho2VoiJCJ-aE8eN4o8YOttU8gHN-XmJqvar-HnKuR76pk1rrQI2V8CmC9bBFFh4zkUNz-TUKNsCVYFaT8Ao_83wdRwTOEbex92GxUY4qLYz3ubbibNJL20qisetKjKNdiHhm_SVaqtN3Wx9QnQzdKaNPv_6a9olJLugKZ9NiUBBy14joVntVyr5YthkfZe94kgiXdVMcpm5sbij8FE0gEPgXVVIkntTYkwYupgzjowIfCvxaNSYlriwYasaMQbekE0Mne2hvs0scU84F5YXCdk5NKxyXkUu3PMiAobAh7pcF56EU9LUgMispC_KyhaeGaOIhvEHuqeJroDQOMW1qz8VZA5Ut_mylPnH1kN6qoUBZyGTlLNXJcMR9x9oHLZ9BcqOhoCZNczoqbtrWtZe-rf5s32kuyImtd6jtK5M-slUb5M_hyigsj_zde7L5BeLga7SzYvYsvv_oVllALdfZwJbWWuABuURA06dFRHM1_A-mB3bWAM0rf5_GACKH0uOGLGDR2etO6N_Ll52gBXwY-dPl_QnEvHVDVX_q_GCyZnv26sS1RE0OPrCsT2y4XctEWQqDsZL4vvoXCNeksVty3cYEBe6rg6iiy7wpTEYdo3ckyI-JcsGoESG0wWjlOcR96BpmCPeXQhf8RB3LmSmD2M4-x2r4hy0XO8R41o-RWCQoBKQwhsQYUw_44okPkkLClrs0Ps7XppZFdZApmshqcCV7DRiMMp_LHWMUKZ2R8z3QyYHSo1OOrs4D7E75IOIMcQxoZMYlvfYZhcnIPA3uEFec4_CveyI91Fc4LAge9ZgzPKQtizAg7kAPwtkjFrOrK7yKc6pWK3lCT2UZkvUQf1vxNkclG4LGCoaz0OsUhEQypTgWcuQOV7i3lyNWkDoYOifDkFFjc9E09p-LRciKnuhBLlEYuWV74qggaUZbtvcjbjbE2SOMhyRHqTivvsGWW-GtFS2_NuJuxnHZLJLcjvLxBojapXEcVlrbt9KbYAXo-Uqwi0DEka7AnUdBC6RMFlK4649Lb8pvjNx_JZaypi3T5ytPw0bkf3l0g8afN1U3stGkV8KctZaw8ZqkEg__-4K6ihYdjY08uZLm0FlxZ-cSXILSICxSVvJjT4MDFf6fSe5DADWDaQzwbEf7srpI_OT_o19-TxDQWRpNsAc0q6NnwOIwzTRW8IhxNzoOkKzMdaLlONH7aoMh-G6VOO0ff9TCRlvzwSiyKdsolTJDJ4Qo7j2hTJ1vFfB9h7jD1sI5M8vbbnDumdripTobMAJMQLoimMCaAivkNcR0H6ZfUeuhXru8RBSZfl_44pdusymR7HJS9mbu1N4JQdlPS5GQMRxRiG7G-nlt-zEgHcqvyGNTzsVIXPUfOaZNMqdnNqFRiGCK1HyqSE6mN0hahsvJhVIUzy3FPlx-qp7IlgBj1LpXoOURUl9zoZdDWUawy-l0KE4FHj62m7b_pBVCU0w5R3-Af5q4Bw-XZt8xu8SjTco7X-DKyeKwo1S3sad223rID4_m_Ull_fVPKwF_yGyZPcJMFsW9mF4is6CSIMfEdvIWc_XqfAVC2G8wd8u0vUzLRkysYK91jkW_-2tYf5CZ07WaLbjMo4GWl-j7FL3evxhvm8RGmS1uVUetGl8E7F9ZyS2Cu-I06WR-8KDpWrzwNRjKJDieNJCPCzPkPdRsolPVd7d-RDM6v5_iUTNDHg2fn3wW2L1-HgCCO0MjWhJnusv5-a_syDFeqTdaw7Re-Yu-yjmSPqvnvGUUBhB9XyL4Pk-H9btn6a5zZmfWAcSUtU739hzfCRnU5RNRDPiNwoWjztb0pIMhUNZbLsxCBqiNIcLwDAH3kP6gs4gLT7V7tTd_1M2bMFr6t0uvhEa_Chu4ZeKhpFUyeB0lg95hPTnXXxQrNlfAp6_TGIhZJGa7jAlRNSoaLXjzXaTyVtXQ7cVdELOvjVtOEsptVEBZgleqZmJrjR2Xu9z0Dyu0tVPR2JEet3sb1emcBW6yBryukF4NCdHFi46GYfysQLV_TOLqb8pc1-cytPLvHPP05M70qfS-586SSvPqhBcBQWntszMXJfE7TC0AkOHJicoXXWukBjiqp3BHJBPXkdF0p4dni4M5ZJ_-1LkmmvxmrnNNnJgA4fjIl0w5f2KJNWAFrjDygPxAsXZO9fl_Bb4CoXhxpKCcxCZY5k2cecJ01sqyjaj6UCfhQtOAfGepaJbdSJaY4peNfvAwCTtkj-rl5cb4StklJSdu3zUUyqcDR6BEOz2R9MAY7HJrQ9xju3XlSij_T7DhkYm9Rqwe1XLNPwZKq9PQtYnjU-HOHlVzOMiwKM5PXtuENkONwQLDq77YiwekXY8Vk1xajGrAiRbxq1hDRrj1j9KbqWUtbl4vDvJU3f6z1koOPpCnO_zqkdtuuoWUrHtyTM2hmigmsj_lJP8SexjyAPzORwGXny3gu6xoe8688zslCSREXIHpGqkoHtyVA0WDjx-qTqDcByHOmmiLyVDjMfoCZ5um0lVrrw2OIuY9Ejo9ilbU2LZBx7cBE-Zfz952C8BSwwT9IQpTsj3p6j2OpGQabkqPSdq0g-ceJbn65GmiKuiNnL5s5cDXtf1aaGGovE3KtP5FfFXeCjUbxhQZfFvVE7RxAFSuFMHiggNbS8mUdsH4Oq4EvzMwc4lQTeADUTkC6fsecAWiN9KXweNR_F.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0fbac43be4ac8b51016ac117969d7487d1921ce628c2e073c9",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 191,
+      "completion_tokens": 1944,
+      "total_tokens": 2135,
+      "cost": 0.00393575,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00393575,
+        "upstream_inference_prompt_cost": 4.775e-05,
+        "upstream_inference_completions_cost": 0.003888
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 704,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 191,
+    "completion_tokens": 1944,
+    "total_tokens": 2135,
+    "cost": 0.00393575,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00393575,
+      "upstream_inference_prompt_cost": 4.775e-05,
+      "upstream_inference_completions_cost": 0.003888
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 704,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

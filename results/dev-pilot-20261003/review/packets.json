@@ -1,0 +1,2009 @@
+{
+  "schema_version": "requirement-review-packets-v1",
+  "packets": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "f3d1296eff9867806b6784ca6c197705df8117faa0e4d6fd3a89057708dc36d3",
+      "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+      "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "Scope (frontend only): form UX + client-side validation + request payload assembly for the Item create (POST /api/v1/items/) and update (PUT /api/v1/items/{id}) flows. Do not change permission or description rules. Do not assume any backend changes other than the stated behavior (backend stores and returns the processed value).\n\n1) Normalization and validation rules (performed on the client immediately before validation and before submitting):\n   - Trim only U+0020 spaces from both ends. Implementation example: use a trim that removes only codepoint U+0020, not other whitespace. Example JS expression: value.replace(/^[\\u0020]+|[\\u0020]+$/g, '')\n   - After trimming, count length by Unicode code points (not UTF-16 code units). In JS use Array.from(trimmed).length or [...trimmed].length so surrogate pairs (e.g., emoji) count as 1.\n   - Valid lengths: inclusive between 3 and 80 code points. Anything shorter than 3 or longer than 80 must be rejected client-side before sending.\n   - If trimming yields an empty string (original was all U+0020 spaces), treat as invalid.\n   - Do not perform any other whitespace normalization or Unicode normalization unless a separate contract exists.\n\n2) Create (POST) behavior on the client:\n   - Title is required for create. The client must ensure a title value is present and valid (per rules above) before sending the POST.\n   - Before sending, run the U+0020-trim + code point length check. If invalid, block submission and show a validation error.\n   - Build POST JSON payload including the processed (trimmed) title string. Never send title: null. Never send title as empty string if invalid.\n   - After a successful response, read the title returned by the backend (it is the processed/stored value) and update the UI with that returned value.\n\n3) Update (PUT) behavior on the client:\n   - The update endpoint allows omitting title. The client must not change the server value if the user did not modify the title field.\n   - Track whether the title input is 'dirty' (user changed it). If the title field was not modified since the form loaded, omit the title property from the PUT JSON entirely.\n   - If the user edited the title, apply the same pre-submit normalization & validation (U+0020-trim then code point length check). If invalid, block submission and show validation error.\n   - If valid and edited, include title in the PUT payload as the processed (trimmed) string. Never send title: null. If the user cleared the field resulting in an empty trimmed string, treat as invalid and block submission — do not send null to the backend (explicit null is specified to always produce HTTP 422).\n   - After a successful response, update the UI with the title returned by the backend.\n\n4) Explicit null handling and omission rule:\n   - Do not send title: null from the frontend. The requirement states explicit null will always produce 422; prevent this by client checks.\n   - Omit the title property entirely from PUT payloads if the user did not edit the field (this preserves the original server value).\n\n5) Validation UX and timing:\n   - Perform trimming+validation at form submit time and also on blur (optional) so users get early feedback. Keep the raw input visible while typing; perform the U+0020-only trimming only when validating or creating the payload (per requirement: strip before submission/validation).\n   - Display clear validation messages: e.g. \"Title is required\" (create), \"Title must be 3–80 characters after trimming leading/trailing spaces\", \"Title cannot be only spaces\". If the server returns a 422 with validation details, show the server message; otherwise show the client-side message.\n\n6) Payload construction examples (pseudocode guidance):\n   - POST:\n     let processed = raw.replace(/^[\\u0020]+|[\\u0020]+$/g, '');\n     if (Array.from(processed).length < 3 || Array.from(processed).length > 80) -> block submit\n     body = { title: processed, /* other required fields */ }\n   - PUT:\n     if (!titleDirty) body = { /* only other fields that changed */ }\n     else {\n       processed = raw.replace(/^[\\u0020]+|[\\u0020]+$/g, '')\n       if (Array.from(processed).length < 3 || Array.from(processed).length > 80) -> block submit\n       body = { title: processed, /* other changed fields */ }\n     }\n   - Ensure JSON serializer does not include properties with undefined values (omit instead of null).\n\n7) Acceptance test cases to verify on the frontend (must pass/fail as noted):\n   - Create with 'ab' (2 code points) -> client validation fail (reject before POST).\n   - Create with 'abc' (3 code points) -> client validation pass and POST success.\n   - Create with string of exactly 80 code points -> client pass.\n   - Create with string of exactly 81 code points -> client fail.\n   - Create with leading/trailing U+0020: '␠abc␠' (where ␠ is U+0020) -> trim to 'abc' then validate length.\n   - Create with only U+0020 characters ('   ') -> trim to '' -> client validation fail; do not submit.\n   - Test with multi-codepoint characters (emoji, surrogate pairs): ensure Array.from(...) counts them as 1. Example: '🙂🙂' counts as 2.\n   - Update: open edit form and submit without touching title -> PUT payload must NOT contain title and backend value must remain unchanged.\n   - Update: edit title and set a valid new title -> payload includes processed title and backend returns processed title; UI reflects returned title.\n   - Update: attempt to send explicit title: null (simulate) -> should not be sent by client; if sent, backend will return 422. Frontend must prevent such payloads.\n\n8) Error handling and server-returned value:\n   - If backend returns validation 422 for any reason, display the returned validation errors to the user.\n   - After successful create/update, use the title value returned by the backend (do not assume the client-side processed value will be identical — the backend stores/returns the processed value per requirement).\n\n9) Notes and constraints to follow strictly:\n   - Only strip U+0020 from ends before validation/submission. Do not remove other Unicode whitespace characters (e.g., NBSP) unless contract changes.\n   - Counting must be by Unicode code points. Do not use .length on JS strings (UTF-16 code units) for validation.\n   - Do not send title in PUT when the user did not modify it. Do not send title: null in any case.\n\nDeliverables for frontend engineers:\n   - Implement client-side U+0020-only trim + code-point length validation on create/update forms per above.\n   - Implement dirty-tracking for the title input to decide whether to include title in PUT payloads.\n   - Add unit/integration tests covering the acceptance test cases above.\n   - Ensure UI shows server-returned title after successful operations.\n\nIf any backend contract detail related to how to represent omission vs explicit null for other endpoints is uncertain, stop and request explicit contract before changing behavior. Do not assume alternate behavior beyond what is specified above.",
+      "backend_prompt": "Scope: backend only. Implement these exact behaviors for POST /api/v1/items/ and PUT /api/v1/items/{id} (do not change existing permission or description rules). Core rule summary: before any validation or storage, remove only ASCII space characters (U+0020) from the start and end of the incoming title string; then measure length by Unicode code points; allowed length is 3 through 80 inclusive. Create (POST) must include a title; update (PUT) may omit title to leave stored value unchanged; an explicitly provided null for title (in either POST or PUT) must always yield HTTP 422. The backend must store and return the processed (trimmed) title value. Implementation steps: 1) Request parsing: accept JSON body as before. Detect three title states: absent (no title property in parsed JSON), explicit null (title present with null), or present string. 2) Title handling rules: - If title is explicit null: respond 422 Unprocessable Entity with a validation error for the title field. - If handling POST: if title is absent or explicit null, respond 422 (creation requires title). - If handling PUT: if title is absent, do not modify the stored title; continue handling other fields and permissions as currently implemented. If title is present as a string, continue below. 3) Trimming: when title is present as a string, strip only U+0020 characters from both ends. Do NOT strip other Unicode whitespace (e.g., NBSP U+00A0, TAB, newline) unless current contracts already required that (spec says only U+0020). Perform this trim before any other processing or validation. 4) Length measurement: count Unicode code points in the trimmed string and validate that the count is between 3 and 80 inclusive. Use language-appropriate, code-point-aware routines (examples: in Python 3 len(s) counts code points; in Java use s.codePointCount(0, s.length()); in JavaScript use [...s].length or Array.from(s).length to count code points rather than s.length). 5) Validation failures: if the trimmed string has length <3 or >80, respond 422 with a validation error associated to the title field and a clear reason (too short or too long). If the trimmed string is empty (e.g., input was all U+0020 spaces), this will fail as length <3. 6) Storage and response: on success (POST or PUT when title present and valid), persist the trimmed title into the data store and include the trimmed title in the response payload exactly as stored. Do not re-introduce leading/trailing U+0020 characters when returning. 7) PUT semantics: ensure that when title is omitted from the request body, the stored title remains unchanged and the response reflects the existing stored (possibly previously trimmed) value. 8) Error codes: use 422 Unprocessable Entity for all title validation and required-field failures described above. Maintain the same response format/shape used elsewhere in the API for validation errors. 9) Tests to add (unit + integration + acceptance): include explicit cases: - POST with title trimmed length 2 -> expect 422. - POST with title trimmed length 3 -> expect success. - POST with title trimmed length 80 -> expect success. - POST with title trimmed length 81 -> expect 422. - POST with title equal to only U+0020 spaces -> expect 422. - POST missing title -> expect 422. - PUT with no title property -> existing title unchanged. - PUT with title explicit null -> expect 422. - PUT with title present and trimmed length valid -> stored and returned trimmed. For each success case assert that the returned/stored title equals the trimmed string. 10) Audit & backwards-compatibility: do not change permission checks or description validation logic; only apply these rules to the title field. 11) Logging and observability: log validation failures for title with enough context to reproduce requests, but do not log raw request bodies in production if sensitive. 12) Documentation: update backend API documentation to state: trimming of leading/trailing U+0020 is performed server-side before validation; length is counted in Unicode code points; POST requires title; PUT may omit title; explicit null is invalid. 13) Deployment: include migration/compatibility review if any clients currently expect untrimmed titles; if no contract exists, still proceed but document the change. Acceptance criteria (must pass automated tests): - 2/81 characters -> fail (422). - 3/80 characters -> succeed. - All-space input -> fail. - Update with omitted title -> stored title unchanged. - Explicit null -> 422. Ensure stored and returned titles are the trimmed values."
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "64fc383676a3a6f0cf212465108417f233b1c3f56a4f59d731ed2dfb18e2befa",
+      "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+      "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。\n\n持续有效约束与验收条件：POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。\n\n持续有效约束与验收条件：POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "c73b073b043b5446f4d5bd3043709ac4037c799cecfe9c6c32234b31ef8b2d2b",
+      "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+      "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 100,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 25,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "target": "response.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "target": "response.page.value",
+          "value": "effective_page",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "target": "response.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "target": "response.page_size.value",
+          "value": "effective_page_size",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "Scope\n- Frontend-only changes: UI pagination controls, request formation, response handling, client-side validation, and tests. Do not change backend code here; rely on the described API changes (responses will include integer fields page and page_size; old skip/limit params are no longer allowed).\n\nImplementation steps\n1) UI control updates\n- Set page_size control default value to 25 (previously 20).\n- Restrict page_size control maximum to 100 (previously 50). The control must prevent selecting or entering values > 100.\n- Ensure the page control minimum is 1 and defaults to 1 when not specified by the app state or server.\n- Remove or hide any UI that exposes skip/limit parameters; do not send skip/limit in requests.\n\n2) Request formation\n- Stop sending skip and limit in API requests.\n- Always include page and page_size in the request payload or query string as integers.\n  - If the app state does not contain a page value, send page=1.\n  - If the app state does not contain a page_size value, send page_size=25.\n- Validate client-side before sending:\n  - page must be integer >= 1.\n  - page_size must be integer between 1 and 100 inclusive. Block submission and show a validation message if page_size > 100 (accept 100).\n\n3) Response handling and synchronization\n- Parse the response JSON and read the integer fields page and page_size returned by the server.\n- Treat the returned page and page_size as the source of truth for what is actually in effect. Immediately update the pagination UI controls to reflect those echoed values (i.e., set the current page and the current page_size to the integers returned by the server).\n- Do not assume the requested values were applied; always overwrite control state with server-echoed values after each response.\n\n4) Error handling\n- If server responds with a validation error for page_size (e.g., when > 100), show the server-provided error message if available. If not available, show a generic message indicating page_size must be at most 100.\n- If the response does not include page or page_size fields, fall back to page=1 and page_size=25 in the UI state, and log a warning to assist debugging. (Prefer making the absence visible in logs rather than guessing applied values.)\n\n5) Tests and acceptance verification (frontend QA)\n- Verify that when no page is sent, the frontend sends page=1 and the UI shows page 1 after response.\n- Verify skip/limit are not sent in requests.\n- Verify page_size control default is 25 and max is 100.\n- Verify sending page_size=100 succeeds (API accepts and echoes page_size=100; UI updates to 100).\n- Verify attempting to set page_size to 101 is blocked by the frontend validation and results in an error path if forced; confirm server returns an error if 101 is sent (frontend should display server error if it occurs).\n- Verify that after each successful response, the pagination controls reflect the echoed page and page_size values exactly.\n\n6) Implementation notes and checklist for developers\n- Use integer types for page and page_size throughout request construction and state storage; avoid floats or strings where possible.\n- Centralize pagination parameter construction in a single helper so removing skip/limit is consistent across the app.\n- Centralize response parsing for page and page_size and the logic that updates UI controls from server-echoed values.\n- Add unit/integration tests around the request generator, validation logic, and response synchronization code paths.\n\n7) Coordination\n- Coordinate with backend to confirm field names are exactly page and page_size and that they are integers (if any difference exists, update the parsing accordingly). Do not assume additional response fields.\n\nDeliverables\n- Updated pagination UI (default 25, max 100).\n- Updated request builder that sends page and page_size and removes skip/limit.\n- Response handler that syncs UI to echoed page and page_size.\n- Client-side validation preventing page_size > 100 and enforcing page >= 1.\n- Automated tests and manual QA checklist validating the acceptance criteria.",
+      "backend_prompt": "后端实现指令（仅后端实施范围）——将分页参数默认/上限修改为 page_size 默认 25、上限 100，并在响应中回显生效的整数 page 和 page_size；禁止旧的 skip/limit。\n\n范围说明\n- 适用于所有返回可分页集合的后端 API（列举/查询/列表类接口）。\n- 不改动前端控件实现，但后端必须回显实际生效值，前端将以此同步控件。\n\n请求参数与校验规则（必须严格实现）\n1) 接受参数\n   - 只接受 page 和 page_size 两个分页参数；其它分页参数（特别是 skip、limit）必须被拒绝。\n2) page\n   - 类型：整数\n   - 缺省值：1（当未提供时自动采用 1）\n   - 验证：必须为整数且 >= 1；否则返回 400 Bad Request，错误体指出字段与原因。\n3) page_size\n   - 类型：整数\n   - 缺省值：25（当未提供时自动采用 25）\n   - 验证：必须为整数且 1 <= page_size <= 100；page_size=100 应被接受，page_size=101 应被拒绝。\n   - 若超出范围或非整数，返回 400 Bad Request，错误体指出字段与原因。\n4) 禁止旧参数\n   - 若请求包含 skip 或 limit 参数，立即返回 400 Bad Request，错误信息提示“skip/limit 已禁止，请使用 page 和 page_size”。\n\n后端处理逻辑\n1) 参数解析\n   - 先检查是否存在 skip/limit，若存在按上文规则返回 400。\n   - 解析 page、page_size；对非整数、空字符串等不合法输入均返回 400。\n   - 对缺省值按规则填充（page=1, page_size=25）。\n2) 计算数据库/数据层偏移\n   - offset = (page - 1) * page_size\n   - limit = page_size\n   - 使用 offset/limit 进行查询；绝不使用旧 skip/limit 来源。\n3) 响应格式变更\n   - 在原有响应体中（假设返回 JSON），在顶层新增两个整数字段：page（整数）、page_size（整数），值为实际生效值（解析+校验后的值）。\n   - 例：{..., \"page\": 1, \"page_size\": 25, \"items\": [...]}  （保持原有 items/data 字段不变，仅新增回显字段）\n   - 保证这两个字段始终返回（即使请求未提供对应参数，也返回填充值）。\n4) 错误响应格式\n   - 对无效参数返回 400，body 应包含字段名和可读的错误信息，便于前端显示错误并同步控件。\n\n兼容性与约束\n- 旧的 skip/limit 仍禁止：不得向后端暴露或接受 skip/limit，任何包含该参数的请求都应失败。\n- 不要猜测或尝试兼容之前任何隐式行为，必须明确按本指令定义的解析与错误处理。\n\n测试项（必须覆盖并作为 CI 测试）\n1) 单元测试\n   - 缺省不传参数 -> 返回 page=1，page_size=25；offset 计算正确。\n   - page 非整数或 <1 -> 400，错误体包含字段名。\n   - page_size 非整数或 <1 -> 400。\n   - page_size = 100 -> 成功且返回 page_size=100。\n   - page_size = 101 -> 400。\n   - 请求包含 skip 或 limit -> 400，并验证错误消息明确。\n2) 集成/端到端测试\n   - 对某一固定数据集请求不同 page/page_size，验证返回 items 数 <= page_size 且返回的 page/page_size 与请求或默认值一致。\n   - 验证 offset=(page-1)*page_size 匹配返回的数据页（与数据库直接查询结果对比）。\n3) 回归测试\n   - 确保在修改默认值与上限后不影响其它非分页接口；运行全量测试套件。\n\n文档与契约变更（后端责任）\n- 更新 API 文档/OpenAPI：\n  - 更新 page_size 的默认值与最大值（default=25, maximum=100），page 默认为 1。\n  - 在响应 schema 中新增 page、page_size 字段（type: integer）。\n  - 明确声明 skip/limit 已禁止，使用者应改为 page/page_size。\n- 更新变更日志与发布说明，通知前端：后端会回显实际生效的 page 与 page_size，前端应以此值同步控件。\n\n部署与发布建议\n- 在部署前确保 CI 全部通过上述测试。\n- 若存在向后兼容性风险或大量流量，建议在变更发布前与前端协调上线窗口；后端响应已设计为向前兼容（新增回显字段，不移除现有字段）。\n\n日志与监控\n- 在初次部署阶段增加日志/指标：记录接收到的 page_size 分布、被拒绝的 skip/limit 请求数量及被拒绝的超限 page_size 请求数量，便于回溯和问题定位。\n\n交付清单（开发完成需交付）\n- 代码变更：参数解析、验证、offset 计算、响应字段回显、skip/limit 拒绝逻辑\n- 自动化测试：单元、集成、回归用例\n- 更新的 API 文档（OpenAPI/Swagger）和变更说明\n- 部署/发布说明与监控配置\n\n注意事项\n- 不要使用或接受任何未在本指令中规定的隐藏/历史分页参数。\n- 所有返回的 page 与 page_size 必须为整数类型（不要以字符串返回）。\n- 错误信息应足够清晰，便于前端据此同步控件和展示用户提示。"
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "6e6202d4e1c28386e89432ef0ed3b36c96deaf25e1fb97319e4f217c75c55632",
+      "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+      "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-skip-type",
+          "target": "request.skip.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "target": "request.skip.minimum",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "target": "request.skip.default",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "target": "request.limit.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "target": "request.limit.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "target": "request.limit.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "target": "request.limit.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。\n\n持续有效约束与验收条件：`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。\n\n持续有效约束与验收条件：`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "ddd866d9922584dc7b643b9f2754ff13c7f8dc2f03194d0dbdc083a1d62a202f",
+      "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+      "preserved_constraints": "响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。\n\n持续有效约束与验收条件：响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。\n\n持续有效约束与验收条件：响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "4e982db1a50f68e6d388635034572866c1247a2488630cd62eb319215183a136",
+      "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+      "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 120,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "任务概述（前端）\n\n按要求将前端对 title 与 description 的校验和输入约束同步到新规则，保持现有未改动语义。不得改变任何未在需求中明确修改的行为。\n\n具体实施步骤\n\n1) 保持已有语义\n   - 不要改变 title 的修剪（trim）、必填(requied) 与 null 的处理规则；保持当前在哪一端（前端/后端）做 trim 的实现位置与行为不变。若当前实现不清楚，先读取现有代码并确认，若仍不明确，提交阻塞性问题并与后端对齐后再实现。\n   - 不要改变 description 的默认值（default）与 null 语义；现有对空串/null 的接受或拒绝规则必须保持不变。\n   - 保持当前的“长度计量方法”（例如是否按 Unicode codepoints/UTF-16 code units/字节计数）不变。若当前实现方式不明确，先查代码/库并确认；不得私自切换计数方法。\n\n2) 校验规则变更（前端）\n   - title：将最大允许长度从 80 调整为 120，最小长度仍为 3。校验应作用于已按现有行为（即在已被 trim 或未被 trim 的状态，取决于当前实现）的 title 值；不要改变何时 trim 的逻辑，只是将 max 从 80 改为 120。\n   - description：对“非空值”的最大长度从 255 调整为 500。明确：只有在 description 被视为“非空值”时才应用该上限；当 description 为默认/空串/null 时，语义保持不变（即继续允许或拒绝，按现有规则）。此外，前端不得对 description 做自动修剪（trim）；如果现有实现对 description 做了 trim，则必须去除该 trim。若现有实现未做 trim，则保持不变。\n\n3) UI/交互调整\n   - 若存在输入控件的 maxlength 属性或字符计数器，将 title 的 maxlength 更新为 120，将 description（非空时适用）的计数上限显示改为 500。字符计数器应基于当前系统使用的长度计量方式。\n   - 错误提示/校验信息：更新任何显示/提示中关于“最大长度”的文字（例如 “最多 80 字” -> “最多 120 字”，“最多 255 字” -> “最多 500 字”），但不要更改提示的语义或错误代码。若后端 API 返回的错误码/错误消息有既定格式，前端应继续按已有方式显示或映射，不要变更错误码预期。\n\n4) 测试\n   - 单元/组件测试：添加或修改测试，覆盖边界值：title 长度 120 应被接受，121 应被拒绝；description 长度 500 应被接受，501 应被拒绝（前提为该值被视为非空）。同时测试 title 的最小长度 3 的既有行为不变，以及 description 的空/默认/null 语义不变。\n   - E2E/集成测试：在提交流程中验证前端对 title/description 的校验行为（含 UI 提示与阻止提交的逻辑）。用明确的 payload 示例：\n       • title = 'a' * 120 -> 前端允许提交；\n       • title = 'a' * 121 -> 前端阻止并显示最大长度错误；\n       • description = 'a' * 500 -> 前端允许提交（若为非空）；\n       • description = 'a' * 501 -> 前端阻止并显示最大长度错误；\n       • description = null 或 '' -> 行为应与现有系统一致（不应因本次变更被拒绝或被自动填充）。\n   - 校验覆盖：确保测试反映出描述“不修剪”的要求（即发送到后端的 description 字段不得被前端自动 trim）。添加断言验证发送到后端的 payload 中 description 的原始内容与用户输入一致。\n\n5) 与后端的协同与兼容性\n   - 在代码中添加/保留注释，说明前端校验的业务规则与后端保持一致：title max=120、description non-empty max=500；并指明“前端不替代后端验证，后端仍需进行相同校验”。\n   - 在 PR 描述或变更日志中列出 Acceptance Criteria，便于后端在 CI/集成测试中进行并行验证：\n       • title 长度 120 成功、121 失败；\n       • description 长度 500 成功、501 失败；\n       • title 的 trim/required/null 语义不变；\n       • description 的 default/null 语义不变；\n       • description 不在前端被 trim。\n\n6) 回归与部署\n   - 回归测试所有与该字段相关的表单/编辑流程，确保不会引入回归（特别注意字符计数器、多语言输入、复制粘贴行为）。\n   - 在部署说明中声明前端与后端同时发布的建议顺序（例如：若后端需要变更数据库约束，优先发布后端 API 以避免短时间内前端放宽导致后端拒绝），但不要在此处做出不可证实的假设：若存在发布顺序风险，创建协同发布计划并与后端确认。\n\n交付物\n   - 修改后的前端代码（包含 UI maxlength、校验逻辑、提示文案）。\n   - 更新后的单元/组件/E2E 测试。\n   - PR 描述，包含变更摘要、兼容性注意点、Acceptance Criteria 与需与后端对齐的检查清单。",
+      "backend_prompt": "任务概述（后端）\n\n按需求将后端对 title 与 description 的校验规则同步到新限制，同时保持现有语义不变（title 的 trim/必填/null 规则不变；description 的默认/null 语义不变；description 不被自动修剪）。不得自行推断未决细节，任何不明确处需提阻塞性问题并与前端/产品对齐。\n\n具体实施步骤\n\n1) 保持现有语义与计量方法\n   - 在调整任何校验或数据库结构前，首先确认现有系统如何计量长度（字符数、codepoints、UTF-16 单位或字节）。所有新的长度限制必须使用当前系统的计量方法，不可擅自更改计量方式。如果无法在代码中明确找到该计量方法，提交问题并等待确认。\n   - 保持现有的 title trim 行为：如果当前后端在接收时对 title 做 trim，则继续做；如果当前后端不 trim，则保持不变。绝不改变现有 trim 逻辑。\n   - 不要对 description 做任何自动 trim（无论在请求处理前或存储前）。如果当前实现对 description 做了 trim，则需在变更中移除该行为；若当前未做 trim，则保持不变。\n\n2) 校验规则变更（后端）\n   - title：将最大长度从 80 调整为 120，最小长度保持 3。校验应在后端统一入参校验层执行（DTO/Schema/验证中间件/服务层），以确保 API 边界总是强制执行该规则。\n   - description：对“非空值”的最大长度从 255 调整为 500。明确：只有当 description 被判断为“非空值”时才应用该上限；description 的 default/empty/null 语义必须保持不变。\n\n3) 数据库与持久化层\n   - 检查数据库 schema 与任何约束（例如 VARCHAR(80)、VARCHAR(255) 或 CHECK 约束）。如果数据库当前对 title 或 description 有长度限制且小于新的上限，则需要提交数据库迁移以扩展列长度（例如 title -> VARCHAR(120)，description -> VARCHAR(500)），或根据当前 DB 类型采用等效变更。迁移步骤应包括：备份/迁移测试、潜在索引/存储影响评估、回滚脚本。\n   - 在迁移说明中列明：扩展列长度不会丢弃数据，但必须验证索引/全文索引/分片策略是否受影响。\n\n4) API 层与错误语义\n   - 在 API 验证层更新规则并保持现有错误码/错误消息格式不变。若现有错误码/错误消息包含具体数字（如“最大 80 字”），请同步更新为新值；但不要改变错误码或消息类型（格式/结构），除非已有文档另有约定。\n   - 返回的验证错误必须能与前端预期的错误处理兼容（与前端团队同步错误码/字段名，如有命名不一致，抛出阻塞性问题并与前端对齐）。\n\n5) 测试\n   - 单元与集成测试：添加/修改测试覆盖以下边界条件：\n       • title 长度为 120 -> 验证通过；title 长度为 121 -> 验证失败（返回现有错误码/消息格式）。\n       • description（非空）长度为 500 -> 验证通过；description（非空）长度为 501 -> 验证失败。\n       • description 为 null 或 空串 时的行为与现有系统一致（添加断言以防回归）。\n   - API 集成测试：构造请求载荷以验证后端接收到的 description 字段保持原样（即没有被自动 trim），并验证存储或返回的值与输入一致（按当前系统的持久化语义）。\n\n6) 合规与回归风险评估\n   - 如果现有数据库字段类型或后端组件对长度有限制，修改后应评估对索引、迁移时间及回滚的影响。将这些风险点记录在 PR 中，并在发布计划中与前端协调。\n   - 如果在后端发现与前端关于“何谓非空值”或“长度计量方法”存在差异，立即提出问题并阻塞合并，直至双方对齐。\n\n7) 部署与兼容发布\n   - 推荐的发布步骤（示例，需与前端协调并根据实际 CI/部署流程调整）：\n       1. 后端变更合并并部署（包含 DB 迁移，如果需要，先在预发布环境验证）。\n       2. 前端同步合并并部署，或两者在同一次发布窗口内发布以避免短暂的不一致。\n   - 在 PR 中将 Acceptance Criteria 明确写出便于回归验证：\n       • title 最大长度 120、121 被拒绝；\n       • description（非空）最大长度 500、501 被拒绝；\n       • title 的 trim/必填/null 语义不变；\n       • description 的默认/null 语义不变；\n       • description 在后端不被自动 trim。\n\n交付物\n   - 后端代码变更（验证层、可能的数据库迁移脚本、错误消息文本更新）。\n   - 单元/集成/API 测试覆盖边界条件与回归场景。\n   - PR 描述，包含迁移说明、兼容性说明、以及需与前端确认的点（如长度计量方法或“非空值”判定的实现细节）。"
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "b2e99b241265dcaca3b3c39287f56f0828b414e37c5c1cd21147acd621147f11",
+      "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+      "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-skip-type",
+          "target": "request.skip.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "target": "request.skip.minimum",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "target": "request.skip.default",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "target": "request.limit.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "target": "request.limit.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "target": "request.limit.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "target": "request.limit.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "实现说明（前端）\n\n目标：按照后端约定，通过查询参数 skip、limit 向 GET /api/v1/items/ 请求分页数据并正确呈现分页结果；在请求前做本地参数校验以减少 422 错误展示。\n\n必需行为（不可变更契约）\n- 请求格式：GET /api/v1/items/?skip={skip}&limit={limit}\n- skip 含义：从 0 开始的偏移量，整数且 ≥ 0；缺省为 0（当未传时应该按后端约定发送空 query 或不传参数以使用后端默认）。\n- limit 含义：每页最大条数，整数且 1—50；缺省为 20。\n- 前端翻页行为：翻页时按 skip/limit 发送请求。对于第 n 页（0 基），计算 skip = n * limit。\n\n请求构建与校验（前端侧）\n- 在发起请求前，确保 skip 与 limit 是整型（不接受小数、字符串形式的小数或非数字）。\n- 确保 skip ≥ 0；若为负，阻止请求并向用户显示校验错误。\n- 确保 1 ≤ limit ≤ 50；若不满足，阻止请求并提示用户修正（或自动限制到允许的范围）。\n- 若不想在 UI 中展示显式参数输入，前端仍应在内部维护 skip 与 limit，并以 query 参数方式发送。\n\n响应处理（兼容后端契约）\n- 后端成功响应时（HTTP 200），至少解析 JSON 中的两个字段：\n  - data：当前页条目数组（可能为空数组 []），仅使用此字段作为当前页数据来源。\n  - count：用户权限范围内满足查询条件的全部匹配条目总数（整数），该值必须与当前页条目数无关。\n- 不依赖或假设响应包含其他分页字段（例如：total_pages、next 等），除非已有统一 API 约定。仅使用 count 与 limit 计算页数：totalPages = ceil(count / limit)（注意：当 count==0 时 totalPages==0 或按业务决定显示 1 页的空状态，但必须以 count 为依据）。\n- 空页处理：当 data === [] 时，显示空态并且 count 应该仍反映权限范围内的总量。\n- 422 响应：当后端返回 422（Unprocessable Entity）时，前端应读取并显示后端返回的可读错误信息（遵循项目中既有错误格式）。前端应将这种响应视为参数校验错误并允许用户修正请求参数。\n\n用户交互与分页控件要点\n- 翻页控件（上一页/下一页/跳页）必须使用 skip/limit 计算下一次请求的 skip。\n- 翻页时保持 limit 不变（除非用户在界面上改变每页条数）；当用户改变 limit 时，重置 skip=0 或按产品决定处理，但在实现中须明确重置策略并与后端契约兼容。\n- 使用 count 与 limit 计算并展示页数和禁用“下一页”按钮（当 (skip + data.length) >= count 时禁用下一页）。\n\n测试要点（前端单元/集成）\n- 验证请求 URL 的构建：无参数时应使用缺省行为（skip=0、limit=20）；翻页计算 skip = n * limit。\n- 校验阻止不合规参数（非整数、负 skip、limit 超出范围）并保证不发出请求。\n- 模拟后端返回：\n  - 成功返回含 data 与 count（含 data=[] 的空页），验证 UI 渲染与分页计算正确。\n  - 后端返回 422 时，验证前端展示错误信息并允许用户修正。\n\n注意事项\n- 不要假设返回的 data 中条目结构；只按 data 数组处理并展示/传递到项目中既有的 item 渲染逻辑。\n- 不要更改后端约定（参数名称、默认值或验证规则）。若需要更改必须先达成契约。",
+      "backend_prompt": "实现说明（后端）\n\n目标：实现 GET /api/v1/items/ 的分页接口，严格按下列约定解析与校验 skip、limit，返回 JSON 并确保 count 表示权限范围内的匹配总数且不随当前页条数改变。\n\n接口契约（必须严格实现）\n- URL 与方法：GET /api/v1/items/\n- 查询参数：\n  - skip：可选。必须为整数且 ≥ 0。缺省行为为 0（当参数未提供时按 0 处理）。非整数或负值应返回 422。\n  - limit：可选。必须为整数，且 1 <= limit <= 50。缺省行为为 20（当参数未提供时按 20 处理）。超出范围或非整数应返回 422。\n- 验证失败时：返回 HTTP 422 Unprocessable Entity，并在响应体中包含可机器/用户读取的错误信息，指明哪个参数无效（遵循项目既有的错误响应格式）。\n- 成功响应（HTTP 200）：返回 JSON，响应体至少包含两个字段：\n  - data：数组，表示当前页的条目。空页必须返回 data = []。\n  - count：整数，表示当前请求者权限范围内、满足筛选条件的全部匹配条目数（不随分页大小变动）。\n  其它任意额外字段只能在与现有 API 约定一致时添加。\n\n实现细节\n- 参数解析：从查询字符串严格解析 skip 与 limit，为整数且无小数部分（例如 \"1.0\" 或 \"1e1\" 视为非整数并应返回 422，除非项目已有明确解析规则）。\n- 默认值：当参数缺失时使用 skip=0、limit=20。\n- 权限与筛选：使用与数据查询相同的权限检查与筛选逻辑来计算 count 和读取 page 数据。具体来说，count 的计算必须对整个匹配集合应用完全相同的过滤和权限限制，但不应再对 count 施加分页（即 count = total_matching_rows_without_limit_or_skip）。\n- 数据分页：基于已校验的 skip 与 limit，从符合权限和筛选的全量集合中返回对应片段（OFFSET skip LIMIT limit 或等价实现）。\n- 空页语义：当 skip >= count 时，应返回 data = [] 且 count 保持原值。\n\n错误处理示例（行为说明，不限定格式）\n- 非整数或格式错误的 skip/limit -> HTTP 422 + 说明性错误信息。\n- skip < 0 或 limit 不在 [1,50] -> HTTP 422 + 说明性错误信息。\n\n文档与规格\n- 在 API 文档（OpenAPI/Swagger）中明确：\n  - query 参数类型为 integer，skip >= 0，limit 范围 1—50，默认值分别为 0 和 20。\n  - 成功响应示例包含 { \"data\": [], \"count\": 0 }（示例空页）以及非空页示例。\n  - 指明 HTTP 422 用于参数验证失败并示例错误响应。\n\n测试要点（后端单元/集成/契约测试）\n- 参数解析与校验测试：\n  - skip 未传、传 0、传正整数；传负值；传非整数字符串；传浮点数样式；期望分别为成功或 422。\n  - limit 未传、传 1、传 50；传 0、传 51；传非整数；期望分别为成功或 422。\n- 分页与 count 一致性测试：\n  - 给定权限范围内有 N 条可见数据（在测试 DB 中设置），当请求不同 skip/limit 时：\n    - count 必须恒等于 N。\n    - data 应包含相应的片段，且当 skip >= N 时 data == []。\n    - 当 limit 改变时，count 不变，data 长度受 limit 上限约束（除最后一页或空页）。\n- 边界测试：\n  - skip 恰为 N-1，limit=1，应返回最后一条数据且 count==N。\n  - skip 超出 N（如 skip=N 或更大），应返回 data==[] 且 count==N。\n- 集成/契约测试：\n  - 与前端约定一起运行端到端用例：默认参数调用、翻页调用、非法参数导致 422。\n\n其他注意事项\n- 不要在 count 中包含因分页而滤除的条目；count 必须反映完整的、受权限限制的总数。\n- 不要在未达成额外协议的情况下增加/改变参数名或默认值。若需要额外分页元数据（如 next/previous URL、total_pages），须在 API 设计上先达成契约并更新文档与前端实现。\n- 确保响应 Content-Type 为 application/json，并遵循项目既有错误/日志格式。"
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "c18a49cae6979620156b542abc5190d29ada81098a349f51218bb817a4b47bed",
+      "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+      "preserved_constraints": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "target": "read.existing_overlength_title.allowed",
+          "value": true,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "target": "update.omitted_title.revalidate",
+          "value": false,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "Make minimal UI/UX and client-side validation changes to match the new server rule (title max 80, description max 500) while preserving existing behavior for assets that already have titles >80. Implementation steps:\n\n1) Display: continue to render title values returned by the read API unchanged (do not truncate or hide titles >80).\n\n2) Editing form behavior:\n   - Add a \"touched\"/\"modified\" flag for the title input. Consider the title field \"untouched\" when the form was loaded with the server value and the user has not modified it.\n   - Only run/emit client-side title length validation (max 80) when the title field has been touched/modified by the user or when the user explicitly focuses and edits the title. If the title is untouched, do not block submission because its existing stored value exceeds 80.\n   - For new input (when the user edits or types a title), enforce maxlength=80 on the input control and show the usual validation UX if the user attempts to enter more than 80 characters.\n\n3) Submit payload rules:\n   - Prefer sending a partial update that omits fields the user did not change. If the title was not touched, do not include the title property in the update payload.\n   - If the title was touched, include the (trimmed) title value in the payload. Ensure the value sent is <=80 (client-side enforcement) and >=3 after trimming (keep existing min-length rule).\n\n4) Error handling:\n   - If the backend returns HTTP 422 for title (explicit over-limit submission), show the server validation message associated with title to the user and prevent the save.\n   - If the backend returns success with an updated asset version, update UI state with the returned asset and new version.\n\n5) Tests / acceptance checks to add in the frontend test suite:\n   - Load an asset with an existing 100-character title; edit only the description and submit; expect the request to omit title and the UI to accept the save and reflect an incremented asset version from the response.\n   - Attempt to edit title and submit a title >80; expect client-side blocking (if edited) or server-side 422 if client allowed it; show validation error.\n\nNotes/constraints for implementers: Do not change trimming rules or min-length (3) behavior. If current client code cannot omit unchanged fields (e.g., always sends full resource bodies), coordinate with backend but do not assume that coordination in this task; prefer implementing omission of unchanged fields in the client where feasible.",
+      "backend_prompt": "Modify validation and update handling to roll back title maximum from 120 to 80 while preserving other existing constraints and behaviors. Implementation steps:\n\n1) Validation rules (effective only when title is present in the incoming request):\n   - Trim the incoming title using the existing trimming rule (do not change trimming behavior).\n   - Enforce min length >= 3 (unchanged).\n   - Enforce max length <= 80 (changed from 120 to 80) when title is explicitly provided in the request payload.\n\n2) Update semantics (partial updates):\n   - If an update request omits the title property entirely, do NOT revalidate the stored title value. Leave the stored title unchanged even if it exceeds 80 characters.\n   - If the title property is present (even if equal to the stored value), validate it per step (1). If it fails max-length, return HTTP 422 Unprocessable Entity with the existing validation error format and do not apply the update.\n\n3) Read semantics:\n   - Read/GET endpoints must continue to return stored titles as-is (including any titles >80). Do not modify stored values on read.\n\n4) Versioning and persistence:\n   - Continue to increment the asset version on successful updates after the rollback. A successful description-only update where title is omitted must still increment the version.\n   - Ensure that rejected updates (e.g., explicit over-limit title resulting in 422) do not increment the asset version.\n\n5) Error responses:\n   - Use the existing validation error response format. For title length violations when title is present, return HTTP 422 and a validation error indicating title exceeds the 80-character maximum.\n\n6) Tests / acceptance checks to add to backend test suite:\n   - Given an asset with an existing 100-character title, issue an update that omits title and changes only description: expect success, stored title unchanged (100 chars), and asset version incremented.\n   - Submit an update with title explicitly set to >80 characters: expect HTTP 422 and no version increment; validate error shape matches current validation responses.\n   - Submit an update with title set to <=80 (and >=3 after trimming): expect success and a version increment.\n\n7) Compatibility notes:\n   - Do not change description max (500) nor minimum title length (3) nor trimming behavior.\n   - No data migration is required: allow existing titles >80 to remain in storage.\n\nImplementation caution: apply these rules to all update endpoints that accept modifications (PATCH, PUT or other) — for each concrete endpoint in the codebase, make sure the branch that handles updates follows the \"if title omitted -> skip title validation\" rule. Reuse existing validation/error formatting; do not invent a new response contract. The client will rely on HTTP 422 for explicit over-limit title submissions."
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "6985385abee31667d8703cde6208afc9d20cb20a8105e7e995e487891f6801f1",
+      "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+      "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 120,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "实施范围（前端仅）：\n- 只在前端代码中调整输入校验与展示逻辑；不更改后端契约、API 语义或后端校验行为。\n\n变更目标摘要：\n- title 最大长度从 80 调整为 120；最小长度保持 3。title 的修剪（trim）、必填及 null 规则不变——即继续对 title 使用现有的 trim/required/null 处理逻辑。\n- description 对于非空值的最大长度从 255 调整为 500；不要对 description 执行 trim（即保留用户输入的前后空白）。description 的缺省（默认）与 null 语义不变，不要更改如何将缺省或 null 发送到后端。\n\n前端实施步骤（按优先级）：\n1) 找到所有受影响的表单/组件/验证点：\n   - 搜索项目中所有与 title 和 description 表单字段相关的组件、输入元素、验证 util、schema、以及前端提交前的校验拦截器（例如 form validators、client-side DTO/serializer、Formik/Yup schema、React/Vue props 校验、HTML maxlength 属性等）。\n\n2) 更新校验规则：\n   - title：将客户端/表单校验中对 title 的最大长度判断从 80 改为 120；保留对 title 的 trim 行为（继续在进行长度判断或空值检查前对 title 执行 trim，保持现有必填/null 规则）。\n   - description：将对 description 的最大长度判断从 255 改为 500，但在任何对 description 的预处理或验证中不要对其执行 trim。换言之，长度判断应基于原始输入值（不调用 .trim()），并在非空值情况下应用该上限。\n\n3) 更新 HTML/控件属性与 UI：\n   - 如果使用 maxlength 属性：\n     - title 输入控件（input/textarea）将 maxlength 设置为 120（如果之前为 80）。\n     - description 控件将 maxlength 设置为 500（如果之前为 255）。\n   - 字符计数器/进度显示：更新展示的最大值（title: 120, description: 500），并确保计数器基于与校验一致的行为：\n     - title 的计数应基于 trim 后的长度（如果当前实现如此）。\n     - description 的计数应基于原始输入长度（不 trim）。\n   - 验证错误提示：更新提示文本中提到的最大长度值（例如“最多允许 120 个字符”/“最多允许 500 个字符”），并确保消息不会暗示对 description 会进行自动修剪。\n\n4) 保持现有必填/默认/null 语义：\n   - 不要将 description 的空值自动转换为 null 或非空字符串；不要改变默认值处理逻辑。仅在对非空 description 值进行长度校验时采用新的上限。\n   - 对 title 的必填和 null 规则保持不变（继续按现有实现对 null/空/trim 后的值进行判定）。\n\n5) 验证与阻止提交逻辑：\n   - 在客户端提交前的同步或异步校验中，确保超长的 title/description 会被拒绝并向用户展示错误。\n   - 对于 description，注意不要在阻止提交前对其值做 trim 操作；长度判断应基于原始值。\n\n6) 测试（必须添加或更新）：\n   - 单元测试（validator/util）：\n     - title：trim 后长度为 120 -> 校验通过；trim 后长度为 121 -> 校验失败；trim 后长度为 3 -> 通过；trim 后长度为 2 -> 失败（确保最小值 3 保持）。\n     - description：原始（不 trim）长度为 500 且非空 -> 校验通过；原始长度为 501 -> 校验失败。\n     - 确认 description 的空值/null/default 路径不被改变（为保守起见，运行现有相关测试并确保通过）。\n   - 集成 / E2E 测试（表单行为）：\n     - 在表单中输入 title（包含前后空白），确认校验使用 trim 后的长度并按 120 上限工作（120 成功、121 失败）。\n     - 在表单中输入 description（包含前后空白、以及仅空格的情况），确认不会对 description 执行 trim；当原始字符数为 500 时可提交，501 时被拒绝。\n     - 检查提交流程中 description 为 null 或缺省时的行为保持不变（与现有基线一致）。\n\n7) 可视与无障碍（A11y）：\n   - 更新 aria-describedby、aria-invalid 等辅助属性以反映新的限制消息；字符计数器应对屏幕阅读器可感知。\n\n8) 回退与兼容性注意事项：\n   - 不要更改任何发送给后端的字段命名、空/null 表征或数据类型。\n   - 若后端仍以旧上限校验（未知），请不要在没有后端确认的情况下更改前端为允许更长字符串的最终提交行为；若存在后端冲突，停止并与后端对齐，但本次任务只实现前端所需改动并提交 PR 说明需要后端协调（不要在实现中假设后端已更新）。\n\n9) 提交与代码审查说明（PR 内容须包含）：\n   - 明确列出所改动的文件和变更点（校验 util、表单组件、HTML maxlength、错误消息、测试），并在 PR 描述中列出验收测试要点：\n     - title: trim 后长度 120 => 成功；121 => 失败；最小 3 保持。\n     - description: 原始长度 500 => 成功；501 => 失败；不对 description 做 trim；description 的缺省和 null 语义不变。\n\n验收标准（前端验证必须通过）：\n- title: 输入（在执行现有 trim 之后）长度为 120 时允许提交；121 时阻止并显示错误。min=3 保持不变。\n- description: 原始输入长度为 500 且非空时允许提交；501 时阻止并显示错误；无任何自动 trim 操作影响 description 的最终值；description 的缺省和 null 行为与变更前一致。\n\n注意事项（不可猜测的契约或限制）：\n- 不要对后端行为做假设；若后端有冲突或额外约束，停止并请求后端确认再调整前端策略。\n- 不要更改除本次明确要求之外的字段规则或默认值。\n\n交付：\n- 更新后的前端代码（包含校验与 UI 变更）和对应单元、集成/E2E 测试，PR 描述包含上述变更说明与验收测试用例。",
+      "backend_prompt": "实施范围说明（后端）：验证层（控制器/DTO/服务/模型）、持久层（数据库列/迁移）、自动化测试、API 文档/契约。不要改变已有的 title 必填/trim/null 语义与 description 的缺省/null 语义；仅按下面精确变更执行。具体实施步骤：\n\n1) 常量与验证逻辑\n - 新增/修改常量：TITLE_MIN = 3（保持不变）、TITLE_MAX = 120；DESCRIPTION_MAX = 500。\n - Title 验证：在现有流程中继续对 title 进行 trim()（与现有行为一致），然后校验长度在 [TITLE_MIN, TITLE_MAX]。对 null 或缺失字段保持现有处理逻辑（即不改变必填或可空规则）。\n - Description 验证：绝不对 description 调用 trim() 或以任何方式修剪输入。仅当 description 非空值（即 description != null 且 description != \"\"，以原始输入为准，不对其先行 trim）时，校验 description.length <= DESCRIPTION_MAX。对 description 的默认值、null 可空性或空字符串的允许/拒绝语义必须保持不变（不要改变字段是否必填或默认值）。\n\n2) 持久层 / 数据库迁移（仅在当前列长度限制小于新上限时）\n - 检查数据库列定义：title 列最大长度（若为 varchar/char）需至少支持 120 字符；description 列需至少支持 500 字符。若当前列已是 TEXT / unlimited，则无需变更。\n - 如需修改，编写数据库迁移脚本将 title 列长度扩为 VARCHAR(120)（或等价类型），将 description 列扩为 VARCHAR(500)（或适合的长度），但绝不更改列的 nullability 或默认值。迁移必须在不丢失数据的前提下进行，并在变更前备份表结构/数据。\n - 注意索引限制：若 title/description 被索引且数据库对索引前缀长度有限制，评估并调整索引策略（必要时使用前缀索引或保留原索引设计）。\n\n3) 输入处理细节\n - 对 title：在接收层（Controller/DTO）继续对输入做 trim()；长度检查使用 trim() 后的长度。\n - 对 description：接收层不得 trim()；长度检查基于原始输入字符串长度（包括所有空格和不可见字符）。\n - 不要在中间层或持久层自动修剪 description（例如 ORMs 的钩子、字段转换器等必须保持原样）。\n\n4) 接口与错误处理\n - 验证失败行为应遵循现有后端的错误响应约定（不要更改错误代码风格或格式）。\n - 明确验收边界：title 长度为 120 字符时应被接受并成功持久化；121 字符时应被拒绝并返回验证错误。description 非空值长度 500 被接受并持久化；501 被拒绝并返回验证错误。对 null/缺省/空字符串的响应必须保持当前语义。\n\n5) 自动化测试（必须实现并在 CI 中运行）\n - 单元测试（验证函数/DTO 层）至少包含：\n   • title:\n     - 长度 = 3 -> 验证通过\n     - 长度 = 2 -> 验证失败\n     - 长度 = 120 (经过 trim) -> 验证通过\n     - 长度 = 121 (无论 trim 后是否仍超限) -> 验证失败\n     - 包含前后空格且 trim 后长度边界 = 120 -> 应通过（验证 trim 行为保留）\n   • description:\n     - description == null -> 保持现有行为（断言为通过或按当前语义）\n     - description omitted/默认 -> 保持现有行为\n     - description == \"\" (空字符串) -> 与现有语义一致（断言不变）\n     - 非空长度 = 500 -> 验证通过\n     - 非空长度 = 501 -> 验证失败\n     - 包含前后空格且总长度为 501 -> 验证失败（因为不 trim）\n - 集成/端到端测试（API 层）：发送创建/更新请求，断言持久化结果或返回的验证错误。确认 DB 中保存的 title 为 trim 后值，description 为原样值。\n\n6) 回滚与部署策略\n - 将迁移与代码同时部署：先部署支持新版长度的数据库迁移（增加列长度为无破坏性扩展），随后部署代码更新。回滚时先回滚代码再回滚数据库（若旧数据库长度不足以回滚，需额外策略）。\n - 为防止中间状态导致失败，优先执行只增加长度的数据库变更（向后兼容）。\n\n7) 文档与契约更新\n - 更新后端公开的 schema/契约（OpenAPI/JSON Schema）中 title.maxLength -> 120；description.maxLength -> 500（仅用于描述“非空值上限为 500”，并在文档中明确说明 description 不会被自动 trim，且 null/默认语义未变）。\n\n8) 监控和日志\n - 在上线初期增加对验证失败率的监控告警，尤其关注 description 因不被 trim 导致的失败率上升。\n - 记录典型失败示例以便回溯（不记录敏感内容）。\n\n验收测试清单（必须通过）：\n - Title trim/required/null 语义不变。\n - 提交 title 为 120 字符（trim 后） -> 成功并持久化。\n - 提交 title 为 121 字符 -> 验证失败并按现有错误格式返回。\n - 提交 description 非空字符串长度为 500（包含空格） -> 成功并持久化（原样保存）。\n - 提交 description 非空字符串长度为 501 -> 验证失败并按现有错误格式返回。\n - 提交 description 为 null / 缺省 -> 行为与上线前一致。\n\n实施注意事项（禁忌）：\n - 不要改变 title 原有的必填/trim/null 规则。\n - 不要对 description 进行 trim 或替换空白字符。\n - 不要更改 description 的默认值或 nullability。\n - 不要假设或更改现有错误响应的结构或状态码；使用既有错误处理约定报告验证失败。\n\n交付项：\n - 修改后的验证代码与常量\n - 必要的数据库迁移脚本（含回滚脚本）\n - 单元测试与集成测试代码\n - 更新后的 API 契约文档\n - 部署与回滚说明\n\n按此清单实施并运行验收测试，确认所有验收条件通过后方可上线。"
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "b891092a4131701f07dd03aea0a246096f1da8fbcd0495d71256699776673607",
+      "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+      "preserved_constraints": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "target": "read.existing_overlength_title.allowed",
+          "value": true,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "target": "update.omitted_title.revalidate",
+          "value": false,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。\n\n持续有效约束与验收条件：不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。\n\n持续有效约束与验收条件：不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "d5a2e025d0e9059f195e8c01c351e9b224f9d31aab82fcdc91e7b056a1159ea1",
+      "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+      "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement client-side behavior for the `title` field in create and update flows. Requirements and exact behaviors the frontend must implement (do not rely on backend):\n\n1) Trimming rule (must match backend):\n   - Before any client-side validation and before sending the request, remove ONLY leading and trailing U+0020 (ASCII space, code point 0x20). Do not remove other whitespace characters (e.g., \\u00A0, \\u2003, tabs, newlines).\n   - Example JS trimming expression: title.replace(/^[\\u0020]+|[\\u0020]+$/g, '');\n\n2) Length measurement (must match backend):\n   - Measure length by Unicode code points, not bytes or UTF-16 code units.\n   - In JavaScript use Array.from(title).length or [...title].length to count code points.\n\n3) Validation rules (client must enforce before submission):\n   - Allowed length after trimming: 3 through 80 code points, inclusive.\n   - Titles that end up shorter than 3 or longer than 80 must be rejected client-side and not submitted.\n   - A title consisting only of U+0020 characters becomes the empty string after trimming and must be rejected.\n\n4) Create (POST /api/v1/items/):\n   - title is required. Do not allow form submission without a non-null title that passes trimming+length validation.\n   - The payload must include the processed string under the key \"title\".\n   - Do NOT send JSON null for title on create.\n\n5) Update (PUT /api/v1/items/{id}):\n   - If the user did not edit the title, omit the title key entirely from the JSON payload so the backend will keep the original.\n   - If the user edits the title to a string, apply trimming+validation and send the processed string under \"title\".\n   - If the user attempts to set the title to null (e.g., explicit null value), block this on the client and show a validation error; the backend treats explicit null as 422, so the frontend should never send null.\n   - If the user clears the title input to an empty string, run trimming (U+0020-only) and validate; if it fails, show an error and do not submit.\n\n6) Error handling & UX:\n   - Surface validation messages that explain: trimmed length must be between 3 and 80 Unicode code points; explicit null is not allowed; all-space strings are invalid.\n   - On server 422 responses include the returned validation message; if server returns a processed title in the response body, update the UI if appropriate.\n\n7) Tests / acceptance checks to include in frontend test suite:\n   - POST with title \"␣ab␣\" (U+0020 around) -> trimmed to \"ab\" -> length 2 -> client rejects and does not submit.\n   - POST with title \"␣abc␣\" -> trimmed to \"abc\" -> length 3 -> client accepts and submits.\n   - POST/PUT with title of 81 code points -> client rejects; 80 code points -> client accepts.\n   - Title consisting only of U+0020s -> client rejects.\n   - On update, leaving the title input untouched results in payload without title key.\n\n8) Implementation note for HTTP payloads:\n   - Send JSON body with key \"title\" when sending a title string. When omitting title on update, do not include the key at all in the JSON object.\n\n9) Do not assume or change other rules (permissions, description rules). Keep all other API contract aspects unchanged.",
+      "backend_prompt": "Implement server-side behavior and enforcement for the `title` field for POST /api/v1/items/ and PUT /api/v1/items/{id}. The backend is the source of truth and must enforce all rules regardless of client behavior.\n\n1) Trimming rule (must match frontend):\n   - On any incoming request that includes a title value (JSON key present and value is a string), remove ONLY leading and trailing U+0020 (ASCII space, U+0020). Do not trim other Unicode whitespace characters.\n   - Example implementations:\n     - Node/JS: processed = raw.replace(/^[\\u0020]+|[\\u0020]+$/g, '');\n     - Python: processed = re.sub(r'^[\\u0020]+|[\\u0020]+$', '', raw)\n     - Java: processed = raw.replaceAll(\"^[\\u0020]+|[\\u0020]+$\", \"\");\n     - Go: use strings.TrimFunc(s, func(r rune) bool { return r == ' ' })\n\n2) Length measurement (server must use Unicode code points):\n   - After trimming, count Unicode code points (characters) and validate that length is between 3 and 80 inclusive.\n   - Language-specific guidance:\n     - Node/JS: length = Array.from(processed).length or [...processed].length\n     - Python 3: length = len(processed)\n     - Java: length = processed.codePointCount(0, processed.length())\n     - Go: length = utf8.RuneCountInString(processed)\n\n3) POST /api/v1/items/ (create):\n   - The request MUST include the \"title\" key with a non-null string value.\n   - If title key is missing or is null -> respond 422 Unprocessable Entity.\n   - If title is present as a string: apply U+0020 trimming, then validate by code-point length 3..80. If validation fails respond 422 with a clear validation error.\n   - On success: store the processed title (the trimmed string) in the persistent item and return responses (201 or as existing API does) containing the stored processed title.\n\n4) PUT /api/v1/items/{id} (update):\n   - If the request body does NOT include the title key at all -> do not change the stored title (preserve existing value) and return success if other parts are valid.\n   - If the request includes \"title\":\n       - If title is explicit null -> respond 422 Unprocessable Entity (explicit null is always 422).\n       - If title is a string -> apply U+0020 trimming and validate by code-point length 3..80. If validation fails respond 422.\n       - On success store the processed title and return the updated resource containing the processed title.\n\n5) Error semantics and messages:\n   - Use 422 Unprocessable Entity for all validation failures specified above, including explicit null for title.\n   - Response body should explain validation failure (e.g., \"title must be a string of 3..80 Unicode code points after trimming U+0020; explicit null is not allowed\").\n\n6) Storage and responses:\n   - Persist the processed (trimmed) title value. Every API response that returns the resource must return the stored processed title (not the raw submitted value).\n\n7) Security and other rules:\n   - Do not alter existing permission checks or description rules. Apply permission checks before performing updates/creates as currently implemented.\n\n8) Tests / acceptance checks (server-side test cases to add):\n   - POST with JSON {\"title\": \"\\u0020ab\\u0020\"} -> trimmed to \"ab\" -> length 2 -> respond 422 and do not store.\n   - POST with {\"title\": \"\\u0020abc\\u0020\"} -> trimmed to \"abc\" -> length 3 -> create, stored title == \"abc\", returned title == \"abc\".\n   - POST with 81 code points -> 422. POST with 80 code points -> success.\n   - POST with title consisting only of U+0020s -> trimmed to \"\" -> 422.\n   - PUT without title key -> leave stored title unchanged.\n   - PUT with {\"title\": null} -> 422.\n   - PUT with a new string that trims to a valid length -> store trimmed value and return it.\n\n9) Implementation notes:\n   - Do validation and trimming in a single canonical place (e.g., request validation layer or model setter) so all code paths (POST, PUT) use identical logic.\n   - Log validation failures as appropriate.\n\n10) Do not change or assume other API contract details beyond those stated here. If any additional contract detail is ambiguous or missing (for example, exact error response JSON schema), do not invent it—follow existing project conventions for error payloads."
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "5f6967838858fc9b26a9e1e1d5cfd7df6919f77be7d5f65a46dfd37fd122c183",
+      "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+      "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 120,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。\n\n持续有效约束与验收条件：title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。\n\n持续有效约束与验收条件：title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    },
+    {
+      "blind_id": "packet-013",
+      "pack_sha256": "eeeab7b1c16f20ba501c9fb84edc7c1a07c8034727b9f936c9522875643bbc22",
+      "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+      "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-skip-type",
+          "target": "request.skip.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "target": "request.skip.minimum",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "target": "request.skip.default",
+          "value": 0,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "target": "request.limit.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "target": "request.limit.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "target": "request.limit.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "target": "request.limit.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "范围：仅前端实现。目标是以 skip/limit 查询后端 GET /api/v1/items/，并在 UI 上做分页、校验与错误处理。不要对后端未声明的行为作假设；只依据以下约定实现前端逻辑。\n\n必须实现的行为与规则：\n1) 查询参数约定\n   - 每次请求均以整数查询参数发送：/api/v1/items/?skip={skip}&limit={limit}\n   - skip: 整数且 >= 0。缺省值 0。\n   - limit: 整数且 1..50（含）。缺省值 20。\n   - 在发送请求前，前端必须将 skip 与 limit 解析为十进制整数并做校验；若不合法则禁止发送请求并在 UI 上显示字段级错误信息。\n\n2) UI 初始状态\n   - 初始请求使用 skip=0, limit=20（除非用户在 UI 中显式选择不同的 limit）。\n\n3) 分页控制（使用 skip/limit 而非页号直接发送）\n   - 计算当前页：currentPage = Math.floor(skip/limit) + 1（仅用于显示）。\n   - 计算总页数：totalPages = Math.ceil(count / limit)（从响应的 count 计算，count 为后端返回的总匹配数）。\n   - 当用户请求跳到第 N 页，设置 skip = (N-1) * limit 并发送请求。\n   - 上一页/下一页控件相应地增减 skip：上一页 skip = max(0, skip - limit)，下一页 skip = skip + limit。\n   - 当用户更改 limit 的选择时，为避免客户端与后端索引错位，重置 skip = 0 然后以新 limit 发送请求（这是前端必须做出的明确策略）。\n\n4) 发起请求细节\n   - 使用 GET /api/v1/items/?skip={skip}&limit={limit}，确保两个参数为整数字符串。\n   - 在发送前再次校验： skip 是整数且 >=0；limit 是整数且 1<=limit<=50。若校验失败，阻止请求并显示校验错误。\n   - 并发控制：当用户快速变更分页或 limit 时，取消先前未完成的请求（例如使用 AbortController）并仅处理最新响应。请求进行中应在 UI 上禁用分页控件以避免重复发送。\n   - 请求头至少包含 Accept: application/json。\n\n5) 响应处理\n   - 只依赖后端明确返回的字段：data（数组）和 count（整型）。不要期待或使用其它未声明字段。\n   - 将 response.data 作为当前页数据进行渲染；将 response.count 作为权限范围内的总匹配数用于页码与进度计算。注意：count 是总体总数，不应因当前页条数变化而被修改。\n   - 空页：若 response.data 为 []（空数组），视为合法空页，展示空状态（例如“无条目”提示）。不将其视为错误。\n\n6) 错误处理\n   - 服务器返回 422：解析响应体（若包含字段级错误说明则展示），并在相关输入控件上显示错误提示（如“skip 必须为非负整数、limit 必须在 1 到 50”）。\n   - 非 2xx 且非 422 的响应：显示通用错误通知并提供重试按钮。\n   - 网络或解析错误：显示网络错误提示并允许重试。\n\n7) 可用性与展示信息\n   - 在分页条或列表顶部显示：当前条目范围与总数。例如：如果 data.length>0，则显示 \"显示 {start}–{end}，共 {count} 条\"，其中 start = skip + 1，end = skip + data.length。若 count===0，则显示 \"0 条\"。\n   - 禁用“下一页”按钮的判定：当 skip + data.length >= count 时禁用（因为没有更多数据）。“上一页”在 skip===0 时禁用。\n\n8) 边界情况与前端策略（不假设后端额外行为）\n   - 若 skip >= count，后端可能返回 data=[]（空页）。前端应展示空页并允许用户导航到前一页或手动调整 limit/skip；不要自动更改 skip 或强行跳转，除非用户操作触发。\n   - 提供一个显式的“跳转到最后一页”控件为可选功能：实现方式为设置 skip = Math.max(0, (Math.ceil(count/limit) - 1) * limit) 并请求。该控件为前端功能，不依赖后端隐含行为。\n\n9) 测试与验收要点（用于前端自测）\n   - 初始加载发送 GET /api/v1/items/?skip=0&limit=20 并正确渲染 data 与 count。\n   - 用户点击下一页/上一页/跳转页时，发送含正确 skip/limit 的请求并更新视图。\n   - 用户更改 limit 时，skip 被重置为 0 并以新 limit 请求数据。\n   - 输入不合法（例如 limit=0、limit=100、skip=-1、非整数）时，前端阻止请求并显示校验错误；若后端返回 422，前端展示服务器返回的字段级错误。\n   - 空页 data=[] 正确显示空状态，count 保持后端返回的总数；当 skip+data.length >= count 时下一页被禁用。\n   - 快速连续切换分页会取消前一次请求，仅处理最新回包，避免竞态条件。\n\n10) 日志与调试\n   - 在开发模式下记录每次请求的 skip/limit 与响应的 data.length 与 count 以便复现问题；生产环境中记录需遵守隐私/合规要求。\n\n实现提示（可选实现细节）\n   - 在请求前使用 Number.parseInt(x, 10) 校验整数并验证范围；对用户输入使用专门的控件（number input、select）限制可选值区间 1..50 以减少错误。\n   - 使用 AbortController 管理并发请求取消。\n\n不要做的事（明确禁止猜测）\n   - 不要假设后端会返回任何除 data 与 count 之外的额外字段。\n   - 不要在未得到用户确认或后端指示的情况下自动更改 skip（除了明确约定的在用户更改 limit 时将 skip 重置为 0 的前端决定）。\n\n按上述规则实现前端分页、校验与错误处理，并在验收测试中覆盖第 9 条的用例。",
+      "backend_prompt": "Backend implementation instructions for GET /api/v1/items/\n\nScope (what to implement)\n- Single endpoint: GET /api/v1/items/\n- Query parameters: skip, limit\n- Validation, pagination, counting, and response shape\n- Apply existing authentication/authorization filtering when computing results and count (do not change auth behavior)\n\nBehavior and rules (must be followed exactly)\n1) Query parameter semantics\n   - skip: integer, must be >= 0. Default: 0.\n   - limit: integer, must be between 1 and 50 inclusive. Default: 20.\n   - If either parameter is missing, use the default.\n   - If either parameter is present but not an integer, or outside the allowed bounds, respond with HTTP 422 Unprocessable Entity.\n\n2) Validation and error responses\n   - Validate both parameters before performing any database read.\n   - For invalid parameters return 422 with a JSON body describing the problem. Example shapes (pick one consistent format used by the service):\n     { \"error\": \"invalid_query_parameter\", \"parameter\": \"skip\", \"message\": \"skip must be integer >= 0\" }\n     { \"error\": \"invalid_query_parameter\", \"parameter\": \"limit\", \"message\": \"limit must be integer between 1 and 50\" }\n   - Maintain existing authentication/authorization semantics: if the request is unauthenticated or unauthorized, return the existing status code (401/403) used elsewhere in the API; do not substitute 422 for auth failures.\n\n3) Data retrieval and count\n   - Apply the same filter set for both the page query and the total count. Filters include query filters (if any) and all authorization-based filters that restrict which items the caller may see.\n   - Compute total_count as the total number of matching items in the caller's permission scope using the same filters but WITHOUT limit/offset.\n   - Retrieve the page as data_rows using the same filters with ORDER BY (use the existing default ordering for items in the service) and then LIMIT = limit and OFFSET = skip.\n   - The response JSON MUST contain two fields:\n       - data: array of items for the requested page (may be empty array if skip is past the end)\n       - count: integer total_count (number of items matching filters and permissions irrespective of pagination)\n   - Ensure count does not change depending on the requested limit/skip (other than due to concurrent data modifications). The count must reflect the total at the time the query ran.\n\n4) Empty page behavior\n   - If skip is greater than or equal to total_count, return data = [] and count = total_count, HTTP 200.\n\n5) Efficiency considerations (implementation guidance)\n   - Use two queries: one COUNT(*) with identical WHERE clauses (and auth filters) to get total_count, and one SELECT ... LIMIT ... OFFSET ... to fetch data rows.\n   - Make sure the COUNT and SELECT use the identical filter expressions and parameters. Do not apply pagination to the COUNT.\n   - If the underlying DB or ORM supports a single request that returns both rows and a total (e.g., window functions or SQL_CALC_FOUND_ROWS equivalents), ensure the returned total corresponds exactly to the same filters and is correct for permission scope.\n\n6) Concurrency and consistency\n   - It is acceptable that count and returned data reflect the state at the time each query ran (no requirement for strong transactional snapshot across both queries), but prefer running both queries within a short-lived transaction if the service uses transactions for read consistency and can do so without impacting performance.\n\n7) Response status codes\n   - 200 OK: success with JSON body { \"data\": [...], \"count\": <int> }\n   - 422 Unprocessable Entity: invalid skip/limit parameters with JSON error body as described above\n   - 401 / 403: use existing authentication/authorization responses if applicable\n\n8) Examples\n   - Valid default request: GET /api/v1/items/ → treat as skip=0, limit=20 → 200 { \"data\": [/* up to 20 items */], \"count\": 123 }\n   - Valid pagination: GET /api/v1/items/?skip=40&limit=20 → return items 41..60 (subject to ordering/filters) and count unchanged\n   - Empty page: given count=35, GET /api/v1/items/?skip=40&limit=10 → 200 { \"data\": [], \"count\": 35 }\n   - Invalid examples:\n       GET /api/v1/items/?skip=-1 → 422 { \"error\": \"invalid_query_parameter\", \"parameter\": \"skip\", \"message\": \"skip must be integer >= 0\" }\n       GET /api/v1/items/?limit=0 → 422 { \"error\": \"invalid_query_parameter\", \"parameter\": \"limit\", \"message\": \"limit must be integer between 1 and 50\" }\n       GET /api/v1/items/?limit=100 → 422 { \"error\": \"invalid_query_parameter\", \"parameter\": \"limit\", \"message\": \"limit must be integer between 1 and 50\" }\n       GET /api/v1/items/?skip=abc → 422 { \"error\": \"invalid_query_parameter\", \"parameter\": \"skip\", \"message\": \"skip must be integer >= 0\" }\n\n9) Tests / acceptance criteria (automated tests to implement)\n   - Default parameters: call endpoint without skip/limit, expect limit=20 behavior and count is total matching items.\n   - Boundary values: skip=0, limit=1, limit=50; expect 200 and correct number of items returned.\n   - Invalid values: negative skip, limit 0, limit 51, non-integer values for each param → expect 422 and correct error messages.\n   - Pagination correctness: fetch pages (e.g., skip=0,limit=10 and skip=10,limit=10) and verify union of data equals the same ordering slice of the full ordered set and count unchanged.\n   - Empty page: set skip beyond count and verify data=[], count unchanged.\n   - Authorization: verify that count and data are both filtered by the caller's permissions and that an unauthorized caller receives the existing auth error responses.\n\n10) Implementation checklist for developers\n   - Add route handler for GET /api/v1/items/\n   - Parse query params as integers with defaults\n   - Validate ranges and integerness; return 422 on failure\n   - Apply existing auth/filtering logic\n   - Execute COUNT query with filters to obtain total_count\n   - Execute SELECT with ORDER BY, LIMIT, OFFSET to obtain page rows\n   - Return HTTP 200 JSON: { \"data\": [...], \"count\": <total_count> }\n   - Add unit/integration tests per acceptance criteria\n\nDo not change any other API contracts (authentication/authorization, item representation, or ordering) beyond implementing the validation and pagination semantics described above."
+    },
+    {
+      "blind_id": "packet-014",
+      "pack_sha256": "f5d56e5172fe2c18c15b475896c7f6cb2338fe500b535e78eec28cc978076175",
+      "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+      "preserved_constraints": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "target": "request.title.trim",
+          "value": "U+0020",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "target": "request.title.length_unit",
+          "value": "unicode_code_point",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "target": "request.title.min_length",
+          "value": 3,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "target": "request.title.max_length",
+          "value": 80,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "target": "create.title.required",
+          "value": true,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "target": "update.title.required",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "target": "request.title.nullable",
+          "value": false,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "target": "request.title.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "target": "update.title.omission",
+          "value": "unchanged",
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "target": "request.description.max_length",
+          "value": 500,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "target": "request.description.trim",
+          "value": false,
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "target": "read.existing_overlength_title.allowed",
+          "value": true,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "target": "update.omitted_title.revalidate",
+          "value": false,
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "实施指令（仅前端，按下列步骤与细则实现并测试）：\n\n1) 常量与修剪\n- 将客户端关于 title 的最大长度常量从 120 改为 80：TITLE_MAX = 80。\n- 保持 title 最小长度 3：TITLE_MIN = 3（不得撤销）。\n- 保持 description 最大长度 500 不变：DESCRIPTION_MAX = 500。\n- 对所有用户输入在校验前先 trim()（不可取消修剪规则）。\n\n2) 加载与展示已有长 title\n- 当从服务器读取资产并填充表单时：如果现有 title 长度超过 80，不要把它标记为错误或阻止界面继续显示。直接显示完整 title。\n- 同时在 title 字段下方或右侧显示信息性提示（非阻断错误），例如：\"当前标题长度超过新的 80 字限制；若编辑并提交，可能被服务端拒绝。\" 该提示仅用于告知，不作为表单错误阻止提交。\n\n3) 客户端校验策略（针对用户主动编辑的 title）\n- 当用户在 title 字段进行编辑时，执行以下校验（以编辑后值为准，且以 trim 后的值做判断）：\n  - 如果长度 < TITLE_MIN，视为客户端错误并阻止提交（显示明确错误信息）。\n  - 如果长度 > TITLE_MAX，显示显式错误/警告信息，但不要在 UI 上硬性阻止用户提交（即允许用户显式提交超限内容，以便服务端返回 422 并由前端展示服务端错误）。\n  - 其它常规（禁止只包含空白等）按既有规则处理。\n- 对 description 保持现有校验（含 500 字上限）并继续阻止超限提交（若目前行为为阻止，则保持）。\n\n4) 构建更新请求（确保局部更新语义）\n- 在提交更新时，严格采用差异化提交：与初始加载时的原始值逐字段比对，仅把用户实际修改过的字段包含到请求体中（即如果用户未修改 title，则在请求中完全省略 title 字段）。\n- 如果当前应用使用的是表单到字段映射的通用序列化器，替换或增强为“只序列化 changedFields”的逻辑；若使用表单库（如 Formik 等），用 dirty 标记或手动 diff 来决定包含字段。\n- 注意：省略 title 字段时，不应对后端返回的原 title 做任何额外校验或阻断（满足“更新省略 title 时不重校验原值”）。\n\n5) 提交后的错误与成功处理\n- 若服务端返回 422（validation error），将返回的字段级错误映射到表单字段并展示，title 的 422 错误信息应与服务端消息一致地展示给用户（例如：\"标题长度超过 80 字\"）。\n- 若用户提交的是未修改 title（请求中省略 title）且只是修改 description，预期无 title 层面的 422；前端需在成功响应后更新本地显示的版本号/资产状态（后端会递增版本，前端应从响应读取并展示最新版本）。\n- 对于客户端已检测到的 title 长度 < 3 的情况，继续在客户端阻止提交并显示错误，避免无意义请求。\n\n6) UI/UX 细节\n- 在编辑器/表单中，对 title 超过 80（仅当用户主动输入超过 80 时）显示明确的警告文案，并提供提交按钮仍可点击（不是 disabled）。\n- 对于初始加载时已经超过 80 的 title，用不同的样式提示（例如信息色而非错误色），说明这是“已有值超限”而非新输入错误。\n\n7) 回退兼容与渐进交付\n- 不要尝试“自动截断”或“自动修剪到 80 字”已有的长 title；任何改变都应由用户显式编辑并确认提交。\n- 保持最小变更范围于前端：只修改校验常量、加载/展示逻辑、差异化提交逻辑以及错误映射处理。\n\n8) 测试用例（必要且要记录）\n- 测试 A（局部更新语义验证）：\n  1. 服务器已存在的 asset 的 title 长度为 100 字（在前端加载并显示）。\n  2. 用户只修改 description，然后提交（title 未触碰，也未包含在请求）。\n  3. 验证前端请求体中确实不包含 title 字段；服务器返回成功，前端更新并显示新的资产版本号；UI 不显示 title 校验错误。\n- 测试 B（显式提交超限 title）：\n  1. 用户在 title 字段中主动输入一个长度 > 80 的新值并提交。\n  2. 前端应显示客户端的超限警告，但允许提交请求。\n  3. 服务器返回 422（title 字段错误），前端将 422 信息映射并在 title 字段展示服务端错误文本。\n- 测试 C（最小长度依旧有效）：\n  1. 用户将 title 编辑为长度 < 3（例如 1 或 2）并提交。\n  2. 前端应阻止提交并显示客户端错误信息。\n\n9) 日志与可观测性\n- 在提交流程中，把是否包含 title 字段、title 是否被用户编辑、及服务器 422 错误（含字段名）记录到前端日志/监控中，以便回溯问题与验证行为符合契约。\n\n10) 回归检查项\n- 确保没有把原来 120 的上限残留到任何前端校验或提示文本中（全部替换为 80）。\n- 确保 description 的上限 500 未被修改。\n\n备注：以上实现假定后端将对显式提交的超限 title 返回 422，并在响应中以字段级错误形式提供可映射的错误信息；前端应按上述方式容忍并展示此错误而非自动修正已有超限的 title。",
+      "backend_prompt": "实施目标（范围决策）\n- 在后端应用层将 title 的最大允许长度从 120 改为 80（回退应用层限制）。\n- 不修改或缩短数据库字段/约束到小于现有存量能容纳的长度；允许现有超过 80 的 title 被读取并保留。\n- 对“更新”操作采用“显式提交才校验 title、省略则不重新校验原值”的规则（即对请求中不包含 title 字段的更新，不对数据库中已有 title 做长度重校验）。\n- 显式提交超出 80 的 title 必须返回 422 Unprocessable Entity。\n- 保持最小长度下限 3 及现有的 trimming（去首尾空白）逻辑不变。\n- 资产版本号在任何成功更新后继续递增（包括仅更新 description 的场景）。\n\n实现步骤（后端工程师施工清单）\n1) 配置/常量\n   - 在代码中将应用层常量 TITLE_MAX_LIMIT 从 120 改为 80（或新增常量并替换用到的校验点）。\n   - 保持 TITLE_MIN_LIMIT 为 3，不变。\n\n2) 校验逻辑调整（请求级别）\n   - 所有创建（create）和 replace（若系统存在 PUT 为全量替换）接口：\n     - 对请求体中包含 title 的情况，先对 title 执行 trim()（去首尾空白），随后验证长度：长度 >= TITLE_MIN_LIMIT 且 <= TITLE_MAX_LIMIT。\n     - 如果 title 缺失（对于创建接口应视为必需字段，按现有合同处理）或在 PUT 合约中 title 为必需，则按既有规则判断并返回相应错误。\n   - 对部分更新（PATCH 或系统定义为局部更新的端点）：\n     - 仅当请求体包含 title 字段（不论值为空字符串或任何值）时，执行 trim() 并校验 min/max（3..80）；若超限返回 422。\n     - 当请求体不包含 title 字段时，跳过对数据库中已存 title 的任何校验或修剪，不修改原 title，也不因其超过 80 而失败。\n   - 明确行为边界：若系统当前将更新语义定义为“PUT=全量、PATCH=部分”，则按上面区分执行；如果系统仅提供单一更新端点且语义为“部分更新”，将按 PATCH 的规则处理（即省略即跳过校验）。\n\n3) 持久层/数据库注意事项\n   - 不要将数据库列长度硬改为小于 120（或小于当前可能存在的长度）。如果数据库列当前允许 <=120 或更大，不需要变更；若数据库已有小于最大历史标题的约束，则先做兼容性评估并保留能容纳现有最长标题的列定义。\n   - 移除或不要新增基于 DB 层的硬性 <=80 限制（例如 CHECK 约束或触发器），以免导致读取或局部更新失败。\n\n4) 错误返回和契约\n   - 对于显式提交超限的 title，返回 HTTP 422。返回体中包含字段级验证错误，标注字段名为 title，并给出可读的错误信息（如“title 长度不可超过 80 字符（去除首尾空白后）”），并遵循系统现有的验证错误格式。\n   - 对于 title 小于最小长度（经 trim 后长度 < 3）同样返回 422。\n\n5) 版本号与事务\n   - 确保在成功更新（无论是否修改 title）后，资产的版本号（version）按既定策略递增并持久化。\n   - 在处理部分更新时（例如仅更新 description），在同一事务内对记录进行更新并版本+1，避免因跳过 title 校验而阻止版本递增。\n\n6) 测试用例（必须覆盖）\n   - 验证器单元测试：\n     - title 经 trim 后长度为 2（应拒绝）、3（接受）、80（接受）、81（拒绝）、100（拒绝）。\n     - title 为仅空白字符串（经 trim 后为空）应按 min-length 规则拒绝。\n   - 集成/API 测试：\n     - 读取测试：存在一个已入库的 title 长度为 100 的资产，GET 返回该 title 不被修改或拒绝（可读）。\n     - 局部更新语义测试：对上面该资产发起仅更新 description 的 PATCH（请求体不包含 title），应返回 200/204，资产的 description 更新成功且 title 保持原样（仍为 100 字），资产版本号加1。\n     - 显式超限更新测试：对任意资产发起更新请求并在请求体中包含 title（长度 81/100），应返回 422，不进行任何写入，版本号不变。\n     - 新建/创建测试：对 create 请求提交 title 长度 81/100，验证应返回 422（除非系统契约另有说明）。\n     - 边界测试：title 长度正好为 80 和 3 的情况均被接受。\n\n7) 日志与监控\n   - 在一段时间内（发布后），增加监控或日志以统计返回 422 的比例与来源端点，便于发现客户端因回退限制需要修正的用例。\n\n8) 回退与兼容说明\n   - 不要对已存在的超长 title 做自动裁剪或强制修正。\n   - 不要撤销最小长度 3 或去除 trimming 行为。\n   - 任何数据库架构更改（如缩短列长度）不得在此改动中执行；若确需后续收紧 DB 约束，应在兼容迁移和通知客户端后另行计划。\n\n验收条件（简洁可执行）\n- 代码中 TITLE_MAX_LIMIT 已设置为 80 且仅在显式提交 title 时生效。\n- 现存 title > 80 的资产可正常读取且不被拒绝或修改。\n- 对已有 100 字 title 的资产进行“仅更新 description”请求能成功，且资产版本号递增，title 保持 100 字不被重校验。\n- 明确提交超出 80 的 title 的任何更新或创建请求都返回 422 并包含字段级错误信息。\n\n实施注意事项（不要猜测或变更未决契约）\n- 若系统对 PUT/PATCH 有不同既定语义，请以现有 API 语义为准并按上文“若为全量替换则要求 title 存在并校验；若为部分更新则省略即跳过校验”的规则实现。\n- 不要假定数据库当前长度约束的具体值；在变更前先检查数据库以确认不引入向下不兼容的列约束。"
+    },
+    {
+      "blind_id": "packet-015",
+      "pack_sha256": "43c5995cf8e6f9390a07c38880e15644cef834a0060ffde9026682ebadab3899",
+      "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+      "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 100,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 25,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "target": "response.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "target": "response.page.value",
+          "value": "effective_page",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "target": "response.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "target": "response.page_size.value",
+          "value": "effective_page_size",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "实施目标（前端）：\n1) 控件与请求\n   - 把 page_size 控件的默认值从 20 改为 25，控件的最大允许值改为 100（UI 层限制，仅为防错）。\n   - 发起列表/分页请求时只使用 query 参数 page（整数）和 page_size（整数）。严格禁止继续发送 skip、limit 或等价参数到后端 —— 若现有代码有从 page/页码转换成 skip 的逻辑，删除或停用该转换。\n2) 请求构建和类型\n   - 确保发送的 page 与 page_size 为整数（非字符串或浮点）。当用户输入/控件值不是有效整数时在前端阻止请求并显示客户端校验错误。\n3) 响应处理与回显\n   - 在收到后端响应后，从响应中读取后端回显的实际生效值，并用该值同步分页控件（即不要盲目以请求值覆盖控件），字段名为 page 和 page_size，位置参照后端实现（优先读取 response.pagination.page / response.pagination.page_size；如果后端约定放在不同位置，请与后端一致）。\n   - 在接收到后端返回的 page_size 与控件最大值冲突时，以后端回显为准并同步到控件显示，同时在界面/日志显示非模糊错误信息以便排查。\n4) 错误处理\n   - 当后端返回验证失败（例如 page_size > 100 或发现 skip/limit 被提交导致失败）时，按现有前端错误展示机制显示后端返回的错误信息（不要自行转换为成功或不同的提示）。\n5) 测试与验收\n   - 增加前端自动化/集成测试用例：\n     a) 不传 page、page_size 时，默认控件显示 page=1、page_size=25；发出的请求应为 page=1/page_size=25（或允许后端用回显确认并同步）。\n     b) page_size=100 时可正常发出请求并按后端回显同步控件。\n     c) page_size=101 时前端应能展示后端返回的验证失败信息，不应把控件置为 101。\n     d) 当后端回显的 page 与请求不一致时（例如边界被后端调整），前端应使用后端回显并在界面/日志中可见地同步。\n6) 文档与协同\n   - 在前端与后端联调时确认后端回显的字段位置（response.pagination 或其它），并在前端代码/注释中记录该约定。\n   - 不要自行设计或继续使用 skip/limit 协议；任何仍存在的旧实现必须移除或封装并在联调时确认已禁用。",
+      "backend_prompt": "实施目标（后端）：\n1) 参数与默认值\n   - 接受 query 参数 page（整数）和 page_size（整数）。\n   - 缺省行为：当请求中不含 page 时，默认 page=1；当请求中不含 page_size 时，默认 page_size=25（将原默认 20 改为 25）。\n2) 边界与校验\n   - 强制限制 page_size 的上限为 100：page_size=100 应被接受，page_size=101 应被视为验证失败。\n   - 对 page 做合理的整数验证（至少要确保为整数并能与现有 paginated 查询兼容；默认值为 1）。如果现有服务有更严格的下限要求（例如 page >= 1），保持现有约束并在错误信息中明确说明。对于 page_size 的下限/其它约束，请保持或沿用现有服务策略，但必须保证上限为 100。\n   - 如果请求包含旧参数 skip 或 limit（或其它等价的旧分页参数），必须拒绝请求并返回验证失败（使用系统现有的 API 错误响应格式）。不要在后端继续支持或自动转换 skip/limit。\n3) 响应回显\n   - 在响应中新增整数字段 page 和 page_size，用以回显实际生效的值。将这两个字段放入响应的分页元数据对象中（例如 response.pagination.page / response.pagination.page_size）；如果服务已有 meta 或 pagination 对象，扩展该对象以包含 page 与 page_size；如果没有，则在响应体顶层增加 pagination 对象并包含这两个字段。\n   - 确保回显值为后端实际应用到数据查询上的值（例如如果请求 page 大于最后页导致后端调整到最大可用页，应把调整后的页码回显给前端）。\n4) 错误处理与兼容\n   - 对于验证失败（例如 page_size > 100，或请求中出现 skip/limit），返回统一的验证失败响应，遵循现有 API 的错误格式与状态代码（不要在此处自行定义新的错误格式）。错误信息中应明确指出失败原因（例如“page_size exceeds maximum 100” 或“skip/limit parameters are deprecated and not accepted”）。\n5) 测试与验收\n   - 增加单元/集成测试，覆盖至少以下场景：\n     a) 未提供 page 与 page_size -> 响应回显 page=1、page_size=25。\n     b) 提交 page_size=100 -> 请求成功并在响应中回显 page_size=100。\n     c) 提交 page_size=101 -> 返回验证失败（符合现有错误响应格式）。\n     d) 提交含 skip 或 limit -> 返回验证失败并明示该参数不被接受。\n     e) 边界场景：当请求的 page 超出可用页数时，后端可调整为最大可用页并在回显中反映调整结果（前端将据此同步控件）。\n6) 文档与向前兼容\n   - 更新 API 文档，明确：默认 page=1，默认 page_size=25，上限 page_size=100，skip/limit 不再被接受，响应中包含回显字段 page 与 page_size（说明字段在 pagination 元数据中的位置）。\n   - 在部署前与前端联调确认回显字段的确切位置（pagination 对象位置），并保证前端能够读取并据此同步控件。\n7) 部署与回滚策略\n   - 部署前执行上述自动化测试；若存在多版本客户端需要兼容，确保旧客户端不会因缺少 skip/limit 支持而出现不可恢复错误（如果有必要，先行通知下游客户并在短期内通过 API 文档/版本说明进行兼容性沟通）。"
+    },
+    {
+      "blind_id": "packet-016",
+      "pack_sha256": "fc5e2b6b31b987f523b2b8d8a9c1752128f0cca7236dcee84c7ea50c7fae0966",
+      "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+      "preserved_constraints": "响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "实施指令 — 前端\n\n目标：将前端分页请求改为始终使用 page / page_size（均为整数），保证 page 从 1 开始，page_size 在 1—50 范围并有默认值；不再发送 skip 或 limit，若收到 422 要有可见处理；在 UI 上正确处理跨页与末页场景并保持响应 data/count 语义不变。\n\n1) 参数位置\n   - 在原来发送分页参数的位置（例如当前使用 query string 或 request body 的同一位置），停止发送 skip 或 limit。改为发送两个参数：page 和 page_size。不要向任何请求同时发送 page 和 skip/limit。\n\n2) 默认与校验（客户端阻断无效请求）\n   - 默认值：page 缺省为 1；page_size 缺省为 20。\n   - 校验规则：page 必须为整数且 >= 1；page_size 必须为整数且在 1 到 50（含）之间。\n   - 在发出请求前强制将参数转换为整数并应用上述默认与范围约束；若输入超出范围或非整数，阻止发送并向用户展示校验信息。\n\n3) 请求构建\n   - 每次请求仅包含 page 与 page_size 两个分页字段（以及已有的排序/过滤/权限字段）。绝对禁止在请求中包含 skip 或 limit；若任何第三方组件可能注入旧字段，务必在请求发送前移除它们。\n   - 不要在客户端计算或发送 offset/limit（offset 由服务端按 (page-1)*page_size 计算）。\n\n4) 接口错误处理\n   - 若服务端返回 422（例如因检测到 skip/limit 或参数校验失败），前端应：\n     a) 对 422 的错误响应做明确捕获，不当作网络故障。\n     b) 若错误原因是包含旧参数，向用户或日志显示“已停止支持 skip/limit，请使用 page/page_size”。（具体文案可本地化）\n     c) 若错误原因是参数非法，展示字段级的提示并阻止重复发送。\n\n5) 页码与 UI 行为\n   - 所有分页控件均以 1 作为起始页（第一页显示 page=1）。\n   - 从服务端返回的 count 与 page_size 计算总页数时可使用 total_pages = ceil(count / page_size)；但不能假设服务端会阻止请求越界——当 page 超出末页时，应展示空的 data（来自接口）并同时显示真实 count。\n   - 下一页/上一页/跳页控件：\n     a) 当用户跳到一个页码大于 total_pages 时，允许请求该页并按服务端返回的空 data + 实际 count 更新界面；同时在界面上提供导航回最后一页或第一页的快捷（实现细节由产品决定）。\n     b) 禁用“上一页”在 page==1 的情况。\n\n6) 测试用例（前端）\n   - 发出请求时只包含 page 和 page_size；验证最终发出的 HTTP/graphQL 等负载中没有 skip/limit。\n   - 缺省行为：不传 page/page_size 时发送 page=1,page_size=20。\n   - 页面边界：page=1；page_size=1；page_size=50。\n   - 无效输入：page=0、page=-1、page_size=0、page_size=51、非整数值；校验要阻止请求并展示错误。\n   - 服务器返回空 data 且 count 为真实值（page 超出末页）时，界面展示空列表并显示 count；分页控件仍按 count 计算 total_pages 并允许用户跳转。\n   - 服务器返回 422（包含 skip/limit 或参数校验失败）时的前端处理逻辑。\n\n7) 文档与兼容性\n   - 更新前端 API 调用文档，明确说明：必须使用 page/page_size、page 从 1 开始、page_size 范围及默认值；并说明旧参数 skip/limit 被拒绝（返回 422）。\n   - 若前端包含多个模块或共享请求层，确保全局统一遵守新协议，不要在任何模块中继续发送旧参数。",
+      "backend_prompt": "实施指令 — 后端\n\n目标：后端仅接受 page / page_size 分页协议（整数），按照 page ≥ 1（缺省 1）和 page_size ∈ [1,50]（缺省 20）校验；内部使用 offset = (page-1)*page_size；如果请求包含旧协议字段 skip 或 limit，或同时出现新旧协议，返回 422。响应格式保持 data/count 不变；权限与排序逻辑不变；当 page 超出末页应返回空 data 与真实 count。\n\n1) 参数读取位置\n   - 在原来读取分页参数（query string、POST body 或 RPC/GraphQL 参数）的位置，新增对 page 和 page_size 的解析与校验。不要假设参数只在 query 或 body 中出现——在同一位置进行检查（即与当前项目中已有分页参数读取逻辑一致）。\n\n2) 校验与默认\n   - 解析并强制将 page 与 page_size 转为整数（严格整数解析，拒绝浮点或字符串非整数字符串）。\n   - 缺省值：若未提供 page，则 page=1；若未提供 page_size，则 page_size=20。\n   - 校验：若 page < 1 或 page_size < 1 或 page_size > 50，返回 HTTP 422 并在响应体中说明具体失败原因（例如字段名与校验原因）。\n\n3) 拒绝旧协议 / 不接受双协议\n   - 在请求参数读取处检测是否包含 skip 或 limit（与读取 page/page_size 相同的输入位置）。\n   - 若请求中包含 skip 或 limit 中任一字段，立即以 422 响应拒绝（响应体应明确指出：skip/limit 已不再被接受）。\n   - 若同时包含新参数 (page/page_size) 与旧参数 (skip/limit)，也应返回 422（不接受双协议）。\n\n4) 内部计算\n   - 由合法的 page 和 page_size 计算 offset = (page - 1) * page_size，并将 limit = page_size，用于下层数据访问（SQL OFFSET/LIMIT 或等效机制）。\n   - 使用整型运算；若系统有可能出现超大 page 导致 offset 溢出，按现有代码基础处理（不隐含新策略）。\n\n5) 查询与返回值\n   - 使用原有的权限过滤与排序逻辑，不改变现有授权判断与 order by 行为。\n   - 用 computed offset/limit 执行数据查询，获取 page 对应的数据片段。\n   - 同时计算或检索完整的 count（总匹配记录数）。无论 page 是否超出末页，都要返回真实的 count；当 offset 超出数据末尾时，返回 data = []（空数组）和真实 count。\n   - 响应字段名与格式保持不变：顶层仍为 { data: [...], count: <number>, ... 现有其他字段 ... }。\n\n6) 错误码与错误消息\n   - 对所有参数校验失败或检测到 skip/limit 的情况，统一返回 HTTP 422。响应体需包含可供前端展示/定位的错误说明（字段名 + 失败原因）。\n\n7) 测试用例（后端）\n   - 缺省参数：不传 page/page_size，检查返回的数据等同于 page=1,page_size=20 的行为。\n   - 有效边界：page=1；page_size=1；page_size=50。\n   - 无效值：page=0、page=-1、page_size=0、page_size=51、非整数（如 2.5 或 'abc'）——应返回 422 且不执行查询。\n   - 旧协议拒绝：请求中包含 skip 或 limit（或二者之一）时返回 422。\n   - 双协议拒绝：同时包含 page 或 page_size 与 skip/limit 时返回 422。\n   - 末页场景：当 page 对应 offset 超出数据范围时，返回 data = [] 并返回真实 count。\n   - 权限与排序保持不变：已有的权限过滤与排序应在分页前后仍然生效，测试需覆盖带权限/排序的情形。\n\n8) 文档与兼容性说明\n   - 更新服务端 API 文档：明确说明接受 page/page_size，默认与取值范围，以及旧参数 skip/limit 将被拒绝（返回 422）。\n   - 如果需要向前端或外部系统发出更详细的迁移说明（例如谁负责停止发送旧参数），请由产品/项目管理协调，不在此实现指令中定义迁移时点或宽限期。\n\n9) 日志与监控（可选但推荐）\n   - 在首次或频繁触发 422（因 skip/limit 或非法分页参数）时，记录必要的日志以便定位客户端兼容性问题（包括请求来源、被拒绝字段、时间戳）。\n\n注意：上述实现细节均以“仅替换为 page/page_size 并拒绝 skip/limit”为中心，不引入新的响应格式或分页语义变更。不要在后端假设前端会主动限制到最后一页——必须按规定在 page 超出末页时返回空 data 与真实 count。"
+    },
+    {
+      "blind_id": "packet-017",
+      "pack_sha256": "7964be93e1364fc1d9278a376d2a2995e5331fd819fbf189c89f2e71b97903e8",
+      "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+      "preserved_constraints": "响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 50,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 20,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "前端实施指令（仅前端实现，按下面逐项执行）：\n\n实现目标摘要\n- 前端必须改为使用两个整数字段 page 和 page_size 作为分页参数发送给后端（通常在 GET 请求的查询字符串中）。\n- 不得在任何请求中包含 skip 或 limit，后端若检测到会返回 422。\n- 保持响应处理不变：服务端响应仍为 { data, count } 格式；权限和排序行为不变。页面编号从 1 开始。\n\n请求参数规则（前端必须严格执行）\n1. 参数名与类型\n   - 使用 page（整数）和 page_size（整数）。\n2. 缺省值与范围\n   - 若请求中未提供 page，则前端应默认发送 page=1。\n   - 若请求中未提供 page_size，则前端应默认发送 page_size=20。\n   - page 必须 ≥ 1。前端在构建请求前应确保 page 是整数且 ≥1；若检测到小于1或非整数，归一化为 1 或提示并阻止请求（见错误处理）。\n   - page_size 必须在 1 至 50（含）之间。前端在构建请求前应确保 page_size 为整数且在范围内；若超出范围则拒绝并提示用户或将值约束到最近边界（推荐：UI 限制选择范围而非自动改写）。\n3. 严禁发送 skip/limit\n   - 绝对不要在任何请求里加入 skip 或 limit 参数（查询字符串、请求体或 headers）。\n   - 检查并移除遗留代码中可能自动加入 skip/limit 的逻辑或拦截器。\n\n请求构建与网络层修改\n- 所有发起分页请求的地方（列表页、搜索结果、导出请求如适用）都要改为发送 page 和 page_size。\n- 统一在网络层（API client）封装参数构造：提供一个方法 buildPaginationParams({page, page_size})，执行验证与默认设置后返回 { page, page_size }，并确保不输出 skip/limit。\n- 在构造 URL 查询字符串时，确保 page 和 page_size 都为整数，不包含小数或空值。\n- 若后端接口需要 POST/JSON 格式，也同样以 page/page_size 字段发送，不使用 skip/limit。\n\nUI 变更\n- 分页控件从 1 开始计数，第一页显示为 1。\n- page_size 显示为下拉或配置控件，选项范围应限制在 1 到 50，缺省值 20。\n- 若允许用户直接输入页码，输入验证必须确保为整数且 ≥1；输入无效时显示错误并阻止发请求或自动将其规范为有效值。\n- 当用户切换 page_size 时，决定如何重定位页码（例如重置为 page=1 或保持当前页并可能导致空结果）；在实现时明确交互并在 UI 文档中说明。\n\n响应处理与边界情况\n- 处理响应 { data, count }：data 用于展示当前页内容，count 显示总条数。\n- 若 page 超出末页（即后端返回 data=[] 且 count 为真实总数），前端应正常展示空数据提示并展示 count 的真实值，不将请求视为错误。\n- 分页控件应基于 count 与 page_size 计算总页数（total_pages = ceil(count / page_size)），并允许用户导航到页码 1..total_pages；若 page > total_pages，显示空页面（按上条处理）。\n\n错误处理\n- 若后端返回 422（或其他错误），前端应：\n  - 对 422，检查并记录网络调用参数以确认是否不慎发送了 skip/limit（若确因发送，应阻止并修复代码）；向用户显示可理解的错误提示（例如“请求参数无效”），并在开发日志/监控中记录完整请求用于排查。\n  - 对其他 HTTP 错误，按现有错误策略处理（重试/提示/降级），不改变后端既有权限或排序错误处理逻辑。\n\n测试要求（必做）\n- 单元测试：测试 buildPaginationParams 的验证逻辑（缺省值、边界、非法输入、禁止 skip/limit）。\n- 集成/端到端测试：\n  - 用不同 page/page_size 请求，验证发送的查询字符串或请求体仅包含 page 和 page_size，且值正确。\n  - 测试 page 超出末页时返回空 data 且 count 正常显示的场景。\n  - 测试 page_size 的边界值（1、50）和超出时的 UI 行为。\n  - 测试未包含 page/page_size 时前端能正常使用默认值发起请求。\n- 手动/回归测试：检查所有使用分页的页面（含搜索、筛选、排序）确保权限、排序、过滤行为与之前一致。\n\n文档与迁移注意\n- 更新前端开发文档与 API 使用说明，明确前端只发送 page/page_size，不使用 skip/limit，默认值与范围约束。\n- 若有客户端缓存或书签（URL 查询）依赖旧参数名，需提供迁移/兼容策略（建议：在路由解析阶段，将外部旧参数映射为 page/page_size，并在映射后删除旧参数；映射行为应在代码评论和文档中明确）。注意：不要在请求中保留旧参数。\n\n验收条件（验收时逐项核对）\n1. 所有前端分页请求均使用整数 page 与 page_size。缺省 page=1、page_size=20；page_size 范围 1–50；page ≥1。  \n2. 网络请求中绝对不包含 skip 或 limit。若包含则判为实现不合格（服务端会返回 422）。  \n3. 响应解析仍使用 data 和 count；排序与权限行为未被改变。  \n4. 当 page 超出末页时，页面显示空 data 且仍显示真实 count。  \n5. 分页 UI 从 1 开始计数，并可在 1..total_pages 范围内导航。  \n6. 完成相关单元与集成测试并通过。\n\n注意事项（不要做的事）\n- 不要向后端发送 skip 或 limit（任何位置）。\n- 不要假设后端会自动纠正非法 page 或 page_size；前端必须验证与默认化。\n- 不要更改后端合同里未说明的行为（例如排序或权限），也不要基于未决的后端细节做额外客户端逻辑。\n\n交付清单\n- 修改的代码清单与变更点说明（列出修改的文件/模块）。\n- 新增/修改的测试用例清单与通过状态截图或 CI 链接。  \n- 更新后的前端开发文档片段，说明分页参数使用方法与示例请求。  \n\n示例（用于开发与测试验证，务必只作参考格式，不作为对后端行为的假设）：\n- GET /api/items?page=1&page_size=20  -> 期望后端返回 { data: [...], count: 123 }\n- 若无 page/page_size -> 前端应发送 GET /api/items?page=1&page_size=20\n- 若收到 422 -> 前端应记录请求参数并展示“请求参数无效”的用户提示以便排查\n\n结束语\n按上述指令实现并提交变更，确保所有分页相关的调用点一致地采用 page/page_size，严格校验并彻底删除任何 skip/limit 的使用；通过所有列出的测试后方可提交验收。",
+      "backend_prompt": "目标范围（后端实现指令）\n1) 适用接口：对所有返回分页列表的后端接口（resource list endpoints）替换原有 skip/limit 分页协议为 page/page_size。只更改分页层面，不改变权限过滤与排序逻辑。\n\n实现步骤\n1. 路由/控制器层：解析分页参数\n   - 接收位置：优先从查询参数（query string）读取 page 与 page_size；同时在请求体中如果存在（对于 POST 列表接口）也应读取。\n   - 禁止参数：如果请求在任意位置包含键名 skip 或 limit，立即返回 HTTP 422 并终止处理（见“错误响应”）。不允许同时支持旧协议与新协议。\n\n2. 参数验证与默认值\n   - page：必须为整数，且 page >= 1。缺省值为 1（当参数缺失时赋默认值）。\n   - page_size：必须为整数，值域为 1 到 50（含）。缺省值为 20。\n   - 对于非整数或越界值（page < 1 或 page_size < 1 或 page_size > 50），返回 HTTP 422。\n\n3. 内部计算与数据库查询\n   - 计算偏移量 offset = (page - 1) * page_size。\n   - 先执行基于现有权限/过滤条件的总数统计查询（count），以获取真实总记录数。\n   - 使用 limit = page_size, offset = offset 执行数据查询，同时沿用现有的排序与权限过滤逻辑。\n   - 如果 offset >= count，则数据查询将返回空列表；接口仍返回空的 data 列表但 count 必须返回真实 count（即使 page 超出末页）。\n\n4. 响应格式（成功）\n   - 保持原有成功响应结构：{ \"data\": [...], \"count\": <integer> }。\n   - data 长度最多为 page_size；当 page 超出末页时 data 为 []，count 为真实总数。\n\n5. 错误处理与状态码\n   - 当请求包含 skip 或 limit（任意位置）或 page/page_size 验证失败（非整数、越界等）时，返回 HTTP 422 Unprocessable Entity。\n   - 建议错误返回体为 JSON，包含机器与人类可读信息，例如：{ \"error\": \"invalid_pagination\", \"message\": \"Do not use skip/limit. Use integer page (>=1) and page_size (1-50).\" }。\n   - 任选用统一的错误码字段名以匹配现有 API 错误风格，但必须保持 422 状态码。\n\n6. 权限与排序\n   - 在计算 count 与查询数据时，完全沿用现有的权限检查与排序逻辑。分页只在最终查询层应用 limit/offset，不改变过滤与排序顺序。\n\n7. 后向兼容性与兼容策略\n   - 不接受旧参数：明确移除/禁用对 skip/limit 的支持；任何包含这两个参数的请求都返回 422（参见第 5 步）。\n\n8. 日志与监控\n   - 在 422（包含 skip/limit）情况下记录一次可搜索日志（包含请求路径、客户端 IP、用户 ID 如有），便于前端或客户端改造追踪。\n\n9. 测试用例（必须覆盖）\n   - 缺省行为：未提供 page/page_size 时返回 page=1、page_size=20 的第一页结果与正确 count。\n   - 有效边界：page=1, page_size=1；page_size=50；page_size=20。\n   - 越界处理：page_size=0、page_size=51、page=0、page=-1；对以上都应返回 422。\n   - 非整数：page=1.5、page_size=abc 等应返回 422。\n   - skip/limit 被包含：请求带有 skip 或 limit（query 或 body）应返回 422。\n   - page 超出末页：构造 offset >= count 的情况，应该返回 data: [] 且 count 为真实值。\n   - 权限/排序一致性：在有权限过滤或排序参数时验证 count 与 data 的正确性（即分页不改变过滤/排序结果）。\n\n10. 文档与通信\n   - 更新后端 API 文档与 OpenAPI/Swagger 规范：删除 skip/limit、添加 page 与 page_size 的定义、默认值与校验规则、说明当包含 skip/limit 时返回 422。\n   - 通知前端：说明页码从 1 开始、page 与 page_size 含义与默认值、以及当页超出范围会返回空 data 且 count 仍为真实值。\n\n实施注意事项（要点汇总）\n- 只接受 page & page_size（整型、page>=1、1<=page_size<=50）；缺省 page=1、page_size=20。\n- 内部 offset 必为 (page-1)*page_size；query 使用 limit=page_size、offset=offset。\n- 任何包含 skip 或 limit 的请求直接返回 422（不兼容旧协议）。\n- 成功响应仍为 {\"data\":..., \"count\":...}；当 page 超出末页时 data 空但 count 真实。\n- 保持原有权限与排序逻辑不变；只在最终查询阶段应用新的 limit/offset。\n\n交付项清单\n- 修改后的接口实现代码（包含验证、offset 计算、count/数据查询顺序）。\n- 单元/集成测试覆盖上述测试用例。\n- 更新的 API 文档/规范。\n- 日志/监控变更（对 422 skip/limit 情况记录）。"
+    },
+    {
+      "blind_id": "packet-018",
+      "pack_sha256": "3736cd4b87af947c1c7f3c88151b8ed90129d89d75d2169fe1c1eae050eb1876",
+      "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+      "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": [
+        {
+          "fact_id": "request-invalid-status",
+          "target": "request.invalid_status",
+          "value": 422,
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "target": "response.count.scope",
+          "value": "authorized_filtered_before_pagination",
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "target": "response.empty_page.data",
+          "value": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "target": "request.skip.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "target": "request.limit.accepted",
+          "value": false,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "target": "request.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "target": "request.page.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "target": "request.page.default",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "target": "request.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "target": "request.page_size.minimum",
+          "value": 1,
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "target": "request.page_size.maximum",
+          "value": 100,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "target": "request.page_size.default",
+          "value": 25,
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "target": "pagination.offset",
+          "value": "(page-1)*page_size",
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "target": "response.page.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "target": "response.page.value",
+          "value": "effective_page",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "target": "response.page_size.type",
+          "value": "integer",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "target": "response.page_size.value",
+          "value": "effective_page_size",
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "需求：前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。\n\n持续有效约束与验收条件：page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。",
+      "backend_prompt": "需求：前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。\n\n持续有效约束与验收条件：page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+    }
+  ]
+}

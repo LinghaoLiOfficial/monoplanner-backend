@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-04T00:24:27.339597+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Use the supplied current contract facts as the authoritative target. For every fact with coverage must_be_explicit, copy the complete supplied line, including its exact [FACT:id] marker, statement, and concrete value, into every applicable side prompt. A marker without the statement and value is an omission. Do not replace values with placeholders, add unresolved facts, or alter values.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。\n\n持续有效约束：POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。\n\n本次变更事实：\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:request-title-max-length] request.title.max_length = 80\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"\n\n当前契约事实：\n[FACT:request-title-trim] (frontend,backend; must_be_explicit) request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] (frontend,backend; must_be_explicit) request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] (frontend,backend; must_be_explicit) request.title.min_length = 3\n[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 80\n[FACT:create-title-required] (frontend,backend; must_be_explicit) create.title.required = true\n[FACT:update-title-required] (frontend,backend; must_be_explicit) update.title.required = false\n[FACT:request-title-nullable] (frontend,backend; must_be_explicit) request.title.nullable = false\n[FACT:request-title-invalid-status] (frontend,backend; must_be_explicit) request.title.invalid_status = 422\n[FACT:update-title-omission] (frontend,backend; must_be_explicit) update.title.omission = \"unchanged\""
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "a41ad037e72a093b519c22bb5cbfbcdac4b01caff702daedf0b6fd7c1f8038f0"
+}

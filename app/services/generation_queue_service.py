@@ -1,3 +1,5 @@
+"""PostgreSQL-backed generation queue, worker leases, retries, and dispatch."""
+
 from __future__ import annotations
 
 import logging

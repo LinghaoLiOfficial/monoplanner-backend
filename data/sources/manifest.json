@@ -1,0 +1,61 @@
+{
+  "commit": "1762adac607a1b29cfc4da129557780beea71616",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "data/sources/LICENSE",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/LICENSE",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/backend/app/models.py",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/backend/app/models.py",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/backend/app/api/routes/items.py",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/backend/app/api/routes/items.py",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/backend/app/api/routes/users.py",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/backend/app/api/routes/users.py",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/components/Items/AddItem.tsx",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/components/Items/AddItem.tsx",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/components/Items/EditItem.tsx",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/components/Items/EditItem.tsx",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/components/Items/DeleteItem.tsx",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/components/Items/DeleteItem.tsx",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/routes/_layout/items.tsx",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/routes/_layout/items.tsx",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/components/UserSettings/UserInformation.tsx",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/components/UserSettings/UserInformation.tsx",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/client/types.gen.ts",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/client/types.gen.ts",
+      "extent": "complete selected file, not entire repository"
+    },
+    {
+      "path": "data/sources/frontend/src/client/sdk.gen.ts",
+      "source": "https://github.com/fastapi/full-stack-fastapi-template/blob/1762adac607a1b29cfc4da129557780beea71616/frontend/src/client/sdk.gen.ts",
+      "extent": "complete selected file, not entire repository"
+    }
+  ]
+}

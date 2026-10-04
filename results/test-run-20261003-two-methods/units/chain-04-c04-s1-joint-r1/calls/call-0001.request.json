@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:02:22.481223+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Decide required scope from the requirement. Do not invent unresolved contract decisions. First enumerate every explicit contract fact from the requirement and preserved constraints; repeat each shared fact clearly in both applicable side prompts, and state any side-specific omission explicitly.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：创建/更新请求新增 name 作为 title 的别名。单独提供任一个时按原 title 约束校验；两者同时出现返回 422。创建至少提供一个，更新可都省略；显式 null 返回 422。响应同时返回 title 与 name，值完全相同。前端迁移为提交和显示 name。\n\n持续有效约束与验收条件：非空字符串 1—255，不新增修剪；数据库仍存 title；列表、详情、创建和更新响应均应用别名规则。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "c2b9c592ca4ed6f713a8bc094439e97850ada2148cf77bf5b182f4acc349c1fe"
+}

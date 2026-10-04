@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:50:24.772086+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Use the supplied current contract facts as the authoritative target. For every fact with coverage must_be_explicit, include its exact [FACT:id] marker in every applicable side prompt. Do not add unresolved facts or alter values.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。\n\n持续有效约束：响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。\n\n本次变更事实：\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:request-page-size-maximum] request.page_size.maximum = 50\n[FACT:request-page-size-default] request.page_size.default = 20\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"\n\n当前契约事实：\n[FACT:request-invalid-status] (frontend,backend; derivable) request.invalid_status = 422\n[FACT:response-count-scope] (frontend,backend; derivable) response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] (frontend,backend; derivable) response.empty_page.data = []\n[FACT:request-skip-accepted] (frontend,backend; must_be_explicit) request.skip.accepted = false\n[FACT:request-limit-accepted] (frontend,backend; must_be_explicit) request.limit.accepted = false\n[FACT:request-page-type] (frontend,backend; must_be_explicit) request.page.type = \"integer\"\n[FACT:request-page-minimum] (frontend,backend; must_be_explicit) request.page.minimum = 1\n[FACT:request-page-default] (frontend,backend; must_be_explicit) request.page.default = 1\n[FACT:request-page-size-type] (frontend,backend; must_be_explicit) request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] (frontend,backend; must_be_explicit) request.page_size.minimum = 1\n[FACT:request-page-size-maximum] (frontend,backend; must_be_explicit) request.page_size.maximum = 50\n[FACT:request-page-size-default] (frontend,backend; must_be_explicit) request.page_size.default = 20\n[FACT:pagination-offset] (frontend,backend; must_be_explicit) pagination.offset = \"(page-1)*page_size\""
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "685b02649063727bfdaa43be2525eb265235480a900924fdec9b148fe36fbedf"
+}

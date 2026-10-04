@@ -1,0 +1,5 @@
+{
+  "status": "invalid_schema",
+  "error_type": "ValidationError",
+  "detail": "2 validation errors for RequirementPack\nfrontend.backend\n  Extra inputs are not permitted [type=extra_forbidden, input_value={'needed': True, 'prompt'...ching client behavior.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden\nbackend\n  Field required [type=missing, input_value={'frontend': {'needed': T...ing client behavior.'}}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+}

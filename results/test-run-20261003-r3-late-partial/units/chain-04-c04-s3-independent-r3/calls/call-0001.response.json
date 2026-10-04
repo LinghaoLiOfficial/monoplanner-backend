@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-10-03T22:53:04.965299+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039171-pA5hCc67XvEq35AOMrMI",
+    "object": "chat.completion",
+    "created": 1791039171,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"范围说明（仅前端）：只修改前端代码以配合后端不再返回 title 的变更；不改动后端或数据库。保持 description、id、owner_id、created_at 字段及其行为不变。\\n\\n实现步骤：\\n1) 接口类型与模型\\n - 在所有 TypeScript/Flow/前端类型定义中，移除或标记为不存在的 title 字段。不要重命名数据库字段或假设后端结构变化。保留并继续使用 name、description、id、owner_id、created_at 等字段。\\n - 如果使用自动生成的 API client 模型（例如 OpenAPI/Swagger 生成的类型），在本地 override 或映射层中移除对 title 的引用，而不是直接修改后端生成文件（以便后续生成时容易合并）。\\n\\n2) API 请求（创建/更新）\\n - 修改所有向后端发送实体的序列化代码（POST/PUT/PATCH），确保请求体中不包含 title 字段。显式删除或不序列化 title 字段，避免默认序列化器带入空或 undefined 的 title。\\n - 对于任何表单提交或请求构造处，确保只发送允许的字段（至少包含 name、description、owner_id 等），并在代码注释里注明：不要发送 title（否则后端会返回 422）。\\n\\n3) 视图层与组件\\n - 全面替换代码中对 item.title 的读取使用，改为使用 item.name。删除一切类似于 item.title || item.name、item.name || item.title 的回退逻辑。\\n - 在列表视图、详情页、搜索结果、卡片组件、表头、导出逻辑等所有显示条目的地方，确保显示字段只依赖于 name（以及其它被允许的字段），不再访问 title。\\n - 如果存在显示 title 的输入控件（创建/编辑表单中的 title 字段），移除该控件并从表单绑定中删除对应的状态或校验规则。\\n\\n4) 校验与错误处理\\n - 在表单提交处，移除对 title 的前端校验逻辑（必填/格式等）。\\n - 保持对后端返回错误（包括 422）的通用处理：如果服务器仍然因为提交 title 报 422，前端应能以用户可理解的方式展示错误信息，但首选策略是避免发送 title 从而不触发该错误。\\n - 不要尝试在前端通过重新添加 title 来修正 422 错误；仅在明确的后端文档要求下再改变请求结构。\\n\\n5) 单元测试与集成测试\\n - 更新/移除所有引用 item.title 的单元测试及快照，使其使用 name。\\n - 新增或更新一个集成测试，覆盖创建/更新请求：验证请求体中不包含 title 字段且后端返回成功（或按既定契约返回的错误处理）。\\n - 保留并运行现有测试以确保 description、id、owner_id、created_at 等字段行为不变。\\n\\n6) E2E 测试与 QA 检查清单\\n - 更新端到端用例，移除对 title 的断言。\\n - QA 验收点：\\n   a) 列表与详情页面仅显示 name（及其它字段），无任何 title 字段显示或空占位。 \\n   b) 创建/编辑流程不包含 title 字段并成功提交。 \\n   c) 如果任意请求意外包含 title，后端会返回 422（后端责任）；前端不应依赖后端自动填补或继续发送 title。\\n   d) description、id、owner_id、created_at 在界面和 API 交互中行为不受影响。\\n\\n7) 文档与注释\\n - 在代码库 API client、表单和模型附近加入注释，说明：后端响应中已移除 title，前端不应使用或发送该字段；不要更改数据库字段名。\\n\\n8) 回退计划\\n - 如果发现遗留代码仍引用 title，记录并在 PR 中高亮说明；在短期内可用 console.warn 标注遗留访问点，随后逐步移除。\\n\\n验收条件（前端可验证项）：\\n - 前端代码中不再读取或回退使用 title。 \\n - 前端发送到后端的请求体不包含 title。 \\n - UI 继续正常显示 name、description、id、owner_id、created_at 等字段且行为不变。 \\n - 单元/集成/E2E 测试更新完毕并通过。\\n\\n注意事项（禁止假设）：\\n - 不要修改或依赖任何未明确提供的后端/数据库契约。 \\n - 不要猜测后端会自动保留或返回 title；前端应假定 title 不可用并相应调整。\"\n}",
+          "refusal": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRbIp-yXhtKXNbKlQyn6AJgm5jH35uIZya-ZLIB5BZsBJ8TkeDiRyaED_PFUT1X4-DRObmJnldNNM_O3cl8TD3u1uVGaZTFwbkVrWhN22XSbKWGuRbzpRCaIbu0qeUUoW4jum099jeF9NZF3p_S-ifv3aVmvBgqCsqjbST7TvzUITjlUN-NUmlsJNRoOqogppCDRbHi0s1WcXIwRCeBr0X7YxKL7zJhG96NMDc_DcM6cOOvk2-ZAPh7IVVRa2cAImXr3aLYxF0lRvujaAzEetUmEmHu5itjwb7vzKxUxXV8KlQXBjzbtRjKuw8XaowWvN1XvYcYX1vO71R9TC_wgEjCK2Ls4obq42OmVS_RXxjsQo47qVzsUVaDPx6j2ObFAeF57QHXbUVJSf7_d2Lj2HY_APdy95intLhX-aGdX1e0szLOWaH4ZqAkUlMKvE_DQp3ZhU1qW8Av3Vaw9M6Lq2CtwJX8ipEx2tWwfm05I6212lWW2JaEY6KyG4vfgeGZjlLOpZFo0jvBMNn-2GYN7sofBrcVVQzLQyfnwOlMfBiI8ZnhHU9Ujd54mgJFlJozHQ6MFHX3czBZ0rOOqoZnV78QDyjQ1dF_-40uOcxg_Pr5dx9lKxBfYbJN1NfQQgLotVAcS7GGP-YYQAhnhCHO9BApOLXykux4GghZnxOu8WOC1SAETRrvCJnQvrQ2uAxuq0aVSlTfOgFFKXXp5gYCe5DjnncEIGA_S7I87v9EaNmltulHuFNAZSAaEonl73kzuAjLAHMHv7Gm_lJb4W1OagLhApONAtS2FbQYLJuBjTvEdxPKgFK482KvJMXbxn-4gzvUlNqRDf2v0ocX2YdlLKFqLnZFSRtJ2cKwi5arBfxNQHbUYdeNZ1WF4I5oWp0M0C5_tQTUsqr1oUc1eOvc9ILYt1loL_Xnczc6HfrQDplLvebXmpfjubwyKLXEXxvA5wpu7Ck4oVhOiG3EQZ1w5xRHfQHnnT3vOS_sdhZg230zte2XzjJTxd1HpFEZfXrfC6t0uCBC-6mi7qqxP5pRi0NeKhOuhwxXGfF9sqnFwzNJDtL5Aol2USxvssUXfySYY7GaB1iSYBaIoHfCe5kM3AldtygdvNVBjb9d3gLdxSfYIapRPwAdzA9fXH5JiRSX-UQql0LERYe5uYxfpCnZQ765uBR7FFrRX5SIwVWGKfhCnUTH9uZojhDzlurTz1FCHut-fEs9b0i3SlJ5Q8UHBUYq5B2DOTDCg_9xi7fxpPfoV7Mxfcv_G1qFMhyxamBBTsvDKYHZaf-QESYN3YRFQsTvXIOlhwa0FDz6_FV1vzZf9DnG30N8ayUZWD3pfCi7PY43qK5Pb1krFQXNZI1VQYzjm6Us1e1-Y8_ksOzcse-PJK65EroN23Dy5ADIVEpG6AwqHOs3gGWrwlj3nw4mvy4iA1KGw8d92g50eak3xMoR6TZJ_qFinLN81bnyFu7Etde-5ojW9HifVKN3cgmV0l-0MLFKjnZQ37n6rhLuFPcBcvOw8isLDr9_8teNjJmBkRTfXc4yMv33CSAA-7SibRDm3jGwVZmMPh40V1uci5nm7htf8qJWSTh1eHgkj6RFGU6FDpOj0LPGvPpDihDo3jpS_X3PbNi3BgU591d156011C_oqIyHVQ0_PSEMzeOhZw3Hrybuf1xnJqbnOz0NN5jXnQ-pQyb2KlKa39ccSYIiotiKJgYfjLxZF3YhgoJdkGfY4PPMYPDS1EzjHog4B7JK0_uoLIB7tyxjTnw80tmcx_hB8ny9o-5ak3axWbtymDf4_Kcl8YYMrG8FVl_uZmvrIPKZI8JZzhoLQW6I8hkoL8S3WwwyeD4jxZ-xrtHSr-IjycXlCB9R8kh6lhvDZpxOrLn36ELXpR_1scScPEG_sQcp8tH-gtqdzfTOGx0LkxI1fgdjVbdPTmpT1cIebBTEkS4N3clJo5l_phnzmkgRf3vXiRfyH5NyrbBEgZpnexxUZ20oY85GMls33KIgF8tQU6q292yVtDhQvIJVo6Tfp-neEcq-Vj-OyDCNmI3xZDWIzvFpZFV74Rp6HPBZLX8-WH-oPLq1p6NVpkSRlEP5o8NkSj0DYDZ0GKvTey32pcBzzCOlJlaKI2N5L_W1hcIQnDUtd9wy472ka_cT6YqltPADJC5kZmmioIvayJIgWbqDYDhQc5Kcenlp3EE3ZbhMejkKpeyrK4XKPVbbx_sbk9rg0uSLnkgqOP8EcgnhVsv1dP6FHWKe_c11Zbegk9303FmD__r54oIljrnN9gs2Hw1M6Bv0RPsujr3euYGSUCr_PH21LKtblm8D4bQdzChqq-5x2G4ypvAT5PbhkSc-P4tOmZ0SvJElm8lHiHbesRbErlxw1oPXIOGIbsnqkQayNr90NxjG0ZGbBQQm1XO48vn02RkRBxDKjCn81B__fkHu5SpQMIsIBNycj1tsLmybL8T6h4qnudbAZaH0jfOOh3MIx09fSQUr1DGzeCuxnmAlnNsd0AjpMYxsegfwAin59zIsuyP4AuAigeCMDoFnT_zN2fz8zNpQpED27mW1Upmi7lCOWrUm4JxrmLMFK2dBEkxh1hdSyxoNOoKwbHxne4ThHGUYI2MjAuKZCJAv9xxb7hO-75XYa6RM5IqlT15GHGK9oRCqekKZG8MpktlzzBXnfciIDGU9QzsI6VBGryAq4KxdadGqQ2jSCWXW93IKKnyHtueqIEFcnQF5GNcysZIUUCWLAybDblJCZ2EHtWt7OSaO52ClE6fD2F6kIDJ03vpc9m8smvsL4gNW4oYNE_KXFskch7NWNM8PgAvR9bhJaSkGAmNJ3oHPSdWLc_-VdlTDLN93G6eBSMbZwLK3WfliPQA__hy4jiRX2GupM3is-EkFafdJeLucUaP0nLl_SH0BdFL1mNtAQbaHFqqztq0dQEk17hfDNKJHWzfeWyZZPJDz8eVJ5vh2rc96fJGcurr7wr6JpaOODoU_cRTkBXhePXIpDNm-kqet3D7MOaxco6-qaz-hBM19DqIhiJtBhw5R6SQbypNTEdF0bBfhVCscb0SjXuAuEuOhNjloQ6T8C0IEcfIHpJ4YxRZUa7jX_e4-J-dG6vs3K0sAs-ml3TIS3ufBBsfJtaac1kVdkZUY1RpSkzG_ec-dxF1PYzFgk7BZhgpqrP0H1dE8w_axww94I21e2FVGzEw8cG6_UR4fhnZ_z9qrEAdZYjQpNaabdW4qQdXCSj4TX6jKpx_4zRn50SGA6XAD27NFYwg7A7qppzlvRdOdz7ezSW6iL2WxJdqKNcgMoJqB2RIH1dQkiscFBHQvo_HULxTag0jouLGuko-ws0z7pYdPL7yU0XZHl466Eq4DJCttUVmc_Hdk7FweW6OgGGwpXntZpw3BgtEYskTbavt2NBAZixkhVwXbF5-99Pd2pgudWVc0kVbHdP0tva6_tR0tJJuR0w3EIt9fz8L3C7Med5t1OAcs57_3c8bLMXb8fNwkCVODaQ2TY-5LGbx4Utz3ksYv0b9YBOrlGMWa_PWtDeBS2MRk0_vw2zLCUqs2q2-_6SoeYQ-7W37nEh5DL6uBb6siNEAxa622Zh-uteD7o4uehQjOPddteCoed0AiNpMbM7b_H3CV5jjJzHTGt_JD79ZK8d3zIjt_6VSH3YaemSq_aS7j_Q1H8DgPKedLHefEFFcctKktjlDOXmJ8LMiGmK_NsAz_pEuegUJDkiXFrFq60sTzx17u05vd2zPhrgxcxvGKOZ6g4JxDuENP-8wVJoA1rvyUp9zHKF-hL9zFEn509cbDTNXPU5578JyT3dGY68nu0mMYDlI86OR464lFXCSBSKJXjfayhIS1NQamIyny0R-OGr2_uhKi8eZnoJ6QoNFfybNd-qWE01eeMQ4kQFfRZWHinzAtrjgPV3CAejiXULgoWTfAAuogG2TybBNMZ5W4cSip-L35-OwaGL0dsmqk3Pv09EKe_xbhiHuUAuSo2TdJsIyUuqJ-_hMJm2lklW9wv210Qoy2TayDjE4ExMNRuhDzJeu31wRugplhGGpHA43okqFz55_gwlxuGk6ua4YKDJgjkXs0bKLpJin1MBMClKHHPpb_dvhvOu0YLuHckH1pTiziCoTgAVNd0FMdtY2nGOuDH0C6u0AMHh7zeRbDv0eK_0LTQG7yTH2NC_2TNXG5jv9wF4PT9FsxOGvanbfbNt9uWoJbWv0fvSy_Ksj262WA-ZfyIko5-zVnrmUQTRAwXo3a2skOpD8rzy9D3FCJttGN4r6LpFyngPR0kppPDGAN0SltMxtgoskhN4dUK7HGGRe9tneLhx5_gh24duPH97-Ei2UEg3WnCPwcLbCWQxsnigkyy1laq-Fr-knlXQlLlDCN3k8NcbknVi6M9RFYUkJgId7NHNzLtsn0_2wasfa7y4pcK6yOwlQTMBQM2ldWliBaerE_gQCmbvLXLJ6LY9sgwcGWddf7iYRvP7vuExEK_Z6GRnhb7aNd4PmwvcY4nnMIsi0aSFAxWRtbJL7elLBwyyaHNxLeB68QQv9vWetNeAJoZujMMVhD_tAoNfpW6Av7jbLwJEKqNDviTE7zJtxfe6J0mw65jJ1RCKFV6KltqDXjZHKAkY50y0M0tYnWmPQas_4PvmwRyel1kakLoKJ3QsMowuFaWs7Qs3IkfwkJ9fssNzZRefNJETLyf0ZFn8pvgHtDL-UeHe_3Xars2GB8qbv9MVPFSPCetn8wLpl_S05tOUmAwU4oZpFoSfuaddzDPF3dtbl6IEzun83bbLoR1nLrx2ueLM0jnhc09rFG8FbMZvHgwoDPw3GS5dGb0SOWHeGaS98hAaCUGGS600uZruHQv4dDS1AJbqT7xHnUY72k0kI8jaUS0lwYHxtXAk63ODelSbrq4_9UvSlhFCCW4R5OJdVqPBjhPf9wiCWBdE1A5DwEthREkCrWh2_0Zr80pZRWYVHyCe1CFBHV1y1xynlaeHJvJKUR04fkVt9CSsg1t0Jf08MnDuoh2Emb0PmWPvMwVAEqvtcA9acvgxKJD-2KVKgSASvqWVf2l5OxPJNwC-nLMMfkUL_cBtjhO0DIu0kSTWX2gupIsVQsbefYxgMD3LMsZUic7CFObSnaT8aj_bQJuPwjiY657oRZDxRcCiLUxoLbif82Yan0T2jBPAUOP5FYTlFTh73XT7oxLskP54JXDMYZhrBG2gQlpWA83ZyTQuzCWJbTH9HdBxqsfSencm9HkR8kAvQ8eg7FkKE2C7WvQ0WifaU4uoE5WWtXbL89GmcViyTx2ZweTn6_UG2npsxAnUjgxBILzh-YNfYc5Dzd8lajieOu4T_js381CvrvYDi_CKgJFLBNX2p4gkzJxqc9k6trSHsPoLGrzp6_MHAgECXRVhFRhSHGhEGN-RQfjEirWRuUrh1NxELWfnLicZIkx1WhNNyApkwEvSEk_EP4SHYHoYxLWwXNOsSyENHRtDmmY-4Hq9ZaouiXdyAJf9O96oXCtzdwDEc-zFSuwSZkULRtFlydfQX9q6Pg_VPqy2e0gDdoMaNSgqVRkjkFK1Q8axEd6Dn9aMHu1jFkSamffJm5NcVTJXtbjGWM8bUrzPIJC2AL0iWCVtV0AVbv-qMubVr15VsE2n-MwOfY8LIexSKrnXXeAQ_gf1_TJzq-qYHNEI7D-OpYL3eWxossOXyXO_NHYefT1or074EwMyJtKt6TmCwKko90c-xcP9mNoXk6KF3AjaOpK0BM689Kbv7Ego3uJNcAW-Tibb5O5uC9TwRTrltPeoX7Oa2s4KXRJAoaso6v05fvLE1fkuv5TmlDvzzzCDeQ1f-iVheh2p5YtRm4hVDci5McmQqvzbAMoTpuygNwdbs3rKd9fV9hFaj1GE__cakbcDOgD7qA9YPlPw6fkBgsr7YIx6ZTe2vNkCWirFNLARNk1tamUtmRCS3Wmov5ywpBLiyyCq52xjzuEQtVhrD9E73oK9FlHuIBrJgiWijsmTEz43-RkkCiHZBBt3b0IuDsN10Opj51xlXZkPgbirkSFU5v7gYTLdhQAY78Icq7vreVapLbYpMN7xGSO1TDl7-J_G32mLspC.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_01d3cf6e53952727016ac116c3d13487d19b96a00818493327",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 188,
+      "completion_tokens": 1788,
+      "total_tokens": 1976,
+      "cost": 0.003623,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.003623,
+        "upstream_inference_prompt_cost": 4.7e-05,
+        "upstream_inference_completions_cost": 0.003576
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 640,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 188,
+    "completion_tokens": 1788,
+    "total_tokens": 1976,
+    "cost": 0.003623,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.003623,
+      "upstream_inference_prompt_cost": 4.7e-05,
+      "upstream_inference_completions_cost": 0.003576
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 640,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-06",
+  "step_id": "c06-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：仅将上述两种 error.message 字段改名为 error.detail，删除旧 message；request_id 保留。",
+  "preserved_constraints": "错误仍在 error 对象内，不能误写为顶层 detail；前端仍以 code 判断，不匹配自然语言内容。"
+}

@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-01",
+  "step_id": "c01-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+  "preserved_constraints": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。"
+}

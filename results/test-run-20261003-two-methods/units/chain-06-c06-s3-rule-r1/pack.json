@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：仅将上述两种 error.message 字段改名为 error.detail，删除旧 message；request_id 保留。\n\n持续有效约束与验收条件：错误仍在 error 对象内，不能误写为顶层 detail；前端仍以 code 判断，不匹配自然语言内容。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：仅将上述两种 error.message 字段改名为 error.detail，删除旧 message；request_id 保留。\n\n持续有效约束与验收条件：错误仍在 error 对象内，不能误写为顶层 detail；前端仍以 code 判断，不匹配自然语言内容。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

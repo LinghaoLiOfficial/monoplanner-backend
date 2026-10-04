@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:56:39.471311+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039379-4vHQgxuFPJZ9vMCgXt7t",
+    "object": "chat.completion",
+    "created": 1791039379,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"范围说明（仅前端）\\n- 只修改前端接收与处理错误相关的实现；不变更后端、接口契约推断或做兼容性猜测。后端约定：两个原先的 error.message 字段已改名为 error.detail，并删除旧的 message；request_id 保留；错误信息仍在 error 对象内。\\n\\n具体实施指令（按步骤执行）\\n1) 更新数据模型 / 类型定义\\n   - 在所有前端 API 返回类型、接口或 DTO 定义中，移除 error.message 字段声明（不要保留旧字段）。\\n   - 新增/确认 error.detail 字段声明，例如：\\n     error: {\\n       code: string | number,\\n       detail?: string,\\n       request_id?: string\\n     }\\n   - 确保没有在顶层定义 detail（不要使用 response.detail 或全局 detail）。\\n\\n2) 修改响应解析代码\\n   - 任何读取错误文本的代码点必须改为从 response.error.detail 读取，而不是 response.error.message。\\n   - 严格访问路径：始终通过 response.error.detail（或等价的 error 对象路径）获取文本；不要将 error.detail 提升为顶层字段或写为 response.detail。\\n   - 不要实现基于自然语言的逻辑分支。错误处理逻辑仍然要基于 response.error.code 判断。\\n\\n3) 修改错误分支逻辑\\n   - 保留并继续使用 response.error.code（数值或字符串）作为所有业务分支和控制流判断的唯一来源。\\n   - 任何以前依赖 error.message 来判断行为的分支必须重写为基于 code。如果无法通过 code 判断，则标记为未满足的契约并记录（见日志步骤），但不要基于 detail 做决策。\\n\\n4) 修改 UI 展示层\\n   - 在错误展示组件或弹窗中，若需要向用户显示后端提供的文本说明，应显示 response.error.detail。\\n   - 明确在注释或文档中标注：detail 为展示用的自然语言文本，仅用于描述，不用于控制逻辑。\\n\\n5) 日志与上报\\n   - 在前端错误日志、监控或上报中，继续并确保包含 response.error.request_id，一并上报 request_id 与 code、detail（用于排查）。\\n   - 日志条目示例字段：{ code, detail, request_id, endpoint, timestamp }\\n\\n6) 删除与清理\\n   - 从代码库中删除所有对 response.error.message 的读取、映射或赋值处。\\n   - 清理相关注释或文档中关于 message 字段的说明，替换为 detail。\\n\\n7) 测试与验收检查项（必须通过）\\n   - 单元测试/静态类型：更新并通过所有涉及 error 类型的类型检查和单元测试。\\n   - 集成/端到端测试：模拟后端返回包含 error.detail 与 request_id 的响应，验证：\\n     a) 前端仍按 error.code 的值走原有控制分支（行为不变）。\\n     b) 可见错误文本来自 response.error.detail 并正确渲染。\\n     c) 不存在任何对 response.error.message 的读取或依赖（可通过代码扫描或搜索确认）。\\n     d) 前端未将 detail 写为顶层字段（确认没有 response.detail 的访问或使用）。\\n     e) request_id 在日志/上报中出现且与响应值一致。\\n   - 回归测试：确保在其他与错误相关的功能路径中行为一致、没有因字段改名导致控制流异常。\\n\\n8) 文档与注释\\n   - 在接口文档/前端契约处记录：错误文本字段已为 response.error.detail；错误仍在 error 对象内；request_id 保留用于追踪；控制决策应基于 error.code。\\n\\n9) 部署与验证\\n   - 发布变更后，使用真实后端或模拟响应验证生产/预发布环境中：\\n     - error.detail 能被前端正确读取并渲染；\\n     - error.message 不再被读取或依赖；\\n     - request_id 能在日志/错误追踪中找到。\\n\\n验收条件（必须满足）\\n- 错误信息仍然位于 response.error.detail，前端没有将 detail 写为或当作顶层字段。\\n- 前端所有控制逻辑仍然基于 response.error.code，且不依赖自然语言文本。\\n- request_id 保留并在日志/上报中可见。\\n- 代码库中无对 response.error.message 的读取或依赖痕迹。\"\n}",
+          "refusal": null,
+          "reasoning": "**Clarifying error handling**\n\nThe user pointed out that errors should be handled within the error object, not at the top-level detail. I need to ensure tests check the error object and implement proper logging, including request_id. So, I’ll update error display components to show error.detail as a human-readable string, but still rely on the code for actions. \n\nI'll focus on acceptance criteria and a test checklist without suggesting fallbacks or guesses regarding contracts. Let's structure this clearly as JSON with numbered steps in Chinese content.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Clarifying error handling**\n\nThe user pointed out that errors should be handled within the error object, not at the top-level detail. I need to ensure tests check the error object and implement proper logging, including request_id. So, I’ll update error display components to show error.detail as a human-readable string, but still rely on the code for actions. \n\nI'll focus on acceptance criteria and a test checklist without suggesting fallbacks or guesses regarding contracts. Let's structure this clearly as JSON with numbered steps in Chinese content.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRedoDXxu_-mVtV6HUTWXCMBc8ga6V9A0ktHEgt4wKwgypVYvpEHVC4edj8JtxkP3z8F7-V7oc5hN_KyRcnD6otUZ0rkd5-mckIRlusXF5smFTYNRPphwaUQvpYSnKCLpuzPYQKm2mUgmxOSsZtMVuzhVEm9W0OSR7ZRbf4aIf8zoZw2onHls6-0xGFjfWpoDjQe384CgrD2h8CyNdPQSb6fPpO9EeUrExTATa5IvlKlzbuZ83bh3aCT31M_iufvrdAM9tdV7tU0DSlxTLzmQXDwzDcpM8YZbx7SNfKigmCX9hWCPsm7eM2gGaIaDVI6RSPLJ-hi5YzzwI2mmkPutA7nOaypR2NNrEAfkMOfALzmO9oXR3iYlGPYKrdkY-77AjpABi7a2mgnbN1gCyBqWfABfq1qAD3zLmZZ7q51z-aq4r35U1_Q5TgthIYl30z5bvumdPP8MCgd7PxgQtXbeQ_aOpUEwecj31c_YO5UGnuaDSF4mDki4bc-JJiAAXgD3fTaYMIYLlNsLrOK7oEnRbU8fNZCsslY6nEf2RLQ-l6YJn4QKiQ4rFs8d0onZ17LiaxkBItp9GNUFX_Cgi5YxNsTlH5fMnpW4PVRTBeSFt4XIyZEpAjxKI8gtdvhMU5_4fS9F_S-xBt-2YJ57lO077i3hDQPo6t5ngr_Z4TlGNQNdfzQDwp4_Idvw-3O3bwY1E3LBRkA8C9u_HZRi2Zn-XYGQQMkOs4vtMzVR3T1F4SGKzn79MxAE-Vlh61QAH-oMBq7TkXb6iaJLZ9zO-e5QPUqegN5DNL0KsQ73Zkw4Bq-JJn0kwf7aIY8XTEgwgGDl9cEDBVCG99Xw3_jJbCQDD78VnZ0INTm0a0Va0OUjgTukbXT0jbnImNyBQU96aJ7u-N6jxpC7I1YI2UaW5m_IjR2wm2a9rD4bgqnW9OdzhZS-8fPbdLO8Ou7gLcloog1jh6ducy3gNEMBs1Wd972ctW_-dRHVtspG34XdJqud2nAuSynN7Z-CHA_ohHFCwWI_DWwDqRCMntl_BcACOM2UZQbImZjlTAurWwkBLEEeROYoY9bR8BXEkNJkcP5gFJL76wjlzRAg4vowxulD2lGOkuKzATPUQ3yOrr8YBoOBtriP-AaT71tKA-dPvTbjD_eOlKpvPjmpF4GWxjOzciTT-AfpbfTh6V5wJ6U9fPjQbabiX3PtoueoUYNFYpshg1kHWA7D4Uu40nSJWY0BB7qRc_4iFefrQcDNfDJWnUe8ZWjYZ4Mv80sXWEQtw4eCF4xJxrXIFgg7jb33mk1umiXCWji8AW04qlFf6vlk7k_prrwUMkq2FqRgAsepBgb6yp4U_H3Z6NumErT-39iWeJRsctqacuNLO7IELwlmxI3qajgHKOdcSiuEqFz5pHxoZ7sDKllQku5YzJb3N1sbx2gqrSRxPUszHHaqU3o9XCgf5X0disPDK2Y2uLm-2TGJEiSHBtfLSt05cUDWC4yOWWd5jHg_e95M6jQ8dVVjLSWIylWg7TIIHYzLbNqli_4wvfrTG5LNTiVUSfbfvKcN1TPZadFghmQ0k275wERtvml6FBYXSLLGg2QJtjQEDOmB3TH2-6mwCe9b87ZL6A-LHHdxXQkJcH2ZaURICnYifTGAM9j0toZpVMmMI9zEvGCYa6abB_TP6cq6BAt2pWIUUBlCIsR_cayKdQar7ZQmWf-d9DO7Xi3PHddY-KOMZ6pvegXa6b3HkeGl_tXFqhT-p4qW95Arh-5zOlsLuHDFB3ODUaPwy26sf-xSt3_8-dxdIYUVBxjuUJZ4by86XzKvJgHRsInObjL0HBIev37Vrd0-O3y1eMrf6N73hOc5B0LXjzn3rubO4E6I-aIxDONYkPKwEQMbMxAhNvzLhEAOd5I__iUHVNGPLwl9Ci8oB4n9nLiW5iOn3Htzf3lwRAoOID6gChvqiDpzcjIl3tQL5o4SAJcWkmdTtgovx4RohlDla7G9hBCNAdPg--5klOW-SowprFU0h69-rveeI1NFU_u00uyI0wUS_i1ypXPpCdbBM2b9lLkefwpn0IIn7GfLODqage23bOIfSaxpnf638JYfhFfNhigj_SL93yaDwngAiZdhP8a2ObRxXuKWpgrqt7eYExZjcrrb8prDQft2bnVM3ijcw4RXuCWKvn4KwyGl1Dpu7eT0PhhNid1osPO0pijQlvbKWFXg2cltq8zeDFfokhL9P_xmrGeve89hYkb76xpQIpx_hH6XBsQj-VtGRkeXQTmTuvyN7Sdy_wIAxy4p6LosNxfmBz55LZu2Ba_1mBSp2j1oiYYmEHNy0vFuG-Qlw5hiZNGEIKAb4vzYQ7X7P6iMU011sP-SQH9LnItiluqY6FvHIAn3BDpckUdwBuMy_RA6PeX_dDu5MkGlvEql7_QOBpL2_li3ZcUyO6BpgzWFD1fj08B84EGsQr6x4_AZzZVv1nYYFoHZGJed4ZAYxzgc12oEUCQi5GVBN9kQ-KTI6pz8zFq4cBnUCN2WSs1u4ja7sjXBSxbn0n_9ti-BUpUBmCGKnYfwp9qloRyXD27GR3wrhLGQ70zPHTmnhzVk08Ii7K70EBDGsyU6RZlQy2rDZnYyOK8gmtIevfOjm60tL-PNqrhMB8x6gN9LRg4VKmYRVnFAHkEfb-qimJB6oh4dEqIpnqyHnqNIK6I4PRRJIadNDN9RRP5bM3lbqADxXtpPlcO0rnqx1HqnHNO8sSnp9EL-a0AVlHEaJAgMu_sgLySKoZ-MHZzt4U4JRe8x8szYwpfMMw2S_YihvSTmYf7wX93cKZonrMZbappAfzZBR3a6Arz8gXjrAhFzKM955zl0lnL9YPx9SPi83c25r58WqMwKBQ_tFgtgnrCPvo9WqbGl-7Qubf0jfTFQRQPESiKIsLcNPNIW8Q83SMMnIFwF22aYFZoxWbXgYZk6Ao0htmKJsZLDFyG1QEHCXF0j_HyldTJGpRgynTRSvDuTB8g3kdpeYJtgsT8KjDqBz5LG8n_ScgNLn22coX0tLIu31h7k2sRc7QQtyu5ScLYKzd_gz1B5Qrgoed0AXVCYOhErWc0nA9k-NIYrmPSSICQ9mP4ttGZuZmHmzkmLDcEgTNLeRyf66sRc6F5ynAWuJGejP23E1w1WfaZ6V9R3pbCO1341x7rQ4gaaM7yuXBE6TdfiQs0nuk0wXSv_tvnFaqUUbPWg6a7Jq-mxMxPPpNPk-gH991xOzT7Z7wqlELUzu56OQZY0nzB15GR6PP3kXiQD5IP5TesdkVxV3j28M0p7p99141GxhHcUtUZEDNswBVCVbEEmD8OWwCPYCDTy5V3E4RiHC7kqv3nvtorZ89Knekg6o6IsbcPBMPDFU_M0dk3npErNOc74DZPlTmvNPGjrSDw-gsd5yPBtunR8eXE8Gxqc5zxK6F6cm5KYQpSnMrpdPA-mjqtt2co_50ZYpJBog7nGSAlMcuv6JFI8yhHsXloO8TF75Ah_lj-jf3_qof2NhSw3l3i-IBX6hPzGwPyrUKdBE6pxHu0wjZTICtnZulmpySTElZwbHtogPzYS687m2rJF2DPD36hw_jwLL1GSlXF-qCnEwD50IxZEW0SgoL8gf22nSnieLm--oU1iC-JwqkUOdSBb4Tcjh_aWyaXUytfjm4ApTgvoEHrXZGT7w0iUVHfLzpsqy2gFuu7X4LyAaDVOwHnAXJRGn0C6FPVEQ36h0AKw3z3d7Gc2mHv4DyHSvIVr9ZkLS4N9IM1SuiYBzfKDKn3zvS-sQGNHxGc8wlUxrbw6lsPC6gmKxr49mRDcnE7YPLQKWU3nVmVbhoKzCkM2dJonFyW3eSNHEvu6qDUNYpZj9PK7-j3vnydndo3cQF9uIlAMBLmual5EVsSjHT_VhEaogf5elZVpnBjg3KP_BOjQZQpWkvaKF5xptJ6Gq4po7R6U40bn18WAE3vu82t4qr_Po3j2rHDqOF8yRBIlPSYlS5r4t1EreSAu0VvVnLgzWxf4jw7gUORiySqQwzColGfO-zAbZ1ZsGGNNrFoa1mSbbTFWrH2QJOmLLk4roOg_-hNsRYPvMvueK6vRgp3aJJB-clrgSR0uxpEzRV2X89rcaOq0lD5gmBQ4FudDA5f5syMvpVqkinonHb4J0w4BNrOS--fhFui3RxUyWgg370krPz51cDWbiBI1fv0GkZRfXdzPaNHhw7BZIyrdW20i_OWkqBmQXA662zF9HkCGBoTEtPtvUyEezbnNAR9lyBtdvwyGOqyH7G5-AdKbiw00RN8K6hKHLgrAZDeuddBfR9byhzk1P_Iufqhs34uHUDWelZDWuvZfozzQHLF0o1JomG78_LmDGx0pjR9WS6WJT5DSkx9FDjnull2APn9vK4pil6fPUjIGIJm-3_HX5QJQZgItJRLFFG1h_soxU9tnf_l92jiZrWLuA1q_1bsb-mb0sE30okrnoqpDpr5nfcZDXuWen0VhaSuoUfwsg2hZZNUJmFJRI8JrD0IO8yRH7wYykcXBUloAhzkC-aa87iGy9wtorXLP75s8lrx1Ir2lly0H3gQUeAP3-xlqcyDkeMlfpZi_btKEhSLyA4FhvRZyGIVj7XaG1e2YB700MkRbKQSt0Aq_6ok2_Ic8lz6lstvPshyYkakciHY_9DJ_FH2bLIyJwYbZ9wcOEoiCTxNx6r_BC22_60i8gc_Zn4xO1lLshoTbfiuA4tnaKXc_TezsqLcVAJf_IFaF9y4yBbpwh98OqtSiX93HHf904l4o41cuHbFVaW4C9wm3WjkRYmZs8N97eweUMSPWmwFpFW_633M9JWL4D1MQIoMMMF-opak47W-FirqWB-W6FsDYjLH9yL5eVWEiO0xmoAZbxfB517pdc7yDAWAF3-0C_NfxkdKxmQn9mtinE626Nj_gUN0duy3JHMNw5glutkUElRckZLfrV-NFqWIh6_xHT85H58jtgES8nojmmqmFzTUT5HQMjkwmYe0WpWSiP-evbgNKf-Lc3a9FsS2ye2eNGN9y_SGlpYm5CLF7SWnLmM1McByEaad5KVtLEpRA5MMyXg0t1_qfVJMDMtMe0Eia2yAgBLkO09it8zGKBAuYanmNYkS-herl2PoTb4wT9BJeruru6VOb341VIJdISDcEZcwMy5lW7eStBU4IMrWQAbvp1pXtAu4wkpqSatADwnkKSjN5lrLvDXjHoke3vcZrFA536a1FHlNg3Om6cSkPPn0jqn5NeSHcDUaStyEveUs8rcE-SVepCfjdyK19_X6kEPAVQqzJ5kmKhlOOWwwXGDAxUo-Fg6WZfvaDhUMC-MjsF7AXCS2xfgNZ7sSwauU98MsxH85SsmsJvwPlKaHqby-jiIyWKVCt5Wyqx002aBGFTt7ENcnVyWOReYhpzUXbKpgXHKp6igNtEDdN6n0tiMWuMXMazCbL2gEn2QP2Ruv9-3REr3liWwueEXKcIEGS4MzBje-wLE3UlNjxai9fZum5q4xmNl1oVQkgKqmwC-xqqi1ThjWBY_PxVrRLkewEEx_10MvFLfzd2rg-zN7rXKse6BwAL_0IugFuiMDryxzACYeQ27A5V7IkyqWTUiDhlQjKMttaunOZOTfunJ2Y0WDocE3KDoUqKlaDhCSHaQPaqydlF_hwEa6alGDzJwbeuHI_XI7oNGAHu_itn1zK15Sb-MwN7cf6sW6USdqWLGmef4RkWZKKVyoo53atC8uQbsvNw0maPfNUtx-QmVV_VxgqjDSVV2kpX9CcLeD1iV9JvZLv6DUZaevjiyPkWJbU2v8xboO_dDknOEQudjeq3HKEbnMm6AS9wCZkVm5HI40oZZ0Nkoi8KJybBgT7xMXelN5TR_f4nZZWoPchIrAQB_1Mc_WNRnUE6jB2Lb0Ye2gHosq91YrsCUB1SlOp80RU8BX7eTHRwXQ1pCYGUS45vg6c111uIZ4AzQ9zbI-xHuKxrIUeHZGbSFksOJKenswSzxyYz8QoSZDT7g-IAP_oS1Fx-NB1o3hZmb3I7KiHobAhx6_SJ4b3Puyht7qZrXAK-z8OqykzeJ52KyeHDb_Cxpb8Bau5BgDeDYexdJtB6ACfeEqL2FOD6jYCGHcL6HCDNq6vQQPBG8pEpo8ukvVaF7XJsbTPdyIImaZk5wK_ize6FBKIqIbLciJwTAZWg0q0Abh-Tz81DtmsZ8-0GLC6GI6Ed67Y78Y-OtLUY6DhTXYCwBREgOcXMuDLRDBuDkzjz6w9h339Ykcc2O95eSp-CqAhEx1S38w5zvR2vqJWtoqJPfbJCbz3Ya7Rpn6ibi3thV-EfzbvAC0MCDdptLwB3TY9dZAAc8OHkEt9LHKdhC9fLHVLLBU6ePaQ9RxJEwsyHG3202lPIVT_ITUiSQKiWVOp29TJYvNJ4_-BepUDOvTtzN13TNCwKAZqETMXcifXF-gs4pZmYylVfalEaoBtGmCYKgf-5qwXHUHaSBSq7KNrEmO9c1qN7grJvm-tihCh034_PFazntOBySN1EU330qa0fbfkKjsuyh1eUDE9moQj7lByg3RjkqTeMvpOfK1hzE-NSQLmeEMGAU3QJ7JtBCcj8Tfy6eNzhQbDNdb4KaSSBBoQKYYr-IgIbOdryH-Z5cgmvA_1FaGns8Pkw2YeFJR3UQ6mb9O23VtCxjclTxsAKRfekIKqsHsRd_96OnwEnC0mpKIFglGBdDGbjXuWNAP0VMT9Yav1WGa3cFpR_o1gbQdqEYs9ZatsRO0oelkwDszW-kzZ39W4fUNP7XjH985rkR-1BXsFEkVAprr_N4zYguGqYGxEG8gkoeovBlWbaDTCA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_09fe636261cbe91b016ac11793c14887d1873262420741cf7f",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 191,
+      "completion_tokens": 1835,
+      "total_tokens": 2026,
+      "cost": 0.00371775,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00371775,
+        "upstream_inference_prompt_cost": 4.775e-05,
+        "upstream_inference_completions_cost": 0.00367
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 704,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 191,
+    "completion_tokens": 1835,
+    "total_tokens": 2026,
+    "cost": 0.00371775,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00371775,
+      "upstream_inference_prompt_cost": 4.775e-05,
+      "upstream_inference_completions_cost": 0.00367
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 704,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

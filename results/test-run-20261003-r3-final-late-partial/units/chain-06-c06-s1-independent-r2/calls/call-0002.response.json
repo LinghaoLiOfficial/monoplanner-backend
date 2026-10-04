@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T23:00:35.180658+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039611-nDUaRKmAAReHc698AN2E",
+    "object": "chat.completion",
+    "created": 1791039611,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"目标（范围）\\n- 仅修改后端关于单条目资源的 GET /items/{id}、PUT /items/{id}、DELETE /items/{id}（简称“条目 GET/PUT/DELETE”）在“资源不存在”和“权限不足”情况下的 HTTP 响应体与状态码。其他路径、其他错误类型及全局错误处理保持不变，除非在下文明确说明。\\n\\n要求（精确且不得猜测）\\n- 当条目 GET/PUT/DELETE 抛出“资源不存在”情况时：返回 HTTP 404，响应体必须精确为\\n  {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}\\n  - 不应包含任何顶层 detail 字段或额外字段。\\n- 当条目 GET/PUT/DELETE 抛出“权限不足/禁止访问”情况时：返回 HTTP 403，响应体必须精确为\\n  {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}\\n  - 同样不得包含任何顶层 detail 字段或额外字段。\\n- 认证错误（例如 401 / 未认证）以及 422 验证错误必须保持现有的响应结构，不能修改其结构或字段名。\\n- 前端将根据 HTTP 状态码与 error.code 分支处理错误（即会同时检查状态码和返回的 error.code）；后端不得把所有错误统一改为新结构，也不得移除旧有的认证/验证错误结构。\\n\\n实现位置与方式（可适用于任何技术栈，给出通用实施建议）\\n1) 确定错误产生点\\n   - 查找并列出负责处理条目单资源的控制器/路由/处理函数（GET、PUT、DELETE）。\\n   - 确定在这些路径上产生“资源不存在”的异常/结果（例如 ItemNotFoundException、null 返回、query 返回 0 行等）和“权限不足”的异常/判定（例如 PermissionDenied、AccessDenied、authorization check 失败）。\\n\\n2) 错误映射实现\\n   - 在这些具体控制器方法内或在针对这些路由的专属中间件/拦截器中，捕获或检测到“资源不存在”与“权限不足”情形，并返回精确响应：\\n     - 404 响应体：{\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}，Content-Type: application/json\\n     - 403 响应体：{\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}，Content-Type: application/json\\n   - 如果后端采用全局异常处理（global exception handler）：不要将全局处理器直接修改为对所有 NotFound/Forbidden 异常返回此新结构。相反，应采用其中一项策略：\\n     a) 在全局处理器中按请求路径或处理器标识分支，仅当异常来自条目 GET/PUT/DELETE 时返回新结构；或\\n     b) 在控制器层捕获并转换为 HTTP 响应（优先推荐），让全局处理器保持不变以避免影响其它接口。\\n   - 映射必须保证状态码与响应体严格对应（404 + ITEM_NOT_FOUND、403 + ITEM_FORBIDDEN）。\\n\\n3) 保持不变的行为（必须显式保留）\\n   - 绝不修改或覆盖认证失败的处理逻辑与返回结构（例如 401 及其原有 body）。\\n   - 绝不修改或覆盖 422 验证错误的返回结构。\\n   - 所有其他错误（其他 4xx/5xx）保持原有结构与行为。\\n\\n4) 数据与字符串精确性\\n   - error.code 必须精确使用大写字符串常量：\\\"ITEM_NOT_FOUND\\\"、\\\"ITEM_FORBIDDEN\\\"。\\n   - error.message 必须精确为英文文本：\\\"Item not found\\\"、\\\"Not enough permissions\\\"。\\n   - 响应中不得包含其他顶层字段（例如 detail、error_description、message 等）。\\n\\n5) 日志与监控\\n   - 在转换/返回新响应之前，务必将原始异常信息（堆栈或上下文）记录到服务器日志，以便排查。日志内容可包括：请求 path、方法、用户 id（若可用）、异常类型、内部错误消息。\\n\\n6) 测试（必须）\\n   - 单元测试：为条目 GET/PUT/DELETE 分别模拟资源不存在与权限不足两类情形，断言 HTTP 状态码和响应体完整匹配上述 JSON（包括字段名称与字符串内容），并断言没有额外字段。\\n   - 集成/端到端测试：在真实路由上验证行为，并确保认证错误与 422 验证错误的原结构未被破坏（即这些测试必须继续通过）。\\n   - 回归测试：执行现有测试套件以确认其他接口的错误响应形式未被意外更改。\\n\\n7) API 文档与变更记录\\n   - 更新对应三条路由（GET/PUT/DELETE 单条目）的错误响应文档：将 404 与 403 的示例改为新结构，并说明仅这三条路由受影响。\\n   - 在变更日志中注明：仅条目单资源的 404/403 响应结构变更；认证错误与 422 未变。\\n\\n8) 兼容性注意事项\\n   - 由于前端按状态码与 error.code 分支，务必保证同时返回正确的状态码与 error.code；不要仅改 body 或仅改状态码。两者必须一致。\\n   - 不要对所有 NotFound/Forbidden 类型的错误统一套用此新结构；严格限制为条目 GET/PUT/DELETE。\\n\\n验收条件（可自动化验证）\\n- 条目 GET/PUT/DELETE 在资源不存在时：返回 404 与精确 JSON {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}。\\n- 条目 GET/PUT/DELETE 在权限不足时：返回 403 与精确 JSON {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}。\\n- 认证失败（401）与 422 验证错误的响应结构仍然与变更前相同（现有测试通过）。\\n- 其他 API 路由/错误响应未发生变更（现有测试与监控无回归报警）。\\n\\n交付物\\n- 代码变更（控制器或中间件/异常处理器修改）并包含单元测试与集成测试。\\n- API 文档更新（OpenAPI/Swagger 示例与响应 schema 仅限上述三条路由的 403/404）。\\n- 变更日志条目与部署说明（说明此变更只影响条目 GET/PUT/DELETE 的 403/404 响应）。\\n\\n备注（禁止事项）\\n- 禁止在后端将所有错误统一改为新 error 对象结构。\\n- 禁止移除或修改认证错误和 422 的现有结构。\\n- 禁止在响应中添加额外的顶层 detail 字段或其他非要求字段。\"\n}",
+          "refusal": null,
+          "reasoning": "**Creating acceptance criteria**\n\nI'm thinking about how to include acceptance criteria to verify both the payload and the status code. It’s also important to ensure that authentication and validation remain unchanged. I need to format this properly and make sure it returns in JSON format. So, I’ll focus on making sure all elements are clearly outlined and meet the necessary standards. Alright, let’s produce this now!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Creating acceptance criteria**\n\nI'm thinking about how to include acceptance criteria to verify both the payload and the status code. It’s also important to ensure that authentication and validation remain unchanged. I need to format this properly and make sure it returns in JSON format. So, I’ll focus on making sure all elements are clearly outlined and meet the necessary standards. Alright, let’s produce this now!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRiEpiJj4c1ZX2jcoaJNITX-D20PJBHZA5ct1fZIhazAIb4yutCtu0MgzgblgT6pOe7j0V5leesvwP1nnPneJYzqtwGXHcTIP6Cq1S0MsuFe38_PRF8nNl30mfL7fkXtcrkPNfvt0j6G4hiZNmPN6VLsCCJFg68V2eF_eoy4AkpIN0DFU8rv8tmUxIUcIP9XRDMWNUXV0Rl-VOzxurRQJbh7oOwtmqI52BlHrv4yilkuFBGceYhb1iFefXrCNTUJkIfm8UKdBphi04h_JK6_eaC3ZhuIbeaDETMQJMPKzByLS4Fovscz7gfbbmiFXDbeNweJaPqCIZ69MJvYOQZVFhKij6vVaMz1994rFZC314ZNQCCev0jIQ6j4xvapaF0h6Jy7YG1Mjzt03VC9WDcUqBVVX3GM9UHU77v8lYhR8snb9lU5w7VpkRxixAP8gJdhNVv0jyl_QzEeldTQR_JesRi2b_Tewgd5jCeBcqMe-mPUTECKXcHEYvvyhfj7tD8WDYp9Ho3pDI-bnU_CD6otKoO5A413x5qYVjcSRnfEJ2mKu_CxRlgJ3BBH66PSx4vKY8BE-Wd8rqZafZMwr7pQK0glFOH7eXuFv0HvihW3ry9kpdxiuYU3ymKwugmTNOtgyE-MrqOel7knqmR_-Fz_uxyT5xpttiqiy6WNruXf109_jnD-3I6sTqUTiC33Wygaps6onHqPToR0yjPX451kv5qFA69ZAPlHmxH5ThzY9BtNSmq9yFL3LMhGxVk6qQPxLHCNzphYWFJL7P72OU2tgVeBNqJ8J9jQqffPeKuqb4ci74-XodfSAM_FmYA8gKXiyMs9qbmo5zlQwQbJPR_9cQnwX7bkA5Zvgfc4suu4j6cBNba8KMtxIgHFuWRYYiA33xTwoUH2TXueKRxjKkgzxPddVSFK1fDHTNRdc4oVBjy_KGQck_lCsqmlBvyfHb_a72JLuEUm_I78JNFjrXkQhIkoTltW5EM6MByCqesQg_O0Y1JOZLdwlDvAzDKj13-S_SYgL6moVaWV7ZCW0zLNtPoD36Xr4z7nwHFY3oOMTCSMV3es2e3BdGXPM1oYCrhtvZqKEbrEYyNz7N7EE23RAbVAVcOiWZxt1YjLgCIVyp0AwvOrT9mHfiqmqLXg8vdXdflciAMEpNz19Y4bxIb62hbIsVmwAJQrzPHiYJVLMD2UbsI7hZIEy330YbXkE32qzVAK4NP0pllKx2FAhh3We_ZS70iO0W8-h64OtifqmLRF_IRsJsxOM92TGx7G2WwEIU_6imogL0PY1QvccKdv4x7j2jMkQCBSELhV6ap5qfU2VOpilS418ItmRU_W8eUhUt0_XiRnklysHvf9huWj0pRZn9zExKo2gzJhuH4Q9MzPbFd-1_a7udhGHOZks3Zbt1a_umRzCxBaV5pfPRuZjpRK0BIvP-uc7N19rF8KrA5YS4lFPryPSxFu9A3k_io5GY6uTWlaoINhvFOXnR2SNc0hSxW3N_Z_AZwPZC1Xbna79v7UGtMUMJONzY_up8-SMWr6RgjZzPHKsUbLowGqudO5bqR1u6QG9UFe9vwuHHHpZXtwpdgkbJyQWdv3eC1jCj0WpT4vSJrcYxXbGByZdW2oJQlrX6B6bqorRnGutJKd8BmOpeV_b4vFV0JsVcQO1YHlX3eij3iT7V1PbiBXbT6EgzaWdIGk4ofpp882b0HUZSLxE9UyQUpYJZs_sZUsDXKfVikwU1JhG5-oycnzzKilo2mBA9REnq8eYJKQfnQbJSp2ouCB10utbfk4AxcrqsvHxc5ZvEP33AXJIdNbUsUZRXa2Phu-TAQo8LAj3l6njUSEeYAxnt4MDFpfnrma3Fk7iP_M_bWIwXNhYPPW-8GjtxIoTiHnY2mSYrf0NzYc0KgPjI8mDw5Qm5tNI0CldMpkR96mc2m_DN3FAj0xColUsDlgHEvglVZj6uplpuut6yxu6uoGWYajkDUQFKiRmTf2NS8gI8wwA0cT985Rf9vVGFLXSwoSfPsISQi7AeLZ9w7DyVDuypj-IuzUiCC7jZVuDteOW1tWI5ldH1JFbVVPl3900tQRFmQdFLL-FJef-h9BloQY2k9LcXvdpfrjN-TD-h0MBGNjM4pE-mUKAxTBfquTZqE9NbdJSIwTaNlZ-BeSjhNeNsHV43TyD_wVOgdFhtLrWDdeiOUZyl4ftRZtL632oNN-Qq9zcKwtPE9H7GS7lwYXH6HDpEMhgLbxJ3A2tCPRIZBmBx65i-HhAP7S03muRzbKpM5YTgx2PsriRonkxlVco25SfuPKbKZZOpIa3IM3ZqPNTpPn2P3i8SV641nkiXOI1rVLlw0wxi-thT--brnrQFYwispf99a79ilX9MrgThywBkHI94isnG8JykbMbOo9_0_2W63IHmIRD_gXrQAH-4cL744IzbtunHA0jqP8YeLzn_uVujzCLFNTgVzdtTtDSSzzMu54LkJGohqOBfSc5UIPln9UfYpr88uV3rysyQsCQAYyJRG7_-4t1vrGFTPT5KxMqm_kPb5F3CB4PaR6FiV6jFi2xi7VC8lFK3osv-NUNii7VocpDHL1e5GJjslY6DLMeLFTmqNGkEOXYYa9wskU2EhDJZ9wOOtHm70AZb-sZMTlF1qvmSwDIbU3vi669zTLX5m4fQ8lMEmntckZVUObLx-XHSc6Kgq9Fkm3qySfK_qp7JL5dZVWJetajDoY3_e9JzRkIK3hwdlLWcxus4GuMncxEQWunc1Zes3dhmJo51MP10d4CY5rC5f0jyMb2CZ3awWnbqchOXVUEVVfVJA80j4slMLQXk1CJeB0T5zCqpb4eJsqtxizzJm7AFK1GSNfmWO_TA0_4vv9tcikj7ku0h7f8-1DT1iMsTxLgOFOfL8Y7uwxbGbBahJP8cbXDSOTSenT0jt7Cb93ozhQDEhYdzbfQFqQnH-psplS7MgNr53LKCaetE5Bhv2pf-7yi9XrsA_qPgaeArc51T5q55GEpkbLElr5qcurHrnyvwmaWAD7GjnmA_ZlUqkWSdXrUnhf1qkLqKYUhjZFGE5_nNUsQNSP-iJ93z22LmsMAGcDh1q5cRd-i-Oy1uWjV-7d7CGhT7RsuUN7Dycih8Oi0hYKr6svZDNumMZcI121N0DPqEBXFJS9tKD5Jkjw5ZjVCfnuG1qJHKzQhV4PmQeIHizg_NcbZUZRTJnEhpdNuYtltR4Q_jAVJb8T-1wfBiuZjS-uzj-gQSAGFNU7g3cO9avY7r7UMwk3Jmp-DOoWcHXleTBiGt72ynR17Reb4BmuGCijuUq77qcCrlEc-imrxVgCMAIU_wtoRUASQih-G4RXo___i1t9OEhcdY9tkC69PzXGWWlQXI5RYyG5e42kcwGNa1uP-uNp6a1bSldIxIaGhh_UiZ-U59kuZ8VXkcc8DgkgLUKyKBGtXQPM5VUDOzyF_M-qWyukA8J9JeDOIbWQSAFULJqXSj2jRNfT_Nsf9XJchUMBqYNNBEtWolqBhypU9vQy3Y1Sr_3CrPpRXIpSGasv10sD7V94-ip-mdpIX63CkjH0rvDGVYj2wlMd2xc3BrU1quykPXviMo2YYFhhkvDDQ7m6Zfa9RSkfQ1kuN9OfXy97jMMqL-iaXFqh-CC6QBRlGj9o9JL7TKzBhEAlqUSJu7C-hOGsKO3-5O_APltJqxgYe3myhiNHH2oscW3xgS3qAqvUD11r5DhQBl9UT3TRnQQ6NLUMNt0eFqPhBlZje51srrIlgjE4xJQLit4u-cgG3cXu3X0Zt_CAraiKGnYi7LpkcBGjChl2xQPFeZ5EOt5_8A_5-O0Y6dDjAVNIC-Lg3gRagDT8_ZP_I0Zmxg225Xu2PdQxRxOCyttjteNp0rW2g0-_Rw4JBXFfspfJd2gM9vahXlZ27RgE_U2wOZyDNwXwty6-h0y32Im9Imxz5msJSZdE7_2dGKFVkiY6ifsoYwP1aquMxzDRst0aB3CAjXc9KuGhIdF3tf7TDgdTnlH2V4MjtI5CL7OJ3Y_s_P4GvNq1MqJ1qQvkKL2VtZGbWzXuz6TtAJrlPo1CSdWdgYE7D5xpGoXHCP0DUR0YUv4NfKaR23ovdIJJAse6eAujR2PEwbG0JgVIRC4_uy-tmBXfh68G1bAlKuyEX-hEgDVjCew3Wt7cYy1Ze6NOvX4OBIaKpLSv1NkExRs5AYr51GaQvsksw6SCt58GR9PB4By-oITPC9_0-GKI7LB_Wowr7HvSbXW7tBlAwEX2kMZYNA387pu8MS6onmwugotLdDblK2sGKV18NkSj9YC7PhR9U39nVSJgaXcr4RwoaS-Q_O6DKf5YLGUBzQ2aWKIP45_g4yu09tqVCLyY03FuXoR1_R4yIfzNYzJ9vzNmha6I820coXl1lepCxGX5uit8BOPUBRSyk-jnyD6J6k0dii6e_4FH5Cx7-raWnve6bsM0NemFuAq-kT5VJ_sd9UpSXwwD2kZzlBRN5MxYQQp3yAnsUDm8ksFDpcG1450cXoBUDbsBuHczAvsKZ-r423KkfBBrrK7I2lp4KNDZkjrgo2P1VF6Ig1Guqx4uaLocx58WMZHRKQf2gs9rdYE-TodT6dcoC-dUCtqbGxpqoWUBvCIUaRlFSMNSLeqgH33V41kc9fgFvGGt83uU_u7mqRMDz2SydCwFvG3hiVPX7SXW4nhjyOt1k6M3OgiNEI_cc9r0ELPpeQKR95aPa9t946oyaHZldSMqQ_qa9sB-zlMYi1Ud10F0QVEn31OnPtncyeou4WplHoJtjQ0aIFUnCFpfLhPVOjrUxI802rZ7ut--Efwf4KFZvigSxMOYtKCh-Y9Hh0OrKK4TBpfAgq3Mb6StwP-flPRAPlQG8BT94dTvzMrzLEEsxPZQSFqazF0Y9pX5OSw2jhN0A08_D97Qm7bqIzF85-joUk16EvzAmSeX_X4P2F9MLZfhZUS_fbTDn_2Cd411Gw1gKDJTuAU31MilkNziSuEErwJ9O-PIsGLj4eVk7gLNQRiZN9Obd60yeyi4dEAJQOs8ashsbRQY-cFrtgrQegKVqU8-oqbKRd1TognZtnUoo79nudPLVL0oZQxlssar-dUOKRKPu4f3iOQ5M20Klf5CPkHDUUiBpGM04Ed5NjkAjLTc4gdkrN3bvv0goE0CD9KaovcPhw-4vSDlSxw_owXNsuvswHo7k36yrQyOKT9URFEKCkVI54TZ70O_s-QPD-dbgao0W4kxcR578R5JkAYxOA6791xr0FPFBK4nwGkAaahckRYjmqEoqWYEGicb9vkAgSRbv4y6OhfUPF1xdooHGp7wHPL4VAxc1fQc6xfbLV03tiErEGINaovASbAnma4jyzOqLaHnjJDO_vuicisPBlKnEAsYP6Z3M_MgcVxHEeRbxPZycrkX23lolk2Sh_4_wzdgVcjZVdMtqlDMC0mxthZP0-oCGMpn8j2TmBAMv9uNFEbMCuLgHwQg9GnFiko7u___neOk5IV7CqLuf_Bix9xYbvPWldiwIw699dfY59a_iDfnq6PsGCfoNKevehdOWvptpStlLuGmpgYllmniLwVrNyGhEouu64FgfbBGDqVsXIea1ZWlt_sRFNf1KFY2OK-z5IkSSUMh_irDMs3thi142xHWvCpAN6FbUJcvWGl2STTaMY0k55GS9W5Y9-En2N-uGP7deR9YdqoiSdc-waPsce7q6LnhPebXFd_yIIkonM7LWi_cltFvmJLPkn5YLXRlMSwrki3BTHBCn1ylfSSfChwP740hjtviRorPgBachFpKCogSAg_0-9koK76y4A9v6IAdYOXf2jbANlLsOLF790hdyboUNidJ7UPbaUMGPZwRDym2M5-ZU_iNelzN57JsHvg47nUkgj3xefJkGYk87-ZDwj0s9eN3aKc4mR3sRttc7Ad-_iYC6kWlPaNhHioJxWd3drKiYKxDMAU6ZrelFl1Gx61PvqyVo6LE7Q35n629rEkw9_v2MKUom-sIda5k2dati_WgMpA2uD6_qibH59q8oOzBVYZSXQu7phX4zm3gdEmXol1GZ8fJDif7nGWZVZxHmILOJGICl2FhmWAQu0vV8KmfHF07FM8XLxFx0CrLyensZtek1Kj6RFJcRczAMjSbGYKr_dk-ea4qbTEX9N6cFLbIMYAc8JG553VCNtkG5F4wTA3NVmzzeVLCYr84N75lxxuIip6kVdx1usNCtBc7hwFRGUB5eg5h76hKKxtJoVUC6M_GcMfnTgex6nScEeipXwqL_vH-uDEG-25csQp-GdJgUEEzfvp8h5-rp-OA7uALdHxvY6Tc9DCrvWSUbqxx8mr-uiUz-cZpOMLRKT5nZFoU_Dz1I6mJASLNUnSy7Pmy1FvFsIH54fHx7hcQq1DEBcH56WEE0N94fwxhLr18z_4nlZ5m98l9Kv_OmeIpOWUyb0qPtZf84z6gqOywk0oql_Lfu_7A3Mu8aXrCENnnCpdPxyx7eqlJhEq45heByXwKt_NTjpB1tPnu-X78TWCeoippQ-rQ-py6A01S5KmeSrQwZMHcsimgz1VBmiTJGhSFath5nQlMaoM1YKifidmznqenuKdJ3IWZ-QvIP2ZxnvFx4vN780AT6hpnC0YMIPcHqJcsT5W8t_0Ep7TFASumb0AYILY50sUjKQEZbVKzHIHJX906CXeugz2wDgaJfaPHiqYHpGp2xQ853EMqdXJpsk3ri7fTd68tiwakWUHwCxTgES_a4EWlQu27pc9sHU5HdVY2zblnXK_z2I54NuW320kLZF4ag6dVOztSiWyElCwBK80CNG9_sJZ5r3ci2hb3a7gaBDYT7mo_0-znpgU2-lxuzCMoFdczKmM6wHS0kLjmy1bwayTuTYEpsHXRo4hfaCrWEhEmd6tfZpUsM0VBjIQomUaAqbTNQqfW8s7AaIWiUL7of1btVFqg_lvLqGZECbm7V54cUtsJb6yFRRbwhsCoflqD9uoIpThBeyQWRhRIHKHtzt2oVIbFxpbsANZqS74xPVVLDddT9MFtiZcP64Q-0vmA4HGOU0R0KP2iFrdJsAVw3wt7UmBgyHVFtzjnufoS0ZrLVFF9b7qZ-1BeQEOkjCQX1Z9SRa9ihvaJfT5ctnX25Kf0WAGpOx-ba-0XVUBBD4sHRyilg1fTuF7DmooLzDJRDBtF9aA8R_dsdiTzw016KsU415lVukT36swqEt7KtrqLy32n2aDBffQZ2DdB1tf3NGBNnVU6ITxEo2x2erU68yHlxIiJXaKWsG9-7vNgToyEYig_eH2e-TPkdp6eztLRQkUZyv4e17xNlKNnQHa9Fzsi8qnNlPuMTWDBfgovueLEwrLf6-xLcbJ9sH83pxhfBkc-N7zGcoRgg6lKS2s04WD1CkgNGUnlYDVF3-Yb2zDyqQmk3Tak2L83I6RAmKOFu3gWc1SIIch1i7eAH-hobwV5-oiz8uFPyij4tcALXrVEqEm3ttnIp73pbTPSs9SXte0oGoWWKtde4IZkvPXV8Gw8YzVCRVXG0jpQjzIU-wm3cxhAX75eOWFG9UoinicXpPBu401Ru5kDj3W6d1brxTHwf2vZIaeFKe0md2thyhUIBqiZ7Nl9k2l6Sw6aDpJFh0fBZ2EUlbGiYLVSFgVu20wAeBSjuAqGL5q0t1cC89Af5c4sIf-4aBhjU0vUcI41EgWQLPM_Q2rLMstc631PIYmEprl5Iw6wY6FQJd8w0bvd5ld9WVA9huUxxte2uakZPiEQGiZtsSlSwJisA3WmcaGK0ZqZLEp_8vhzedpgu6YcAQcONC26qiiGz9wT9Qj9gHP1zcWAEnXcpZe4Lcv6AYD6uIIV0gCT7LnAluq0EBWON-hugMs5nKsP6Fcejxv2mZuQlThCaYcSRi4riUrS_vlvjaTQCh7Ck5gko9TJclnZWyb8jYA1oI-BlntkSLJogSTMZ3LAf7b0kbGQWleHM9eE9uMku9FjJcVKI7fbcvn61l_vGNZtV7vrCDIvlnFCCEWJ690TkKf4ZEZu0k4wrlRs4eUMzWXyqj-zkHywpwyk3F-oPW3qiaWFyxygwPZPHkgaUjeA27_nqNH7shaAFha9VL6dMKvhfibMGdb3hqBwoNMGVUwYyvvvE2DMl8PoSPNBiqgaLdOkePaUQ639U0_QvfffozJVZUVmgK-rjyapkdsW9iSEY68XpnZ9nAlyiUiMjQM-nMx2ra3gJFi89ZSgfEbbtIJA7Gpd4d0vO6OARAaaej03FoKTKTOpHbxaigjzu4SsMblZIOFdpLF92MlqZYRWcH_kDKWnnKJEYRMK-3chUBCuklsyS6s4Yln0uAOqlrD_JnZ9-tN4UbpGBjCZCCCTcmbXbf5gBmiiBL7_h7viDHhhWIXiDwu47-vZPJSsqkzCBCTjkyNiaKBSQEmRQH7ul3ju_nxGxoNlwntxUlIVncpg4hNHGR6dTjKnjkR73MmVzID8CuCexcdOsX-8o8c_GlBQxl28yz5F0sWHu5NpKCAl6AlfdcITHDtPsEPV7cLz3_XxNvA_-lVT2t88jTt0XCWcubtMoPILvUd_xzmQ74gvWV6oNUOD2LDpwEJ_BRGNc_muulGJ9Da3my3VRfvzHWq8zAINPbe_9ZdGqBK_QiA=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0196c8a0adc3022d016ac1187bd66087d18dde74143e785d37",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 272,
+      "completion_tokens": 2636,
+      "total_tokens": 2908,
+      "cost": 0.00534,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00534,
+        "upstream_inference_prompt_cost": 6.8e-05,
+        "upstream_inference_completions_cost": 0.005272
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 960,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 272,
+    "completion_tokens": 2636,
+    "total_tokens": 2908,
+    "cost": 0.00534,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00534,
+      "upstream_inference_prompt_cost": 6.8e-05,
+      "upstream_inference_completions_cost": 0.005272
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 960,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

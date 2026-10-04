@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:52:15.676820+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039109-G30anhYlLMrz3r9UnFaW",
+    "object": "chat.completion",
+    "created": 1791039109,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围说明（后端实现指令，仅后端）：\\n\\n1) 总原则（必须遵守）\\n- 新增请求字段 name 作为 title 的别名：客户端在创建/更新请求中可以提交 name 或 title，但不得同时提交两者；两者同时出现应返回 422。创建请求至少提供其中一个；更新请求可以两者都省略（表示不修改）；任何显式 null 值视为无效并返回 422。\\n- 验证规则保持一致：值必须为字符串，长度范围 1..255（包含端点），并且不要对输入做额外修剪（即原样校验，空格算字符）。数据库仍然只存储 title 字段。\\n- 响应（列表、详情、创建、更新）必须同时返回 title 和 name 两个字段，且两者的值完全相同（都等于数据库中存储的 title）。\\n- 对验证失败统一返回 HTTP 422（遵循系统已有的验证错误响应格式；若当前项目无统一格式，建立一个以字段为键的错误对象，例如 {\\\"errors\\\": {\\\"name\\\": [\\\"错误信息\\\"]}}）。\\n\\n2) API 层（路由/控制器/处理器）修改\\n- 创建 (POST)：\\n  - 接受输入字段：title?, name?（其他字段保持不变）。\\n  - 验证流程：\\n    - 如果 title === null 或 name === null -> 返回 422，字段提示不可为 null。\\n    - 如果同时存在 title 与 name（请求体同时包含两个键且值非 null） -> 返回 422，提示“name 和 title 不能同时出现”。\\n    - 如果两者都缺失 -> 返回 422（创建必须提供至少一个）。\\n    - 否则取存在的字段（name 或 title）进行字符串与长度校验（1..255），不 trim。\\n  - 存储：把该值写入数据库的 title 列。\\n  - 响应：返回资源表示，包含 title 和 name 字段，两个字段值均等于写入数据库的 title。\\n  - HTTP 状态码示例：成功创建返回 201。\\n\\n- 更新 (PATCH/PUT)：\\n  - 接受输入字段：title?, name?（其他字段保持不变）。\\n  - 验证流程：\\n    - 如果请求体显式包含 title === null 或 name === null -> 返回 422。\\n    - 如果同时包含 title 与 name（且都非 null） -> 返回 422。\\n    - 如果两者都省略 -> 视为不修改 title（允许）。\\n    - 如果其中一个存在，则对其进行字符串与长度校验（1..255），不 trim，验证通过后将该值写入数据库的 title 列。\\n  - 响应：返回资源表示，包含 title 与 name，值均等于数据库当前的 title（更新成功后为新值，未更新则为原值）。\\n  - HTTP 状态码示例：成功返回 200。\\n\\n- 列表与详情（GET）：\\n  - 返回的资源表示中必须同时包含 title 与 name，两个字段值相同，均等于数据库中的 title。\\n\\n3) 验证器/序列化器/模式（schema）变更\\n- 请求模式（创建/更新）应列出可选字段 title 与 name，并以互斥关系说明：\\n  - 创建模式：至少包含 title 或 name（oneOf/anyOf + required 语义或在代码中实现逻辑校验）。\\n  - 更新模式：title 与 name 都可选，但同时出现非法。\\n- 对字段的校验不要在接收时自动 trim；长度检查必须基于原始字符串长度。\\n- 明确校验对 null 的处理：null 被视为非法，返回 422。\\n\\n4) 数据库层\\n- 无需新增列。继续使用现有 title 列来持久化来自 title/name 的值。\\n- 写入时使用相同字段（title）。\\n- 读出时从 title 字段构造响应中的 title 与 name。\\n\\n5) 文档与 API 规范（必做）\\n- 更新 OpenAPI/Swagger / API 文档：\\n  - 在创建/更新请求体中新增 name 字段说明，明确 mutual exclusivity（不能与 title 同时出现），以及显式 null 不允许、长度 1..255、不要 trim 的要求。\\n  - 更新响应 schema，确保 title 与 name 都在响应示例与模式中，注明两者值相同且来自数据库的 title。\\n- 在变更说明中标注迁移注意事项：前端新提交 name 即被接受并存为 title；后端仍保留 title 字段用于持久化。\\n\\n6) 错误处理及消息（建议，若项目已有格式请复用）\\n- 对于校验错误返回 422。\\n- 建议错误条目包含字段名与清晰原因，例如：\\n  - name 或 title 为 null -> \\\"不可为 null\\\"\\n  - 同时存在 name 与 title -> \\\"name 与 title 不能同时出现\\\"\\n  - 字符长度不在 1..255 -> \\\"长度必须在 1 到 255 之间\\\"\\n  - 两者都缺失（创建）-> \\\"必须提供 name 或 title 中的任意一个\\\"\\n- 使用现有错误响应结构；如无，采用 {\\\"errors\\\": {\\\"field\\\": [\\\"message\\\"]}}。\\n\\n7) 测试用例（必须覆盖）\\n- 创建接口：\\n  - 仅 title（合规、超长、长度 0/空字符串、包含空格）\\n  - 仅 name（同上）\\n  - 同时提供 title 与 name（任意值）-> 422\\n  - 两者都缺失 -> 422\\n  - 显式 title: null 或 name: null -> 422\\n  - 成功场景：响应包含 title 与 name，且值相同\\n- 更新接口：\\n  - 仅 title（合规与不合规情况）\\n  - 仅 name（合规与不合规）\\n  - 同时提供 title 与 name -> 422\\n  - 两者都省略 -> 成功（不修改 title），响应 title/name 值为原值\\n  - 显式为 null -> 422\\n- 列表/详情接口：\\n  - 返回的每个资源同时包含 title 与 name 且值相同\\n- 校验边界：1 字符与 255 字符均为合法；0 字符或 >255 为非法\\n\\n8) 兼容性与回归考虑\\n- 老前端仍可能提交 title，仍应被接受（行为如上）。\\n- 响应中始终包含 name 字段，避免前端因缺字段导致问题。\\n- 部署时注意先后顺序：后端必须在前端开始仅提交 name 之前就能接受 name 并返回 name（兼容旧的 title 提交）。\\n\\n9) 示例（供实现参考，务必与本系统现有风格一致）\\n- 创建请求示例（仅 name）:\\n  POST /items\\n  { \\\"name\\\": \\\"示例名称\\\" }\\n  返回 201\\n  { \\\"id\\\": 123, \\\"title\\\": \\\"示例名称\\\", \\\"name\\\": \\\"示例名称\\\", ... }\\n\\n- 创建同时含两个字段（非法）:\\n  POST /items\\n  { \\\"title\\\": \\\"A\\\", \\\"name\\\": \\\"A\\\" }\\n  返回 422\\n  { \\\"errors\\\": { \\\"non_field\\\": [\\\"name 与 title 不能同时出现\\\"] } }\\n\\n- 更新示例（只提交 name）:\\n  PATCH /items/123\\n  { \\\"name\\\": \\\"新名称\\\" }\\n  返回 200\\n  { \\\"id\\\": 123, \\\"title\\\": \\\"新名称\\\", \\\"name\\\": \\\"新名称\\\", ... }\\n\\n10) 部署与回滚策略\\n- 按常规发布流程先在测试环境完成全部用例；在灰度/小规模流量中观察；确认前端迁移后再删除任何兼容代码（若计划删除 title 接受逻辑，应另行明确约定）。\\n\\n注意事项（不可做且需避免）\\n- 不要在接收端自动 trim 字符串（需求明确禁止新增修剪）。\\n- 不要在两者同时提交时尝试合并或优先某一字段；必须拒绝并返回 422。\\n- 不要新增数据库列用于 name（需求要求数据库仍存 title）。\\n\\n交付清单（实施完成后应提供）\\n- 代码变更（控制器/路由/验证/序列化）\\n- 测试用例通过报告\\n- 更新的 API 文档/Schema\\n- 部署说明与回滚步骤\\n\\n以上为后端实现的完整实施指令，按本项目既有风格与错误响应格式进行对接与实现。\"\n}",
+          "refusal": null,
+          "reasoning": "**Finalizing modifications**\n\nI need to make sure the modifications in validators, controllers, serializers, database, API documentation, and tests are clear. And I'm thinking about how error handling should be addressed as well. Oh, and should I include the migration timeline? Maybe just keep it optional to keep things minimal. Alright, I’ll go ahead and produce the final JSON for it. That should help wrap things up neatly!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Finalizing modifications**\n\nI need to make sure the modifications in validators, controllers, serializers, database, API documentation, and tests are clear. And I'm thinking about how error handling should be addressed as well. Oh, and should I include the migration timeline? Maybe just keep it optional to keep things minimal. Alright, I’ll go ahead and produce the final JSON for it. That should help wrap things up neatly!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRaP-gm1nkVi0VO-yD18TDxYV9_YSx2hr07fUZC9yuTbShD-E4xpZxmkWby2N2e5CtClHZHcJ58oUTJuvvUJOA4G_4vbu7KUHilxcKtWGuo1_dAwumbdgVeYXRmsEmo-WZ0RWstJYnTJOTnDhZp3Emo2HX6rNlX5hhowbJChXm7qo4U4EY5nFG4htL79fm_yIe4LVbU4yquGDR9OfGnLXpREBtw1-mPbpqgY4mfR25oaOzhUuhBB5TJaCep2zGrWyl-Sv_ZY0VR8dxLit9CcCurNJVd8yXL8f-ii5L2UQWapYwS_J-IVEVGnunhXMk3dh2bF4fTdGC7dbHgFnRAk8tpNsB7qU7-SdYQeG9PuWscN-l9kQJovkwC5cG8Uy45QHXxFEvcFY7IWFnDwnbE64PNU-Ty98NH2KHmtu75bMCqCXwZtA2V4U6r4wYmKotldnuf59cWrsiLNYjwmqaMpvHSUMVHrcQh09giBxh_u0l-ONa4McnvEoqZdfVr_EdEiml16YeI9VM26cW9IWnGsLiD9SVc2V63A-IscbDrUpATmdhnGZDgAQAa1DICRoIKM7nAUlu66_3PLXAGUeismxVd6yCnePgnEQccazR1cqkqiYWCk5CcnqW3UvTpZVMw6rONDkQ2XJ37uIchk8C-8dfA4nlr_XlPtfU1c_jlJRvZIQr7e1IT6MGjLE7K471vLipVB7RbZC-fffCmqyCDwyYe0x_KqZsMi8t5S6umbIAeshQOoA85UonrjxblsT8CQRv0GrwnYLECaHihbLAV2hmgNhuLug-fVBhDOgkudG8E-rHqnp_Y2Jhs_T39rxB0Q_h8Om4EXPD3xy2U1NbdNmvn8arvM3uorub3NmHRpl9fbsCu_vlTIMvoQVBTM8nga7eqNg-OH1BzfwrTqDvZ4GVQGaH6k2TrbDBJyWnYn70txfklwJMLxypNNC8WO_zf-U2lisubC_CvrwaRlTLefH-wNkIlgNQHLaLGdgJPurZGY4fL2ZEE0KuDN5_fvZkdqBP7PJUnaNY9Is6XwJG354T72eb3vmgV0UBDbNnYyZppc8xBggJnY7DrWc0tjvI-b_UgnnA-B6hz1NO_hsTi7OT54TdLwoCIZ569_jddo3z7T_sLo2uv8DkOUb_VhKsnLNMrn-vPGo4qAUnhSwMqMIpInmr0T4wMaZc6bvHngkPLPURJWFZb1Zt0Pz1hyiLQS977Km3dtNq8P941R6O9jjKZcrdT5Quz9Y5BBvxHzfPmUq8XUGDOAW_MhTPJJz_uIJGMrOuyK_aXuHkM5lQBKCZKiIacIkRl3EXHM26VX0-VGnUGpGhDsEpIdX7ytpUnkH647_jtvTDfNmdQXopgLpoObFK_YIygOaLcKID8zymco0cf6Ruwxk_0pdTFcXBgTXXoa7DPbddslSs_ULqkuDN27SSPetruL5eeBRfQfJWvNU8NFRLpDoHbuhhhGv2mWl9w0a6GNK_Scar02Q5PHGEIQRKAhBAqoecZ4Za5qLVNoKN5Qna0RWT5IljeBLRE7fSxFY3dWE1EWie5tChDZBsPEQyXCr1W52Gib9AiejxXp3KM9UMJIl4KZ9JgDe56wtFjYEZPXgl7nZULu3wb-7lpQqjLLfF2mjklOvWZao_yw4v2mWdWIth4wAsg7gOp0Y4ze0PXdfA5Gr1nGQy_wVGoBSvXyCnq05QVXLoyWB6_o5ToHYENd6PWWChhQmQ-t5iFFv80urAHQ8HEnInF1ZoXBv-g8Bgw257qvHBzm6JB7OW2GksIhNRZk-parTiXmUmhCNXxA03esMu1Xoj8g4az73mJEaqUREPBJod57bj8MjYSN_nh6T4fmwmswJ8h6Svycqaev0mQzTbNQjEFaq9XlvmiMbsZ79FgjIEx94BhswFCa1X3P2LRMYX6zT1ebTR6qlkNH2ONQSZS4WfoPK8WJcZ67x_QjW6Cs8X1mR1H4pu55Ahi0LDxbzNyPWt6LlQXEXbBnFAj9VtXMVtPcK3QnB6nq1I_sOLIasHDUcxhqZeJPEz0mm6k9FU375wx5ZgsHE8OyR4_ZboogHfuOFRBORgPWJBSrCxAMGwWgZUXCVperie5a_IeEtpvmVCc_a5WXVtpZ_LJ5cCBcABFjJ-BMyaV3pXVwhpOT9qS0Q4C729HjdNm0D5_mlFpOImjg0A0j5gASR3U4c4m6-Zce8dpv_OdtehmSzizrdt172Qjsic1MKFsH0GFhuuchf4srk-ZOpCy9LhW-c35hRTqZYGFgUpwIxxEQFKBjq4vBOgHyRDuRBgHHQ_IXEKP77NicO3paYFF722Pema8urFjiKKY18CfXescswNdlIQ0ME7Hg5sd6oV7zmh01QEXfZHOTr47NylUchYAnddn1kFNHLMLKxS-dQ07LHkHzZ5sEDZ-1JxYRQpprSI0JGpORQbNku1GPyQZLqyoqdp-1SzW81YPRET3BniJGk8ooVW_UX0QWi4zJKzr2lbA6CgfJ6JhMUf3HhNdAyAnJU1Avlm8mqGTOES-guv3ATqT50eKDr_WzoYax0tHoQkrs0JkuxoqQMLDWVnUWIYSv9CHHtkXPjYNo5V3rdhZdJPFHVmlBk9UelCsB7Vi3jccIRz1X67DGgOWOmJuB6NHYyylcbKCOjNWd6lDn9AaZPyC7NmhiXsTnwaElB1lXx4L1YneZrb9Yjz55f_Ra9vq99S1Urh4KP0oaUp-DxNiWlkCOi8wgpac5XC8xrlJcZ32vdHq8k67zgT_5W-ngkxWXd5UZe2hrjYowTyQ7tNlB2JJiriAdSb-SAzn_7bIQzvvrCs2RkHDbHCGyEAwbr5jUryWK5egMfRpSFGMBB4lJ01cWzy7RUm1K3EVkd2ZLSNcv7Pqs2S0d1Ue6rfiEjd9rnYrR3p-lZpGfCV_jEMlHgJ4KzeyIPxm8BJADSRgPRlIK1yDF9sX70E8-Ydt_ZUW-FWmmYOzaiXFsnexuIsm32LXs3fk9jc1tLoQGyr-4cofnCYaxpdMLgbYcACtF0R0tYEXvdir2gqktpRXak9drMrKwZ8LPtikK1gdyhgWgf0gWo53Ql9k2RqBwpuRjBKehAh_tuklm3SZuiu9_YsDmRaRF47f68KbvayDKQC1puSXqas9yY5LZdX51oZ2Gvu1cK23_1mLEJhmiLLlA80X5aZmrwqJVWRlyE5hcwKfb0F5bHQDIpFJWpbr2m2vkrjubIUhwrwRKve49xCWTWU4_rVZ1jj45kOPtZiCM5Xy4l5IbeW6MPnnBfuJgGb2HVrC3SJC4uINV3O3aDNrEoAneQ1487q-qxUcA4cI5mckAUlmj4rj6ENsmZ4REv12-MHCXysF63QsWx7IQrDhIfD_KNb80-4q75pvixrpMwWK_SEUxuE55Ul9pY2kjH42nIFAUkXsS2EvDzJEw_MF3o0O782--_OKamQRtOIKFGknFj0qzi7kdP-cWwFPAE153mf2atLsC8C2ZT5GiW_LaXly3wPb5af8dBcI1nlbhhC5TRuNby8bGcS-Lhna96lY1nlOP_BWxihkNyyc4jq0Ezw_gRrCaRic-CGrRQ4BbcKX-chV1SI_9lQsrh81tys0S-weUxyDdxoZbfK1SQ1jJF7Sr2H3onjqQSUhT84hcqBiHxAgWf0EAWH8AtLdxoUANyfeZHKL_TMI_cmhRQu5q3UftUMc3fD8sirEdhuc5fkzO3bqFH1z0SCK4V_VgCG6lDUiIqN9CCa_VF-Qc1qg-sb-mBOCwyA6Lpyg38FErkdt42vW0YT6ZWDfH6SjJhwR5nsHDYJDwakMEkK18TFmZjwjeLln_Gti8B7hlbwaJUQbGLloRczhSc7enJWZupVz-eKg8VWJUP1W4a15kXHY-V4y_NVPp54_PwRj_Hsv1Q2HurPMTXY92n_BXyn_C2JaZ2-n4I2Fk_NgRWS-srll4N9zuWJ-8Yf6o8sk6abH9B8nB6M3-1fm6sfoTHsAFMJlwYK-P8oSPwl9ucDvHplJACpuaZt2FeLZIebI5xzmb1GWpgICLCaQZFtnXqnzAFb0fkYNmlgZ6-5OYj5-YDSKLBOL04sYNpmPgpwUPnR-1s9V_lgEsZHJp7vrNPQMS934W0BzCxuo-gca-SBJAzvRpo9WFFPd5Qy3eV5bXQ4TeKPm0uHqeGP3C06Ro0kKWn-RDvd7148cY3kqxEfkOuDPFEZfZFIxQFcKJFg8NeZvalGoN6jKSD6G-qxUMdaFf7OfTWMLMZefiaVpxklS-kYedSGUAzSh68CtiL_FUWtkoEFVxanZZatZ7hz49Ydp_-bjE0BvCdXPjDdoW0edTXChrhkF5og3m-UVG7oUr49IDiaxapKmIDGIDe1R4BcniafNcOcLtcN5yuepf-funMfbOWtIHvtrPNRvk33gSDKtjeHifnNIPeTefEVfYiHosGEg2nezdDRpdTdBFl0xvqOTOKUOCLfOIkeRlCTlJjuKnMu61i1yXH-Lj4XWKfwh7ZHh57Qs3RNU-BFLZfow2B-yHdbrUId8rEnwb_Y5Q0asyGOUhkm-MlFZYJxg49HanthNgvNfMxrumSh3ZW_kVWD5mCh4faysaNVn3oQHANdecljFdcYvc4VIzwS1ibTTaMxgNa5j36gTqqEsddWgQ_nLTwqbCsjnGrWnSLIiBylYsxY260C11rqe6kB8WY2bCx6L713f6n4gbKxDZRdV0s3WV0oE_Mjs_tODIVgF8bQ0yfghQWoxt2F-9RLid4dpMFmpok8lWz-7m105JqxgXJlMUShv4MJXWAD8NfmZDM9dUMUmZtMa59cWYV5Ol0jFRpzN7yUGEhxbHpmX8xRKVtyy3pQZqqdzajNC__dNuS9HdxuF22xI_KU_DzMRuP0hMSlQnW8zvEh4gU3aR-BcDb5nR6EubkmXFAMBtn4fBwOUW-sM0jLvPQwOhoIbUoUs5HaH0f2M3yn5HMuP6VlmDM61c30xJ_1lt1uCPUs3LQ_BoYrxhAWoGTv5xsO5f1d2PV_f95UmZ4oV48al0WbePr0OFhkjkwTP8wKR_5BAyN4iwyMIoOsKenZITbrs5IIcV6yR0O9ZVX2DWdmr06kjlRHkCppK2vUuYSzkQRqH_p8RN3si3Aoc0_Hhcc4ExJj7ZK82l3wOahcFHCb06lEpdj3TDfWu1UCHHnVzw04cwMOaZzgYYAfIjSPndCfzJSGwySY8B6osfV-gJqhpDTmuPAJbzskage5vfv1-aIRwzTx5I_K-ViKqGIx4fXI60aGFCpMjEbVanwgcq19ilppZyL0ataE8bA5aLDpXgxtWQ1C_qLlPvDqWWKnPj2UICa4zvBETAWfNbhq3mNWM5WxUAhzLt5rG3YCuAGVTKmyjdxI3gQG2RI3H0QZS5Mxb6Vur8AYza8LT7YoT9OELFjeb-JlpAjbGE8vwMZrSLDKeR6LM4DZtu37eq_Ybbz3OHuIgHBhil7Ca2LSABw3b1L-nJCV92-9iGrWtXjZmu4KV-mPvLbtbSqfJ2OBLRJ02KgYv2CStp_hjRxbvzIk_GVT-B9Rt9HofzgfGV48ahwYgwrBdv9ge6oN-RqMEqpDjjJAqF88KkWbchbGTS4NsXOhOwGOmyQG3RxC7LLty0U530kCAm-E0V28TKRVb-itdsJxLwuMmegR9jrn0Ij2Wp98pI0QxoiLtvsaJhYtg2NXzjl50z2LgakEnUWhzJCqJILRwOzA7fz4gINsTV_azjBbXQsxloakTLl8UTtfXWBH7RgWY11_hJaJPUabDeFfjCLBqVVvId4bBlii7YouQ3FMrgaUaa760nYNd8V5zvOaUWC7iljUzqUQDBuBo4g9aVwyiMzm6yDko3esqc7qa-Rwt9tzOtmjV1qzBuL-EEmdSkm87wSTa681epgwb8-ZiPgMzE2h0ELW6Kr3PaOx1tqH73aN445fyw37D0FFh_tn9nRjLbp0FsrDIp4Zn8RtFFc9ZxsNnU8OSdfs63bgAtWrH26GBI4zS1ZisM0VyRR2G2URxhN9Fp2f6oR1z2uH66ch_NSYukgIZwgu1esqT3MSsGoTsYLdEJ_yGLC4eExsf9kBZrmQ-zCgNH8bXUcIsd7VGOvQFl-dykrKxml1-ZZAmk1ZNKtzTCHJa-PWksMX1SpX3eq1zxlP3OiexrNAzkjNDMNeMaMMXWufz72Gm0x_T6edc66Nc-0OEKNSiHB04C1g2Bu_dMgl-yqJ7gRIdG_Wcaq92ADigrS4c_U-Yngg8xFDQcvV6wpedDOqnbcvEYdk-SCaHw9JLPQ1UCuv1MFzCJS_K3iedCcEKW2MUCuW9Dl3K2hLD9cJ3YxWZ02C867Ffb0XzPpWumBkNRr_2w6EWv-PwZQpzjDrq2cDhOylykxJc8Y7gf4aoUEBKZ3bcBz9sKvOgVJ4LmCIy0Va-QxDZUeSyS2_ep3fCK7sbrqJWrVbiDUVQV9ElY8RQmsV2tDNKKj8GZ81_AQqLGdbl5UY6o64tfqTAgrVZSI4Otmm-IsZiM3IzpXyr-JQvCUJNlknonHYXlgp0ElSjL2X7_t2jXlFqVY2DE1M9Djl_asuvLmnqeq2A_PFf1UDWbSsSiF5ENcFsUvffnB1enQzc5eIoGsIpDdE02oyCwWMrG74WJjHSM7T1Dc46x0jDj32_TlpZ02zTt1e7sR2fOHlKQIfd-5OjXtY1vgZo8WnLD_yd8Ei_VAInZH_ayff9Rjp4OEJQkli7D2Zj0i9JmTeqswHN1ectRfMOqtoixeKbNB96SLiL5flysJPnLWYyE_x5H3iuzuzxW2Dg3YuCkwXaNw-vALo38z1kdTrPJ3SuFQSnga0fzm2h9CNwHHjx2ttrnEDNI7BE-hFe9EluFznnAtbkeN6wsgXadzKBzkdEGqhodTiFbKlTsdGFUHLI1VARfH0eVwh6y3yjLFHriODLFMFzCStkSYRDIuhKyRO_HJg7omK6JdthMurjMD_2rlFqSYpAEZkOZLgN_DGUd2c2fUjJ30f31MYhfeOuUn8HFPVl-BqWmXh4e3m5uBjmk0ePPJQh8fBCDYcV-_U5FOBD47d2hQoqqPOHV5CTvCUbjTNZq2zdEi7h0FNbuVByPczY3AKcNKhSOY2e_N5Q-3-a8__f6BDeSxfON-SdwMPge6QRwHhOQzCgdNquHRd_zeG9z_vclYCP6klKqJiykTbHmjo-ZHyaJp-Cq4qcPQFz1SWN3wFwYfvp0B10JFHehXw-RgVRXmu4jPaxtgigPipfjHQJnU4fPD2KBw8hPPc3uh3PqEgEAolXHSx8xN-lsNFA7XBayS2j7jCuDFXLnVG_J70zkfm9Jw-kXto7NPLl9hA7EHlGPTef5NC3ESpeScPhw343qSFFgJ7uSVcudGJ3Pax8MR0aQ44BIxNSUcxJoWGm_t3mB1Bj_x8omqhj3UYaM-rg9hviAJowrMQkc4LBqbRdses30dGqkLHKsN1m_fwKJpuBZGk0bOKVjrXGAwtDQMYtpHc4hlIUhU7pKGiK0TBIfJy3BiD0wBcY00C-RfIm3Be-LMrjQM_zVGD3lxxH3sR7U7EzItVjG51FpOAptuGGjx2u8GpP-8FtxRUG9U0DchkUjlLiESrH-3rRr8xI4XONUqWqj2WLRkshjN6k_FaQGZaPcDbmE2rPsxhNtly8sI_Fy3MnWk21n_SjRV-LytJVdjUiF8ylao9PM49R7tHJYTszFXUXMUYRNVOlaB-GRsdUs5jQydSfCJPZcRsX4_SLrdtVmY7es_6mQaT7sUHiqknXxXjiOC5Sh2Ix18GNtP2i2h-2MHFWkUpXmd_1HQkwXf5KRfxFBZXJv6-JuIzEq-8xcCFVbwEv_1Zz2aXSmd-qAKS5gO_5eHP6Z30uA-DQVMIlmdz1wpSyenIs70EbA7KkSuCXKaAGOBfhEr6528HKwAeULRLF3cT8qE7CLYBkU6PpVrDe5TzmwmTB7rYwK7lCJQ9sBo6qLAVL1TeyYYqzqJj8PC-SpQwpILK3dbmu4ftuOMbcL8UM8rGR95go2JAY0be8XJ0BHMaFMtQ4U_DOFISD6E31Ex-RomyagaXHJJi47TGmbwoUi3y40cqnajjQ_oKl-nqT3Svo9Fk34BFG_d1U0Kbg99SkMxx6oi01hntlU-bzix8ou1yGRqDQLDE8te9IB_MPYOGu0mzYcoA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0d81d7c7644fb730016ac116869af087d188292a262d2ddc91",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 245,
+      "completion_tokens": 3038,
+      "total_tokens": 3283,
+      "cost": 0.00613725,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00613725,
+        "upstream_inference_prompt_cost": 6.125e-05,
+        "upstream_inference_completions_cost": 0.006076
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 960,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 245,
+    "completion_tokens": 3038,
+    "total_tokens": 3283,
+    "cost": 0.00613725,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00613725,
+      "upstream_inference_prompt_cost": 6.125e-05,
+      "upstream_inference_completions_cost": 0.006076
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 960,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

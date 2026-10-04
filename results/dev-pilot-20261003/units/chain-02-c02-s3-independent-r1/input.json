@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-02",
+  "step_id": "c02-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+  "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。"
+}

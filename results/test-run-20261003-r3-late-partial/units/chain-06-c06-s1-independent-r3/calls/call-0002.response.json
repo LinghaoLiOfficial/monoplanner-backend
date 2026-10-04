@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:56:00.895243+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039343-tqB84RxIsiGmPWf55kpM",
+    "object": "chat.completion",
+    "created": 1791039343,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围（由后端决定并负责执行）\\n- 仅改动与“条目（item）资源的单条目操作”相关的请求处理：GET /items/:id、PUT /items/:id、DELETE /items/:id（或等价路由/控制器中处理单条 item 的动作）。不改动其它资源的错误结构。\\n\\n总体目标\\n- 当单条目不存在时，响应变为：HTTP 404，响应体完全为 {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}；不得包含顶层 detail 字段或其它顶层错误包装。\\n- 当单条目存在但当前用户权限不足时，响应变为：HTTP 403，响应体完全为 {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}。\\n- 认证失败（401）和 422 校验错误必须保持目前的错误结构，不做更改。\\n- 仅这两种错误类型使用新的 error.code；不要统一转换所有错误。\\n\\n实现步骤（后端通用、框架无关，但要在具体实现中映射到对应语言/框架）\\n1) 确认受影响路由与控制器\\n   - 列出处理单条 item 的所有路由/控制器方法（GET/PUT/DELETE）。\\n   - 确认这些方法中目前抛出/返回“未找到”和“权限不足”的位置（例如 throw NotFoundError、403 response、异常类型等）。\\n\\n2) 引入或标准化两个特定的错误/响应类型\\n   - 在后端错误类型/工厂中新增或标准化两个语义错误标识（可以是异常类、错误代码常量或错误工厂输出）：\\n     * ITEM_NOT_FOUND (语义：单条 item 不存在)\\n     * ITEM_FORBIDDEN (语义：当前主体对该 item 权限不足)\\n   - 这些错误携带的信息：HTTP 状态映射（404 / 403）和固定响应消息（\\\"Item not found\\\" / \\\"Not enough permissions\\\"）。\\n   - 不要将这两个错误映射为包含额外顶层 detail 的结构。\\n\\n3) 修改控制器/服务层行为\\n   - 在处理 GET/PUT/DELETE 的逻辑中，遇到资源不存在的分支时，抛出或返回上面定义的 ITEM_NOT_FOUND 错误；遇到权限不足的分支时，抛出或返回 ITEM_FORBIDDEN。\\n   - 不要改变其它错误的抛出方式（尤其不要将 401 或 validation 错误变为新的结构）。\\n\\n4) 更新集中异常处理/错误中间件（仅在必要时）\\n   - 在全局错误处理处添加明确映射：\\n     * 如果捕获到 ITEM_NOT_FOUND 错误（或对应异常/错误码），返回状态 404，body = {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}。\\n     * 如果捕获到 ITEM_FORBIDDEN 错误，返回状态 403，body = {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}。\\n   - 对于认证错误（401）和校验错误（422），保证现有的错误处理路径优先且不被覆盖，保持现有响应结构与状态码不变。\\n   - 对于其他未明确覆盖的错误，保持现有行为（不要将它们统一转成新的结构）。\\n\\n5) 保证响应体精确性\\n   - 新的 404/403 响应体必须严格匹配：仅包含 error 字段，且内部只有 code 与 message 两个字段；示例：\\n     * 404: {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}\\n     * 403: {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}\\n   - 不要添加额外顶层字段如 detail、errors、message 等。\\n\\n6) 日志与内部追踪\\n   - 在抛出或处理这两类错误时仍然记录足够的服务器端日志（包含请求 id、用户 id、item id、调用栈/上下文），但日志格式与对外 API 响应分离。\\n\\n7) 测试用例（必须自动化）\\n   单元和集成测试必须覆盖以下场景：\\n   - GET /items/:id：当 item 不存在时返回 404 与精确 JSON；当用户无权限访问时返回 403 与精确 JSON。\\n   - PUT /items/:id：同上（404 与 403 场景）。\\n   - DELETE /items/:id：同上（404 与 403 场景）。\\n   - 验证 401 认证失败场景行为不变：状态码与 body 结构保持原样（编写断言检查 body 结构与之前版本一致）。\\n   - 验证 422 校验失败场景行为不变：状态码与 body 结构保持原样。\\n   - 断言：前端期望的分支条件（status code 与 error.code）能正确触发；例如对于 404：response.status == 404 且 response.body.error.code == \\\"ITEM_NOT_FOUND\\\"。\\n\\n8) 文档与兼容性声明\\n   - 更新内部/外部 API 文档（或变更日志）明示：\\n     * 哪些路由在 404/403 下会返回新的 error.code 字段和值。\\n     * 明确声明 401 与 422 的错误结构保持不变，使用方不得假设所有错误都采用新结构。\\n   - 向前端团队通知变更点并给出示例响应体。\\n\\n9) 部署与回滚策略\\n   - 推荐先在测试环境和预生产环境验证所有测试通过并让前端用预生产联调。\\n   - 小批量发布：若支持 feature flag，先针对部分流量开启。监控前端错误解析相关指标（400/403/404 率、前端解析异常日志）。\\n   - 若出现兼容问题，尽快回滚或关闭对应 feature flag。\\n\\n验收条件（部署前后必须通过）\\n- 对每个受影响路由，自动化测试断言通过：404 与 403 使用新的精确 JSON；401 与 422 使用原有结构。\\n- API 文档与变更通知完成，前端确认已知会并能按状态码 + error.code 来分支处理。\\n- 生产监控在发布后 24-72 小时内无大量前端解析错误或回归告警。\\n\\n实现注意事项（避免误改导致前端解析失败）\\n- 切勿将所有错误都改成带 error.code 的新结构——只有针对单条 item 的 404/403。\\n- 切勿在新的 404/403 响应中包含顶层 detail 字段；如果现有 401/422 返回中含 detail，应保持不变。\\n- 在集中错误处理中，确保错误匹配顺序：先检测并保留 401/422 的既有路径，再映射 ITEM_NOT_FOUND / ITEM_FORBIDDEN，以免误捕获。\\n\\n交付物清单\\n- 代码变更（控制器/服务/错误类型/错误处理中间件）\\n- 自动化单元测试和集成测试覆盖上述场景\\n- 更新后的 API 文档（示例响应）\\n- 变更通知或变更日志条目\\n\\n不要执行或假设的内容\\n- 不要对其它资源的错误结构做修改。\\n- 不要改变认证（401）或校验（422）错误的结构或语义。\\n- 不要在响应中新增顶层 detail 字段。\"\n}",
+          "refusal": null,
+          "reasoning": "**Refining error handling**\n\nI should include modifications to the error handling middleware, ensuring that authentication errors (401) and validation errors (422) stay unchanged while possibly leaving other errors as-is. I can define the scope based on requirements, focusing on code-agnostic implementation for typical backend functions like middleware and centralized error handlers. My implementation steps will include adding new error response formats for item-not-found and item-forbidden errors on specific endpoints, updating tests and API documentation, and ensuring proper logging.**Crafting error handling instructions**\n\nI need to ensure I avoid referencing \"other side's output\" and keep everything concise. I want to craft the instructions in Chinese, including technical specifics like error type names and mapping, along with examples of responses in JSON format. I'll make sure that authentication errors (401) and validation errors (422) maintain their original structure. The acceptance criteria will require the backend to include error codes in the new structure. I also need to include tests for controllers, integration, status codes, and JSON keys, along with rollback and logging details.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Refining error handling**\n\nI should include modifications to the error handling middleware, ensuring that authentication errors (401) and validation errors (422) stay unchanged while possibly leaving other errors as-is. I can define the scope based on requirements, focusing on code-agnostic implementation for typical backend functions like middleware and centralized error handlers. My implementation steps will include adding new error response formats for item-not-found and item-forbidden errors on specific endpoints, updating tests and API documentation, and ensuring proper logging.**Crafting error handling instructions**\n\nI need to ensure I avoid referencing \"other side's output\" and keep everything concise. I want to craft the instructions in Chinese, including technical specifics like error type names and mapping, along with examples of responses in JSON format. I'll make sure that authentication errors (401) and validation errors (422) maintain their original structure. The acceptance criteria will require the backend to include error codes in the new structure. I also need to include tests for controllers, integration, status codes, and JSON keys, along with rollback and logging details.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRd2T_JQ_I6u4Ab07IBqqhTh05vUi0DkYLmGA_xmPnEndf6_DyGhoXv7p5lMeqqbjI1N1VGqkWQi9QGiV5gTUhjhgVQrgxtkcKMeF4grxwZVA4-Xnxg1SOSckXC9wHeb3noQM0-nvsK6sRet4Kn4yLdugH6g4qSR7TdP-CiZjJCDkkc8m2tCZJGV79o1vNVbG2Oa4tFzCkozjwuimsVDA6U-KLFDYz1ZPRS-HyqFe3NNGyfnEPJfItCQsUWc_6sR5QKqSr5i2ZUxZ8uCpX9bTSOqMWrjNZz82zyov1RgpxvYRfCkhjPYj5QpCe0JZea0BjnL6yBi8tBIEswPnR7ReGLPnMPYIEk3gm29tQsKqHfSXt1ChOVNG-H_92GoN3hbSlIXqxlf5MmEYZVMkLuVEnT_O3-Ydx_ykyeQfGbKQW4jVg3ZKkt6RvcpvLzpXzZXtcEONyuKVK-2c4j1kb7NEj5BL2eVjAE7A79efQJUy41EBWJxReKJfTDvFeYFH4tSOMIDmFhLWNXBzk-NsdylBWVcJu1RTHhIOD1mc-vVWIYkiZ6pxEKgklpS2PmDJ_hXAnGXZa-LiSmfZqgMUrzSikL1EsAPuZEOOEzmamrRiEwWGizi1WkRh6r30LovDDKVxdOOKU7jjSvQrnCWaXeNbzAyFMu3yAoWdv3t0SKIDsJ4wkgN5fWLZI7e3eXXuTaUJOZyWDtuTIXVcv_iWkZWNL5tOLISQgNDbFbrGWpPiJ7DaNkPMAaJuPzRd0NBq-PVU15jBMo2v9nvc-VT5PdWHkOBCyNnfRB8kczB_ZWGnn5qvavgt8Tdkzl-xGhpdvfWv7o480bJTRsIrzBOOug9eMYaA8ZFLRcWb6LnTsigYqgxte_9nU3EqgmxPDTHygYHPTyLtYvYkQbd3h_jDfBm-m0TCiTv8p4PtQb1lmWm-AE2IlyWPE0EUarXLrgkz3QfJmJoVDx_DlDhhXQsl6EXOSAnus4P6JTdZXojF2v9N2SsjGKiJx4eya2elJ8iWZuBRbN0s1KTokD2-K3JZ_t19qFDxIJ4u9xG4tKkNGPxyrfTmVVj6oyXdKr-iU8Bg1rTrpnKOAQv5aKW7NbcR-mKo0HiQe-PQ__AqjmaqQToIoBCLdD9QK06lPi59Pm-JpWmrOELgnQPy5e1A7Wuwt_3xYAt53XnzX0p06eKGwVFF0yNaIgmY84EBJCzbroLnaIyhpdLKQw3GHBhIWIXQ-mD1-w_ybusgMledNZpRKYWbTMuh-CxaGp6skMCMvBAsewDM6p8xlxyNg1up5VJFCxxjTrDokOJxcCkbxR20M8BTcynTIPipviGOS1sBXZGBM28HTOn2_upeESCwWMnWhCm0Qnzezd7i6lhtxYw0tNv05o_VXM14VyfFzlDoW9I0oiksyX_JRwyNSDDhStjhojhdTPI9pEgmNl5TPsqULHXyo-Uk9RGvAb-j9Vpvpc2zJrQUwSWx_WJ1I4hwACftY_-o2c4lPhciF9Jkl0i3XdHfte2d08iTUp4eVz_mHXwZR5SJUGwV_ulMikaVvoLLk6tKywp67uLvy5FhP4S9odXFYLDH0B6960I7n1gU4VCdtdhuwccZgNnyBky4otKh1j8TgP-L1Bt3O6bIEdwZ8qDVxHKuBl6EloC_kPLFY06Wp_zAu8FAV1FeVadRsvcenuQeiqICvemJdXKGiVujPMTxrxg1PSO7SjERdUsbk8SmuVo8Q6LLrDerrZ_D934pIyiy47_oOW1Ai3qJ6M5xi6s7J2fOPA60JYMC5Ph2EH30BSNTSi_J-eEzyzkE4sAeXLdz-vJCPWGQzbiwaX_hEIfZC5Uv4CS8DlP3bSkWQCDwkaEnIEqcM4ryOrlO1TzlEUSyMcqe0zkiuR-VJ22q5UN6SIwcRbeVME3mOpPvUFucjhoNRcddZpPWmMu5k91NwI3TLD5nQkDezm88gUg5-ozILxD_DdASkrjc9uwm04J7poyzyVfpIgHGtVCSkz8e2bGV9d2JnHA-qZninBTb45s_BuHtNpRnYZo-5drA1SrKswfJ7q15MX94YWTIuMvcS93gspA1iIHXspw_zR58cGPN5O1MnsA6o1Iy-I_cUuVWHxg0hmqnUyNLG8bZirmrMOObRaTv-E1k6TDQv91K_1i1v38cTfbrj7rzkiQId_o2VcBPpGOIYA7az0QK1mgSAWyXHY6E3ssE6KNWUs7UY80TE1YcDXCOKs5J7OVNiDvcaIR2KWTi4qqYHcbZOpTeIZ7FWlO0sDPtOX-UjXyCI1LIRGFTww_TBnYF7hKKsocUmn_cI97oEcbmU4sFkS7f7V2UWOC037TRyUSG05ZLS4FrROqZ8hAUS13nXUXjmPZ7BFlob7H-6RktCpgO__bCSAuM_QWktCiuspfsZkuzmYEuCrrLNt4cKBiBJaif3LYitAROzwKsGqyzZdoc9TnwoRg-XNXQBvRaNjPpnLfwEyrhqPCPWc5Hp16n2opl_ruG-xedsbt-34OUuOYDAoDpdhgxPt8zivebgDIlPzWblUgQho4yu9nrxlrYfPI9bxooHA8oKRBexiDvOIKFe7jY4GS_eitbbn52BRFTZFmettB2-i7mqXRze8LyZI7_SSFv2og5PJEXjmUNh6YoNnVM2858XDs3iRbJeoMVfv1hGcK6aJr5ebObGQwUmWKx7KHoOPd-Ygyy0k7DfZM6tbwzuXKhQMeFLOf-72QfeEa5-QQpkx4D-7bmFr2HQiAo2EDv7gw5XO1qDKUQ9hezKMSHIe-jGT3GxlkJD74Ilry1y9SKWjcf7aHosglSh9IMN5qyqQNn_XdntD1S34vZyuq3nAECWTk9QSSpXxQsKN80iZMWQHIU3l2ppwOscAIqjHYfbpMl8FWDPliz065LVwRDzFF9jbU9ud_K8Fn47ZoaVo2LmSx9aiV8stZU2_Ycw3GgcmKUFz3WKmxaMvZfzbCTAF2G8Sdnuy9WxKDxbwMyf-gvubBRpaswhvE2X1IGVPXhVHSMJxbxkdNlqeTwvp4RocDdTm6RWCaCjk53ariZnlwpkNdpDn3HDbHCKDUozYQb4Boc5q_PIK_JMmER8BtDODdlRsA2n7o4KYEbVdBP4QEzaMSi870IXrq1Tou0DhXGL1tzDqtDDeCnxJn7YPaOr15n-ZjKCEadOoAcFIPL9rn_Rpzi3NnE4S0ubcJOP2T_5UvaYfJD858IyHaz0V4X5YJmpEVKrwlyFvaS3mZCUSgcz5Fj83yiu15-RYjj4ETgR_InR1hwkDSp7zhE2LXv5tR14aN83hX8vHsmFxATKooG9FhU1EnYh94eJyQ8_861l0FwZuLo3pq0bQdCP6hIQ9NqRlx6aRMUAJ5y96MC_k1YzlCqj4zgWGT2pJ-BMEt1hqZqnwM_WmDi6gdLMF-gqnjuzig5qE5lXY2NLWwuKqsvcoBuMGDnMwBhEj0hHrH0L_sY8ak2be2CZFOupnxZPDQ9OFlpfXDfSEHnf12ylPvSNWUV-UZk2uSDx9jsYN192dqqTGz_RUNIvtGe4n9wI3JiZOKJtH6eEgFZQA9fqWj_GVHSDBjB7DTeFNeoEnCH30sKj9oxL2TV09Ect5CH6M1XL7sLh7IQpbC1KcYTx_-48UqEN7RPmBd997K3iQQSWP_NrGZbbn38TCddQSJ8md1H6v-iYKidQp_b7OFvqdqvXeGeh6_lg052fWWMYJQjzKEm8Ce7RJnErD5WYekvqACbdxzIVz3j2k0_PFeSYnkpbgB3E3SyZL8uCXHBMBSThdrfh8sLy1BkKjJxSMPHcOTV8K5_zhhwxbCi-DjCz0_A44worjYbCox3q6OloKJbvhzdGOkjVjEZN7n2cABjB9c_2ERF_aD76EItmYWxCykalNytpCpXhJcfkL2nTDXQ6xd4Mit_7mAnU2QpSL81aGo8Oov-VHqg8uDmsefErJ3lx12TB6oe2ZSxOZ8MKyzdo4vlSCffoyAARYImAptMtFIkVh1YHhoqKeQasocdRml_1XUzBahQNdBGTuJsHr5hQkOetjqLWCRyDM1lX5waa0dsdlrzQl5XLHmejsKGRw1wTPd9bbwyHAidUO2x2L3U-EgCq6Kdk3GJa41mf60JFuz4HA5B25V1TLMhYkvIVIpU13Oj_Cg8G8Pwu3bsEv_iHmWM0W3JqLWKx3iXGE9noqupBr8Q5pnIr8St2k1zKqs0elmPbmf0u4Y5GoadpThvMvNp2MAwfcTMT7XIGlv35zOKQMSx2JD-93MxT3zmbZt-T5aLaq-xkYGpXKI0bCKa4RMFWNkbP8buVsDUuS5AcTV6dd7GJ8I3UNa6R3csSobsLIdpEcIxuULYVm3ZtYU2RcbTGX7XhwnJuAiVR33Yy6Z9quZQnjtgQGRbLLgn1wMv6p-JcgdkyBCj4haBIxYUKrAuv-tqWVbMj3kTaSmlMuZ0o9J9VVoTKdVsRZKwvgGGybiEYoPvgpc-sJSX9AJwuORncBtIfrdz5M57P5yxKtxq5JGevYenHpQDmzP4Iph2oHlFJOuVSvYceZx5NbZF2J1TkmHro7v7vbvzXgVTHOPZx5TTZNfLZO4Z213Q5qhSUwZqhOX7ulQdZjL2O6_M9pweIlvN0da9YCeZ6u2mXH1LSYCap8EAtXfdIv3LmPxj8KrwzWzjTVbvDQqASxBrbnNVVzSmHa82otkbGOQUblVi3c4VCr9QGNc_ucIgfI7btCwn9CD4A6kJk42ILoc-XCjowBUj9n9J0rFF9VHbnSKuLluRIYIbGCD0nmt8A7yA0AVaLhmG9ExSfSmetUInrfdUJd4JIWly9OUBjpzXvsVl-tu7En9nvDtahWmJqcFSZ757EfvUwNLnhCiGuD5x7eM8SEy_-KNT7WBqJe9UmtMX9FKET0KTY-MNxQw4ec0yq4eRIkos_7ZK0pMBVCe7W6QEsme0bN07iSkqSdjgf-5EyNEnDsKRFnwDnph16rII7pHOFyg2DQQULCDClrMrwTJKrqpg7yJgIYtze2kR9f_2kf3bcC00IrI39sMhfn1hG25ajhyGt63fOAj6F2H42x5VEbkcV-N473BhHDj-l6MlJYAznN0mC5wxpFlRAhk-u92OJjt7oE9g4S4dxTrXE99yk3geAp7XOCVb6sLWlQx5t8epr_FqAwRzoQIJtnIxInavLCn3LiPjIuDR1dQ1zxkT8iwiFE-5cdAOH5R_8j2WcXP4WFInoWF3fDohpkyKz2qCX-E4ojnGRBKwEbdMiYxKF73TRcN3Rsmw5rqv0tvaX5epc83JKictDif7nlFc-DX2c6a5rJ_Mu_pIzAFDyBPs21l8HdCWfWfz9_3KW7amH9DQ2mPyfq83T7bB-7KLxuyk5uLia-ZVAgxu_9wVhvYIn4MX_G1pOFsWm8K4jAIkCQGP1emB_Pn90cGFhzjsiQBsxlmxBJW--mVhEz2B0trD4RkuVBVglp6VgXVDf4NhkHAz15GTcDdiaFM5dRze3pgBAoMw2__kz0i29JsZ2Y0J-a3T3JWFoAIZ3HE335wPmp6_7Ee-gnCHev2DmXnIq2l8wEfhjZkW9kJrp5u-aM_vB1GMaEahDuvIsXWqxfJhBoSkxtGaqRkm3jOMmkODHy4v3z1wgWZyooicfH9r_pMZkJ0oAJ_wkIgrfDEyF2S-C_Kv5yzynxedDRAWR88VpwU-4AEQzJdjgS80C82fjux4qliohZ5_3QZXT4oBCiXBcAh4LNF-1rm6Prj57xwiks8A_X3IxqEIhjnyZ_OusdE-1D0Tbr0hAp4PYg-mN7cPHuJCqiqbXrPrSpKBD7rSgErVJ_cw_LR1jsPaFEnZNEmtHVAKZnakLh6usXyl9cvbN4W4zyXtsx0BWPfGDyOxtTzMmOKdl5g9GfYgFCmVJU0L0olpAwAcfBJn6wOD0eOR_TIXPCR6byPTGzKC53nbmp-iD6tNOaEjAYBIftr_hX0fEwP0xOJiBbNza-O-M43R_PcwfYhKE2hOSPR0Ht9_Lh0MYxOhhM1Vylv-6CEn0Tr1Q6fnvhYDHrPpyYu3ypjdrXJZYHLGMqYiELWoNljlLSY05gN-9lEfu5fwuo-YTpVcVhOWcg7f1dalysM3lk50TAi0fbZlnFXPO95aytLlNYV8kuOPEVfsTk0CZ1UjRRvOgYKGQxJ6Opv-IZfQB8WVzB107S0AzWc6SUtWXAil7Cww9EYqbJzk10JDuiFt8izcsrQn1IRjDQEp7bWjfoYRYwT7O07sMrSErgCUABA75vzoBBVSqFgLykGEX2aL1kfoMpCBYDYjFY0GIMVWGjoj3GhLR393cEqkJP5fw6p8-rYewnMbLXYgRJWFnXwIoukcG3YZzQaukr7hOPwxnaFfqc5vzteFM7cULNgpC77K9Lhq6uWmL-D4dmgqtXdDto6x77PlEE0qSeLt2SjAdF4ojcFuJbJNQeefkuyB1DEinIpJv40Ggdkc5rgU3_NoB07LSLzne6XN4WMDpLhMXf9evKwtQSHytr8QyP6j6vOQNFMFSoowVKf3adSsCOTLYBTar_p4RoXnGD4OjnlQzYJWlplvARST95ezwxH1WEaUPAJseGkw_JoCZqcsE7VsJPQeAyYaArZE56tZf6lxkXA2oakGC7kUTS7qcn6XS6VKDZazp83oqmj9xXMoCeOCIpIJ74b5W798AIKDy-RDOjp87jcLg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0e5398094a314679016ac1176fc4d887d19cf70e538fb535e1",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 242,
+      "completion_tokens": 2512,
+      "total_tokens": 2754,
+      "cost": 0.0050845,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0050845,
+        "upstream_inference_prompt_cost": 6.05e-05,
+        "upstream_inference_completions_cost": 0.005024
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 704,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 2512,
+    "total_tokens": 2754,
+    "cost": 0.0050845,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0050845,
+      "upstream_inference_prompt_cost": 6.05e-05,
+      "upstream_inference_completions_cost": 0.005024
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 704,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:59:15.124410+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039527-0NUzGm4lwoMNLGQBOlEf",
+    "object": "chat.completion",
+    "created": 1791039527,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围决定（后端）\\n- 仅修改后端 API 层（控制器/路由）、请求 DTO/验证、中间件/错误处理、自动化测试及 API 文档/OpenAPI 说明。\\n- 不改变数据库表结构：保持现有的 title 列，不新增 name 列或其它持久层字段。\\n\\n总体要求梳理（必须逐条实现并在实现说明中保留原有事实）\\n- 请求新增可选字段 name，作为 title 的别名。数据库仍然只存 title。\\n- 创建（POST）请求：必须至少提供 title 或 name 中的一个；两者同时出现视为冲突并返回 422；显式传入 null（title: null 或 name: null）应返回 422。\\n- 更新（PUT/PATCH）请求：title 与 name 均可省略（即允许不修改）；但若同时出现则返回 422；显式传入 null（任何字段为 null）返回 422。\\n- 当请求中只提供 name 时，按 title 的原有约束对 name 进行校验；反之 title 单独提供时按原约束校验。\\n- 字符串约束：必须是非空字符串，长度 1—255 字符；明确要求“不新增修剪”，即不要对输入做 trim 操作，校验与保存都使用原始字符长度与内容（包括前后空格）。\\n- 所有响应（列表、详情、创建、更新）必须同时包含 title 与 name 字段，且二者值完全相同（均从数据库中的 title 字段取值或刚写入的值）。\\n- 验证失败一律返回 422（Unprocessable Entity）。\\n\\nAPI 层具体实现指令\\n1) 请求解析与内容类型\\n   - 接收 application/json。\\n   - 将 JSON 字段明确区分 “缺失” 与 “显式 null”。\\n   - 如果 Content-Type 非 application/json，可按既有做法处理（不强制新增），但在校验阶段应按上文规则识别 null 与缺失。\\n\\n2) DTO/Schema 修改（Create / Update）\\n   Create DTO（POST）\\n   - 字段：title?: string | absent, name?: string | absent\\n   - 语义：title 与 name 均为可选，但必须实现“至少提供一个且不能为 null”的自定义校验。\\n   - 校验逻辑：\\n     a) 如果 title 显式 === null 或 name 显式 === null -> 返回 422（详见错误响应格式）。\\n     b) 如果 title 与 name 同时存在（非 null） -> 返回 422（冲突）。\\n     c) 如果 title 和 name 都缺失或未提供 -> 返回 422（创建时至少提供一个）。\\n     d) 若仅提供其中一个（非 null），取该值作为要保存的 title 值，再对该值做下面的字符串约束校验（不 trim）。\\n   Update DTO（PUT/PATCH）\\n   - 字段：title?: string | absent, name?: string | absent\\n   - 语义：两字段均可缺失，缺失表示不修改；显式 null 不允许。\\n   - 校验逻辑：\\n     a) 如果 title 或 name 显式 === null -> 返回 422。\\n     b) 如果 title 和 name 同时存在（非 null） -> 返回 422（冲突）。\\n     c) 如果两字段都缺失 -> 接受请求（不修改 title）。\\n     d) 如果只提供其中一个（非 null），把其值作为新的 title 值并对其做字符串约束校验（不 trim）。\\n\\n3) 字符串约束（适用于从 title 或 name 获取的值）\\n   - 类型必须是字符串。\\n   - 长度必须在 1 到 255（含）之间，按原始字符串长度判断，不对输入做 trim 或其它变换。\\n   - 若不满足类型或长度要求 -> 返回 422，并在错误体中指明字段（title 或 name，根据请求中提供的字段名）和原因。\\n\\n4) 映射与存储\\n   - 后端持久层仍写入/读取 title 列。\\n   - 创建：确定要保存的值（来自 title 或 name），写入 title 列；返回体同时包含 title 与 name 两个属性，值相同。\\n   - 更新：若有有效新值（来自 title 或 name），更新 title 列；返回体包含 title 与 name，值相同；若没有修改则返回最新的 title，并在返回中同时包含与之相同的 name。\\n\\n5) 响应统一规则（列表、详情、创建、更新）\\n   - 响应 JSON 中必须包含两个字段：title 和 name，且值完全相同（例如 { \\\"title\\\": \\\"x\\\", \\\"name\\\": \\\"x\\\", ...其余字段... }）。\\n   - 列表（GET collection）：每个项目对象包含 title 与 name。\\n   - 详情（GET item）：对象包含 title 与 name。\\n   - 创建/更新响应：所返回的资源表示必须包含 title 与 name（来自持久化的 title 值）。\\n\\n6) 错误处理与 HTTP 状态码\\n   - 所有校验失败（同时包含两字段、显式 null、缺失或长度/类型不合规）应返回 422 Unprocessable Entity。\\n   - 错误响应体应明确指出字段及原因（例如 { \\\"errors\\\": [{ \\\"field\\\": \\\"name\\\", \\\"message\\\": \\\"must be a non-empty string length 1-255; null not allowed\\\" }, ...] }）。\\n   - 对于“同时提供 title 与 name”这一冲突，可将错误字段记为 [\\\"title\\\",\\\"name\\\"] 或单独给出 message 明确说明“title 与 name 不能同时出现”。\\n\\n7) OpenAPI / 文档变更\\n   - 在 API 文档/Spec 中更新 Create/Update 请求体：title 与 name 均为可选（nullable: false，即显式 null 不允许），并加入自定义说明：\\\"必须至少提供 title 或 name（创建）；不能同时提供 title 与 name；显式 null 不允许；不对输入做 trim\\\"。\\n   - 在响应 schema 中确保对资源对象同时声明 title 与 name，说明二者值相同并均为字符串（1-255）。\\n\\n8) 测试覆盖（必须全面）\\n   - 单元与集成测试用例：\\n     a) 创建：仅提供 title（通过）、仅提供 name（通过）、同时提供两者（返回 422）、两者都缺失（返回 422）、任何一方显式 null（返回 422）、长度边界测试（0 长度/256 长度 -> 422；1 和 255 -> 通过）、含前后空格的字符串（不 trim，按长度判断）。\\n     b) 更新：仅提供 title（更新成功并返回 title/name 相同）、仅提供 name（更新成功）、同时提供两者（返回 422）、显式 null（返回 422）、两者都缺失（成功且不修改 title）、长度边界测试、空格不被 trim。\\n     c) 列表/详情：返回对象包含 title 和 name 字段且值相同。\\n     d) 响应格式测试：错误体中包含字段名和明确的错误消息。\\n\\n9) 日志与兼容性注意\\n   - 记录在请求日志中接收到的原始 title/name（避免自动 trim），便于排查前端迁移问题。\\n   - 后端应向前端说明：前端将以 name 字段提交并以 name 展示，但 API 仍返回 title 与 name 两个字段（值相同），直至前端完全切换显示 name。\\n\\n10) 示例校验伪代码（供实现参考）\\n   function validateCreate(body) {\\n     if (body.hasOwnProperty('title') && body.title === null) throw validationError('title', 'explicit null not allowed');\\n     if (body.hasOwnProperty('name') && body.name === null) throw validationError('name', 'explicit null not allowed');\\n     const hasTitle = body.hasOwnProperty('title');\\n     const hasName = body.hasOwnProperty('name');\\n     if (hasTitle && hasName) throw validationError(['title','name'], 'title and name cannot both be provided');\\n     if (!hasTitle && !hasName) throw validationError(null, 'must provide title or name');\\n     const value = hasTitle ? body.title : body.name;\\n     if (typeof value !== 'string') throw validationError(hasTitle ? 'title' : 'name', 'must be string');\\n     if (value.length < 1 || value.length > 255) throw validationError(hasTitle ? 'title' : 'name', 'length must be 1-255; do not trim');\\n     return { titleValue: value };\\n   }\\n\\n   function validateUpdate(body) {\\n     if (body.hasOwnProperty('title') && body.title === null) throw validationError('title', 'explicit null not allowed');\\n     if (body.hasOwnProperty('name') && body.name === null) throw validationError('name', 'explicit null not allowed');\\n     if (body.hasOwnProperty('title') && body.hasOwnProperty('name')) throw validationError(['title','name'], 'title and name cannot both be provided');\\n     if (body.hasOwnProperty('title')) validateString(body.title, 'title');\\n     if (body.hasOwnProperty('name')) validateString(body.name, 'name');\\n     // If neither provided, OK -> no change\\n   }\\n\\n   function buildResponseFromModel(model) {\\n     // model.title 是 DB 存储的值\\n     return { title: model.title, name: model.title, /* ...other fields... */ };\\n   }\\n\\n11) 交付物\\n   - 代码：控制器/路由、DTO/验证、测试用例。\\n   - 文档：OpenAPI/Swagger 更新说明、变更说明（包含后端兼容性和前端需要按 name 提交/展示的提醒）。\\n   - 测试报告：覆盖所有上述验收条件的测试通过证明。\\n\\n重要备注（必须保留并在实现中遵守）\\n- 明确不做自动修剪（no trimming）。所有长度校验和保存应使用原始字符串。\\n- 不新增数据库列，title 列继续作为唯一持久字段。\\n- 在任何场景中，响应中必须同时存在 title 与 name，且其值必须一致。\\n- 按要求，创建时至少提供一个字段；更新时两字段可都省略；显式 null 返回 422；两者同时出现返回 422。\\n\\n按上述指令实现后，后端将满足前端迁移以 name 提交和显示的要求，同时保持数据库与历史契约一致。\"\n}",
+          "refusal": null,
+          "reasoning": "**Updating API Documentation**\n\nI need to consider updating the API documentation and OpenAPI specification regarding the title property. For creating entries, the title won't be required, but it exists in the database. I’ll modify the data transfer objects, making name and title optional for creation, with at least one required, while keeping both optional for updates. I should add custom validation for presence and ensure responses include both properties identically. Finally, I’ll outline migration steps and update tests and error codes.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Updating API Documentation**\n\nI need to consider updating the API documentation and OpenAPI specification regarding the title property. For creating entries, the title won't be required, but it exists in the database. I’ll modify the data transfer objects, making name and title optional for creation, with at least one required, while keeping both optional for updates. I should add custom validation for presence and ensure responses include both properties identically. Finally, I’ll outline migration steps and update tests and error codes.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRgx09N2uPXXZJmu422wSN-TxDU7K-pfB6XF_UdWNQemiKjNHekugF7vGdk-NDfEbFctxZ3aHTM9JioC0P8Zq-YKAvemza1-cOtjfd21uGbb5TBvj7fXEJpzdYvHDA6b9xX-I_n9aQRyBaVUcquVGXjtevqOPQpU6YxwMriJfjvn5KJdtNf0M4CFxp9pVZ9J4gN0efHATsPwb-40RoSeLHOi0yGE-yW3KjnKzfdRkxv6zJnouNTcjJdsU1vESByCIChm3xyLB9LeGtcfKMxQzxMk7Lb_HeEiQmO9xWoXvY3MDR2pFYRdo8HMxAj3n4r9FvHvIuMcNOIQnTvV50sQupkQfqID5dKCm2ed8725opbBoKz55hNZ7ckfjNsDJc0i86p3C5dpF2xfma6gyyhUbS_NilmxSeOCW2tYSpDS3NxuN9B6yiOasF1bzF-DT03c2IsL_7f2NnHheK8dKzshvHKVdd_xmq2Z6x7jP09SdLbrf0VyFmskT2gntGmyVxBXH1l-cyfKBORtrO4JL2qGdrdR4m_LKgGwvzZFiRzYKtADkh5oWtigXB6l2jDQRBRZAlf2cQi-ytnrLVMHAPHnrvnRiQbnBIRE3cdwXVOhdntOyopA9tklXsI__OE0Mauue_LFlU0Ba-dxWpGUByr0P2CwUlYkcr_4cTQ5QonIQPS15g4AGnRsg44BYgCMKxF_RK985VKnYwaWv46WfQMQ0e13S8urW035gJ4AWjhaBsdGGHeoZ1rzmOrFosIf7f_uWtOl1Pen0FIHPTJ4ynrOA7-_-cRInUZKODFhV4P-9iNtw3KK2zigmCQslGmPyONeUPgTF99L1RxzS6hs4ilMy1LvjyHKP3M8UGWK-FJvuZQtnssD87AfPSBzb-NIlgLdvgvXKXtyLmiEDssD6HLHW5fnhzpZ2K3Uk-1t4CRNI2Z7_mTR-RyhRxaWD17otxCwd2hBttPlA3xw45NHer9dSqrsS_faDS-BTS_oXvlIuFqLqADnyh7CIlxg_U3E7LkLlr_n_k13e3eZFmQ7uybMhKJMSbSlpxuQLx8s_JZgGojuVYn_JF_A6v4aV4ohuclI65hIyz0jv6XrbMQSt5BPPEFOXkhXmRLAn6vouoFy5s4g2KyzQEkWJjRyoHj-jtftODARi83qqufkxwSrDvseGhnAbJy0QhTB24xFHUyvBsjUaKH8JFZFRHxajJldBlttZG-qdgOem9yu_lspFHKdXnJC57CiHVBQto-g5lWuuzkPOYxR5Gm9kTE0Na8dGlqC5WvixqBOsvdeZY1qcxiz-Db0TYW79IMjrejdDnTw4tspVuQU4LxWC6bAkhRXGJShPyfGMaf2QSUslZhr_zrmEhPZZ9h8SQlgqvZAbrrspkx1dqFx5cY_rNR-pj5165pOwjx5hOFzViDpgT2skvUhJ-MHIjiJ1sGTCWOQY89Ah6cxSshW8S5EnnNioq7BiPGUMZ3Ci1cmirA6lfCGbOfvmevUde6-8wD5i7k46C_Z2r2nqOYWA0kkJLPT_dQTDyfrVlCMb7AWBo3Ld2UYlg_eME0tUQ1ze_5wzaTNWNVgPIVoYJwjEqOVHgqL745OGk8mLS5_N7fJVbCmsmcuoCRb6JR0V5xUNhUSTkyryp9KPGENdVbEL7phYZbeCrtMmElqDkMt1tirCUSSxEY9cti4Tmy3lRA_1Qah0_v90zvCwOoloEEVI8Nl7MBYcSmsmq32Y166cj7LzDKs84MjXe2dRg1m1sRsjqc5xePpkXLUQTgfJy_R0LZXAZLE-C0ASRDKuOKVJeXdN1TSIpA72NepqcmJERVEgXvVg1rUKZJ84RFL0UQmU6hSJ6YMUPrtETbO4d5FHib8FiATV5Zt1obvrUpF6DMHqIcvH1INas8LNq39RRqbga45SLGvloDwhMlnHnacSEe4mzqUMV8IdsbzU8KFq9fTqmB5BHRY-0BZvsVu8-F8c2OM6MpHqBolHYnHWIXWB1qJnsdrqdEI86rXLwS9QSVdhKPhybnDPTq4Ei94UB6RmQyS82tVsHZvzGE1aP3wvf0jVFqhjw8GKenaYeUS3uVIi1MzZnQXhmURUW_ZRUWUGGlVY78fRf807Cld0iNvp18Mfxxy_TwAVM4fGINvx4tNzyy-8AkjkzDcH4QjZAu5JlYGs7sLRN8HnXUUzeF7Qs6SQuHDoKY04XeC31uDKT2oGWpIM2kgW_Az692-eoatxHm2SXccpbmw6wylr-7Qrb2wlzqVdCc8ZAnV82QQokNAEoCrv27zBuPRKT3MnAER7yAkxq6Xdhn0uTp1Zx_ZopRa4cCdvxtS35E23SFwMLSf7j-fmWqWfDCtkEPKKRlao82EcE7UnDb2HdXcrCu_6gYEtc-nlldShnCO5PyJSBKlnYUxc6mgAtjjkxAc40KfWN0C_r3NQtOz8WNitVmQazlnv8SYsQdZUw2M4Rs0yy-d5uLe8xiB73O8r6SaZ7RBLbpOPgYM9Hg4oW2YzqheXT6o9-U2mxJmH28pHlz2s3PUu8cq3FzeLQjowMQVLXTldcAut_O0GG3-7gCqkIcnNIgyZZdLEBSfxM-ePzrGMphpoFAhoaYsil-NSUpAbrNH8dYfiXUQ3V_f6Tw9rgWxTfNFnwMv3P7A6YObFPWfIK2QnVXpM-hqAh-agQIZG64h44fHcwrrlt1vOfHhs-zrrNFVgv4NfslWW252UNf-W6guSZBbws59pQ0dgq39fKIC0aaq5AT5cbBkWtAshSZkqe7hDlf9HE-O6pDsobsC2Mh-BTLojikz8Tishrznb9atMt0IJMvJ896YPZ-_JIr4gSGoNK7BEqW-XPioMU95KOev-l_j53OYiTCid71gHZmX3s_RqDqD0VqJiVPfScjMC7JYjcxxP2wigp7aQ_5yP3HMnRqhsnSqFLlBxOT5w2JM1U8yHxNQ5y3C9Hxk53me7eeKK7V8Td_v2ZUfZtO0GsDGI-mqhdk_uGDd3ZcJC5Xg_rOO7rt8uStx8cSz1W9NoaBawxt3AntI8WVuuvfMKyxPcW8m-0lbmwNkOlXiwaCJ_cKpmIPdxHt_d8ujdg0obGXjyOVDc2jU0DIasWr_fzSSWNRiz03wkkpNcPSIS4naqSxvoF4XJuhTwdADJrbfgbVSWSHW-7170kTKt1quOiI-TYkztf068kNyBc9xhduRdpbFpcu4g4Dv88V-8HKF2CIGjw77C-b-0KFaiz-Q-QN-kX95Oj4ZSR2MvE4ncaPcL_eF020kGyqga4ir0Crgw9F1tlXIOp4vJm9j6G7FQMNR5T24Xjo-ldDdlCB0Q_N5etDbxqfF_XALidDeE6WJ4UWOtpPR-aUEDFO5oQ7AM5OYcmVt6J5qCzYz7E6A0cmJMuBgmQriWBVBy9zQPQqyG9CeRq8caQ-3_xJEQMApYyOuxfKXytO1g9c8BabvQaVk9r20aewan695649VuAoWY8ud9EeTmfR3pnpKPziXP2ncTEjkPsWZu2KtIlDdCnuakb1CPBEXdsbN1q5C7R5x1HOzwFX10H01hYSYaw6XQScitZoHoTFqharjjbuWfWZ8_FZvnm83-xircruHDUwpVGHGUqYdB7E1mJPBL_IdJuTH5Cs5ekhpYnChMdFxGTjh1RGMk4ZJeMJpS_XmpDq0d6eM1e-BgGC5SOcCUGYSpx9DZtPYo2OSZ3ONuTSUSflZBQVaWEHnSuExKDKaEIUT0z0oKR5fHz65ptzXCj3jXmNhGwheUtfHwqGNLaKjP05w196uG7mtkpyCL4MS28s3keYfy8TNvwZNVwejYjFouogMOTXRB6WMc9hG5aQFLLW--q0A2id4h0wxyJLzk8C1-zUJ9o2i1pedQZQGa4LySRXDZMGozAqsv5w_F7dufTUahQrK6kyDTx6M-Y52kARexDTPXwq6BcJWo5XL3azKXbPbmpjM9I_nxJsT_FQFhySZiA7te1Q26mhP39KlN8lkuLu1M4pmEbvK2ZY6VZZpHmpWkbbp-xslyBkA4lDyr_kyZ59ojhNDaBl0ttfb5lnDSUXGC4Sq7hQRhlA-PhIsxE_nFaW4DQm0F-jKyNEH-9bGWBFJY5ufBN_Sso-j4HBub_5EKn6nXQ2ztNc31wHfAaclXKRM8xvY9e34Te2ivQpQ_SxaYahTmG4aKXa-pDPGHXM9sUTSXFCt195SPWFmBptBZe4Ca40o796jSoKcCvNYHm0VZe6cR9vebKgkFxzE2W2dJq0JMv7zzISkbEBzkr0NhGK5S5c6Eesj-oYCETsGPC0e8ucVQYp0gKhgDa0a4rMfaKxSswAQBK_mT_i0QXXNGrIyQYEiBbk5SLaK9vYe8CcmzQt-iryCr7q_EJ9X0TOHIxJ0_Xqvs4TFuINyxOMqD4ZM5ZW28wrGBaZwvY1T7URs924R341zdv1bnZOOUmLhHix7wb_uhVSYc3v2RmiFjbvyC2xpyr0nOSXO0phVZpLVDDG7l_w0Ueo6N8hyWPZWk7i6eB0Ecz6rp10bbaY0caw1LJBMB8iUyQCm7cqb4L91YyCGY-QvobKu94oC_DY_fh6kVNr3xPz3188LOi6XJ6CyUv5zxC-9f9sRHRzQaL0BVhY3J6r17K9_3h4Q4aJGV-j8vyn-KeKZ4iMgxxlVLygwM75LKIxenbevnHzNc9P_vEZbS7zmoG_heCuvrWQrpmM3ctsiFTHFD0n1DEwOmD7Z4b_9f-MQ5YEnJvmUvY5hJD7E27xqHFquZ1bCnU7gZ1dfs21trMN8C_mxrYVQJIyB2NkpdsiiRRwOiUrABvud_4XpjkjPKBzgkaD_VC4TkWoeER1oETAuqwqNTbEDlgkYxtyHIBVE-shyZlp06gUwu2nKLZHwPV7yv_a41BAOiZdwkFDDjoxy_TmmnnE9biu8YUKTJNcyV-xnSKaLmMCkECdt1JQWBl8EDAXt4CvLZcf3AVuaWkdVi62r8r2_bhDC4NF2jmwCrG6l_14W3I7Js56d4AIONMJZMqEtmrpNxM08DtywQCjJ0Pd66S9whNre6RMgc7x-L-RMe6joGag7zF_oJlzXmqgCl_cYuq4r_G_IYsQjWN8gXtjm7dRjH82wvJpjNSS5S0yay_ZYUIYale6de9bMTYghoQA6XWRiEWGec4n7SCyu87lcslLLkvQE4UkXiqk0WbnJkG662w8MvnADHslm0XGzpzcxxsdBitLkGR6cO5I41gGXoqYGF1ZKjMjCZiiFsuE5hvx3G5wo3NAoCw7-eW458E_uEyI7oahXwiVojnuUNOq3Fixsi0MgQS8VSv2Rh9gzpX5x5ITUTA87zrlFaBuDnJLlgTRmMMSdSQHkzJ4NzcEOYHKrclS0Vg7SU9t9xe4XyFxSwohPzkYRVrNzWawtb1M4tw_8N1HD9lCNqHBAu3McXz9pLeyqyXGWaLaZJE4AFPQXkWyl5P00fNGwObv3C48tqztTQvJMI-6YwRrdHRcUqJEolze4SfAHVgh4QsvgfMZg5zpqdUN5qdHPOBsoGd6fCgyhnV9l3zlavhriE2Y0w56TOCxRcbqJyhQpEa7rYwPKU1u1MsGW9fr0vTnO0nO6rDgbakQSHucXN9LUir_vTEQ-Uwh03GGiUzPxuhaY-ABKckjDqnnSv6iwCign83HF5j7BYZa05lcPSFKPR0eTtmdhFHii15h4yqHGQ_8jM0EQckBHCZsfYc5A-2sDyfBP0v1x0JvN5Clk7yuoAmrh29TpDeMFj97JHHN9Q5wnB8uCvjveq-KPIgVBr5GDkvVuSS6DErfaEJI7Pr_-I4rQ-ppLx-JRKb3BlIP-ooyjcXd2yH_ngGAq1O02v71eJ3BFljJgh8p3FmtmG1AfQhEXDbp6IsXYbTtv0z1KDllVhjUYNUE2-yP-0VpHifHYyC_IGQjxSA6NI5f_Y5p1zHLCuExeVpYR3fs-kGELxYVYnWXh-G-ZHOKtTnF_bMiqdhvVN1GdXXACR72fCB0hgMqNctyJtf7J0dxCHOkCHDT2V_aRI3U9An3D6LxW3JkXWOx9r57MybHWlNNjUcbijq4aySQb2bbVYXoh3Z_PV_g-k81f7K-GJfREdJB_JpDC8zv37IbHB_72U25S_QovSZ4fy6AmY1_bNoll0q_mMA3OuBC6t_3ns6fXnNjeNlrwskPb61Ja9smf042dbJK0LLhmVeafRn9FRbpqQd85fxKf9hGhTmlGGrSR6uSknWjP9S-XNDX3qGl4XWi_IVuemazq3qm47wTMwqrxM1RLzdaMMIB6lQcGUFTrUvJV5xnXImOunh6CsY7TvgSvqbUFA-2JkZL7zbGGnieh5xW9ulLKxK6e1HHNcveV0nLjqAy2MG63MXqFIjHR_2JfaVfKOSb1VQmzpjs22-OfykwTrWNbs4HpVdzHLreZsSi6zk2XjvqRsbPbfBHM6RA68u2lICXZdgnX27jeIekjwOfrPQE-7HjmEofyLXzvY21V4at-v7yXQDGH3ipLiUsJL05poipPg5T10SKs53hmmevNETN2cWi6dGs4qFBGw7wbXaw6ktO5CBpR8vYtOImfBU4D2MV-4WNs2FwTWvf8beJ7eHAM6LrNeHfc9UYHGRgrovn1gC7R9tmwfwNjJ3KxZVFgxzYvoDDfybc_v_dLGah2r1rz1POo9PnKP_XOiKJmZ2TcYMFyoXigEb-bMgJ9FjWeWZx5Q3Q0PCkcviqQyfs9lONreESVmqG17AdWFI6ytz2iEcMCHcPHgELtzCq1cIUa-2m83_3yEomSGSzfgUfVrzxisc2MZSgwNfjeZJRBjt9tpxHse9thYKC4ygb1QbG8yWAgLjueZM7yXy0b9mglbEN0cOspNq8PnAjqk-_YeEZhK3CjWXc9dx9B1s1CYriDH-bfutuisvXzZVlBZb1BwcGuNI3geuDIF2eYeZqR2SWDKka6ecTrCQ_ciM5UhnkA-GMrYy4NX6x7n-sITaQ0L9Ju5B5UgFFH4zISrJ0Y5AQJ6xuXcz3uQCyrm3J9XeV9MZjX_28cUSjBUXlQSTbpIDYolgaDzBkAk1vfzYxrGdv4bTR8QugjeMsDmn98R-Zg14bvlnAw_J93SOetaycJEdw7oIsvOaSC3NlnqjvkVcdT1KMyL76XQjLUBoXh-g-Z_Zdmqrvzv12YvwZlSSHg68euiFToyDn8mdRCnzSfrDzSteU6n2sI8AyKs4TE0aWAIWaZm7OfqGuXbkd1whEPgib3mksEJMNiB3QUSYNJYN_MJTVSvvggwfLNQ_ELheFpnWzMINiZI5MVdFKZtNrravaGdJXQpGqNVlMEVi4E4_87cek6jbxdfT_34y5a1cfZWj_lktUuJO6-S6OKoIdlUJ958GS9O-Ie6dcC84vIglCeLT2GoS7dsZLPUN_Kb_Zqa5Q7IrYyhDDBQra8sOaLHsEZ-KogL1T6P7KPfEOsDo4XesIYph-hG0tHzhC1XTYTYqxRDQF9X-blGGk1jX29ria_zgNxTAR_UKTCXcnnIEcNnb2Gj5rpCarDtcQgrRvVQkCWeHoimaKFtOsJuGcxE2RFyyyJ_NKerJ_2pV78uFLuq4QMlNSt6oDgcpJWBp5Y5jiDBWZrnXq_jSRzBl-D2GaOsSWC059ivxl9tR-xeAHCQuu0BqRYLMSvHFICqj3d0vGEnaw7pTwexzTbL7ksWOevEiszEy5GD90UoyEZseR5UyG83MC_UyKmRxkqRkQSpPazvA2UlrYNOCH7EklpojqogUVrwwWTyMOwfwdluqTp9W8P3G36ehZTmi_F6GU5rPehuTrQ7fH31CY8m04sSh0IH6I_MQST2Iv2cYr-5Jpn5NuNstfnZoCSmvGoQ_m682RtmmTF1uBMlqADWVqjksj0DbWrtOsPiNoXWwe0xjCqp5-v2srnd_UcHntRYQnL6qOC3VdIAxozKxttgti2nEvLValAyuUJyYAvOhCCEPPJCbjkosF5pyqThybrR7O-P2RgRg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_033321816ee41369016ac118280f8c87d1b240a8686cf6b3ae",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 275,
+      "completion_tokens": 3439,
+      "total_tokens": 3714,
+      "cost": 0.00694675,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00694675,
+        "upstream_inference_prompt_cost": 6.875e-05,
+        "upstream_inference_completions_cost": 0.006878
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 960,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 275,
+    "completion_tokens": 3439,
+    "total_tokens": 3714,
+    "cost": 0.00694675,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00694675,
+      "upstream_inference_prompt_cost": 6.875e-05,
+      "upstream_inference_completions_cost": 0.006878
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 960,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

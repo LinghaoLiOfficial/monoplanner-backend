@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：用户持久化与 UserPublic 新增 timezone 枚举 `UTC`、`Asia/Shanghai`、`Asia/Singapore`；既有用户回填 UTC，新用户默认 UTC。本人 PATCH 可修改，缺省不修改，null 或非枚举值 422。前端设置页提供三种选项。\n\n持续有效约束与验收条件：full_name 第一步规则保留；所有输出 UserPublic 的接口返回 timezone；除本人 PATCH 外，其余写接口不开放 timezone 自定义写入。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：用户持久化与 UserPublic 新增 timezone 枚举 `UTC`、`Asia/Shanghai`、`Asia/Singapore`；既有用户回填 UTC，新用户默认 UTC。本人 PATCH 可修改，缺省不修改，null 或非枚举值 422。前端设置页提供三种选项。\n\n持续有效约束与验收条件：full_name 第一步规则保留；所有输出 UserPublic 的接口返回 timezone；除本人 PATCH 外，其余写接口不开放 timezone 自定义写入。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

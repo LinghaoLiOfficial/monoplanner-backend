@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:54:38.578221+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039251-0it6w4TTFEGjHS46Gu74",
+    "object": "chat.completion",
+    "created": 1791039251,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施指令（仅后端实现说明）\\n\\n范围判定\\n- 仅后端负责在“更新（edit）”操作时将请求中 description 的空字符串转换为数据库的 NULL；响应中当数据库值为 NULL 时返回 JSON null。其他情形不改变行为。\\n- 创建（create）操作不得做此转换：如果客户端在创建时提交 description=\\\"\\\"，应保存为空字符串。\\n- 前端必须能区分“创建”与“编辑”请求（例如通过不同的 HTTP 方法或不同的端点）；后端按操作类型执行不同规范。\\n\\n接口与行为规范\\n1) 区分操作\\n   - 使用语义化 HTTP：POST 用于创建（create），PUT/PATCH 用于更新（update/edit）。后端根据所用端点/方法决定是否执行空串到 NULL 的归一化。\\n\\n2) 请求处理（更新端点）\\n   - 仅在更新请求中对 description 字段进行下列处理：\\n     a) 如果请求体显式包含字段 description 且其值为空字符串（\\\"\\\"），则在持久层写入 NULL（与请求中 description=null 等同）。\\n     b) 如果请求体显式包含字段 description 且其值为 null，则写入 NULL。\\n     c) 如果请求体显式包含字段 description 且其值为非空字符串（包括仅空格的字符串，如\\\"   \\\"），则按原样写入该字符串（保留空格）。\\n     d) 如果请求体未包含 description 字段（字段缺失），则不要变更数据库中已有的 description 值（即部分更新时保持原值）。\\n   - 注意区分“字段缺失（undefined）”与“字段显式为 null/空字符串”；在使用的编程语言/框架中须明确检测键是否存在而不仅是其真值。\\n\\n3) 请求处理（创建端点）\\n   - 对创建（POST）请求，不进行空字符串到 NULL 的转换：\\n     a) 如果请求体包含 description=\\\"\\\"，则写入空字符串。\\n     b) 如果请求体包含 description=null，则写入 NULL（如果业务允许）。\\n     c) 如果请求体不包含 description，则按现有创建规则（例如写入 NULL 或默认值）处理，但不要把创建时的空字符串隐式转换为 NULL。\\n\\n4) 数据库/持久层要求\\n   - 确保 description 列在数据库层允许存储 NULL（nullable）。如果当前列不允许 NULL，需要与产品/数据库管理员协调并在合约允许的情况下执行模式变更以允许 NULL。\\n   - 在 ORM/驱动层注意区分 undefined/absent 与 null：在构建更新对象时，确保当请求未提供 description 时不将其包含到更新 payload 中。\\n\\n5) 响应序列化\\n   - 当从数据库读取并返回实体时：\\n     a) 如果数据库值为 NULL，序列化为 JSON null（即 response.description === null）。\\n     b) 如果数据库值为空字符串，序列化为 \\\"\\\"。\\n     c) 如果数据库值为仅含空格的字符串，按原样序列化（保留空格）。\\n   - 不应在响应层对空字符串做额外的转换或剥离空格。\\n\\n6) 边界与兼容性说明\\n   - 缺省行为继续沿用：仅当请求明确走更新路径并且字段显式为 \\\"\\\" 才做 NULL 转换；未显式提供字段时不修改。\\n   - 不要在其他任何端点或全局输入过滤器中盲目将所有空字符串转换为 NULL。\\n\\n7) 单元/集成测试（验收用例）\\n   - 创建用例：POST 提交 description=\\\"\\\" -> 数据库应存入 \\\"\\\"；GET 返回 description == \\\"\\\"。\\n   - 创建用例：POST 提交不带 description -> 按现有创建规则（不强制转换）。\\n   - 更新用例：PATCH/PUT 提交 description=\\\"\\\" -> 数据库应存入 NULL；随后 GET 返回 description === null。\\n   - 更新用例：PATCH/PUT 提交 description=null -> 数据库应存入 NULL；随后 GET 返回 description === null。\\n   - 更新用例：PATCH/PUT 提交 description=\\\"   \\\"（仅空格） -> 数据库应存入该空格串；随后 GET 返回相同字符串（保留空格）。\\n   - 更新用例：PATCH/PUT 不包含 description 字段 -> 数据库该字段保持原值不变。\\n\\n8) 实现细节提示（伪代码）\\n   - 伪代码（更新路径）：\\n     parse request body -> payload\\n     if payload has key 'description':\\n         if payload.description === null:\\n             entity.description = null\\n         else if payload.description === \\\"\\\":\\n             // 空字符串在更新时视作 NULL\\n             entity.description = null\\n         else:\\n             entity.description = payload.description  // 包括仅空格的字符串\\n     else:\\n         // 不修改 entity.description\\n     persist entity\\n     return entity (序列化时保持 NULL -> JSON null, 空字符串 -> \\\"\\\")\\n\\n9) 日志与变更记录\\n   - 在更新操作中，当空字符串被归一化为 NULL，应在变更日志或审计中明确记录该字段从旧值变更为 NULL（以便可追溯）。\\n\\n验收条件（总结）\\n- 默认行为不变；创建时提交的空字符串仍保存为空字符串。\\n- 仅在更新请求并且字段显式为 \\\"\\\" 时，将 description 写为 NULL；响应反映 NULL 为 JSON null。\\n- 仅空格字符串保持原样。\\n- 前端必须能区分创建与编辑请求以满足上述规范。\"\n}",
+          "refusal": null,
+          "reasoning": "**Evaluating API endpoint design**\n\nI'm thinking about implementing separate create and update endpoints, or maybe requiring a query parameter to distinguish operations. However, the best practice is to use HTTP methods, like POST for creating and PATCH or PUT for updating. It's important to handle empty strings correctly: only convert them to NULL on update endpoints. Also, I need to ensure partial updates maintain existing values. Plus, I should serialize database NULL to JSON null, keep empty strings as \"\", and ensure acceptance tests confirm default behavior.**Considering response serialization**\n\nI'm focusing on how to handle response serialization. For a GET request, I want to return null for database NULL, an empty string for \"\", and preserve spaces as \" \". I need to clarify the database schema for the description column, ensuring it allows NULL values. There's caution against making assumptions about unknown contracts, so I should instruct that if the database column does not permit NULL, coordinate to allow it. I’ll also draft pseudocode for the update handler to detail the steps involved.**Drafting response handling**\n\nI need to ensure that if the description is absent, we don’t make any changes. When persisting, the response should automatically use null for NULL values. I need to be cautious about ORMs that differentiate between undefined and null as well. I should provide tests and return a JSON response containing these instructions in Chinese. It’s important to keep the JSON concise while including all necessary details. I’ll craft the prompt string carefully, ensuring proper formatting and escaping of newlines. Let's get this done!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating API endpoint design**\n\nI'm thinking about implementing separate create and update endpoints, or maybe requiring a query parameter to distinguish operations. However, the best practice is to use HTTP methods, like POST for creating and PATCH or PUT for updating. It's important to handle empty strings correctly: only convert them to NULL on update endpoints. Also, I need to ensure partial updates maintain existing values. Plus, I should serialize database NULL to JSON null, keep empty strings as \"\", and ensure acceptance tests confirm default behavior.**Considering response serialization**\n\nI'm focusing on how to handle response serialization. For a GET request, I want to return null for database NULL, an empty string for \"\", and preserve spaces as \" \". I need to clarify the database schema for the description column, ensuring it allows NULL values. There's caution against making assumptions about unknown contracts, so I should instruct that if the database column does not permit NULL, coordinate to allow it. I’ll also draft pseudocode for the update handler to detail the steps involved.**Drafting response handling**\n\nI need to ensure that if the description is absent, we don’t make any changes. When persisting, the response should automatically use null for NULL values. I need to be cautious about ORMs that differentiate between undefined and null as well. I should provide tests and return a JSON response containing these instructions in Chinese. It’s important to keep the JSON concise while including all necessary details. I’ll craft the prompt string carefully, ensuring proper formatting and escaping of newlines. Let's get this done!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRcgLVjUwVJgm0_5R2b9w_QwD8hHBidTEm2vqQCmIn9zT9tonyy4-U_pk5B0Cmqv2hWOA7OWcY9JSafEFYMu5o964R5Z3LUiBml9eA027Ad51LzvlohokjhVvY_htsOx5VNNT0PkA3-BeqJgb7jmwZ2TYpooIspt8KGFqkCkoajbftR-kTiTQHdeeqfy4M0iFXOcrijKM_KYSQsBuMfYk-IkHxZIxQdJEUTnLeQgOOuZAvBGJ6gz5tWjlwCANDatqlONj_4Gyw2hRou1HZR6_5XwONv2RUIMfm-A39-s6e3nQnNUMKPh0jzcyQMHWaROASksP2-aWpV6p3FS9y2U5O2JuqjsjH5z7fHyKhp2o3x_Ew-b9_v7XMhyiv3HmfvoXh98pCK8TmE0rrsIJ-3awbAACCX814SX9WzuIITM074L9_5zJfHUOTCUmVy7QlC0Ld8por6XD_GzGrWXOaBpYLg6U1DLZs8rA-6QMViXMhnnu-kdJ-0w1e4XRSPtZMmojS6IUogsDu4pQ6y6O1qt8vHVSBDGmIJh7Owidotb0v__8huBCMcSBfUrQ7PcLo9_U2kmZHtfxbbu-1nM4jiZmATuY_KEEgKFXow8McWOtRieIQXIPPnadTUBNYWYhKQvzwJ-uErB7eTamTnRDMpz37QbLOr5HBV7ROgpki-1RFMYx5W9PKQV973AT3MVWX4qNCbjopXLUTfysUOdrs7rqO_72SGDmYHXn3oFNkVFUupPhP3Q7arbHVDC-W8dwxEVQ6Q_mq_0rQfvN6pil8LDYk1Niuqnw0mjuvxBGwU6HuPISE7qqvCo_hk0DjIzh135HQPOrG1uAi39eUAynvc6cawNSax-xD8FaJTVct6FG6pP8MgfHgW4JmxB6dLC8poaQBs0PYD713JIDCU_YE_IZlzNWmuAwnNkAuOUs5Q_YcLLqhXlAl56k5upXT-gODPh-xDbyIb9snzosSG4WqXRmBcr5jmNtIna0SXvCuUEdcsp4g-lH2GNGZSTQfNROrYRNP_bvNhqb2Wk5o05tSNRF-61t0tEcqB-etzDIMmc_zupLU66_jUWJ0ZxgmTeJhMXIyir3kNg1_xFf5ybR9cRixUSmJUGeEv3gbuBNBOfjX0vSEw2AkqPA5h9ujDOMjY11fWtoBNV6knZ0sJ_9Jam_UVF1flP6xIQppskK1J8bYVO0hD-LswSoNn7PxJh9jbDKWRGHcZQSEFPeGJ8MeA7Aq6GbvEVgOpDj5ppHYB5ZpAzYF1IR_pmc-TZUdNlDePmn2RyPcVHbtWwaf-yZtgHmDgNAxNc8OM0mIMx0MR6bu7ebh5XXRKxERCek0WQuOeys96WmUt6iVTiQ5jYA6r_QKmcQkY8OzXgrol6tvYJ1q2h3MyNzQYFVtmlLwcFDWUCKhyV8yP31SkQi4cqaalZs0hGT-jAr103RKb2erai2vLYMdmMX8-nGNqMkHlkaFACHBArnjfW3Sp8CaczywtAnbFqbhVmhB54ftYDBftDiO4pO2JPW6NcgEnFFo60jkPMByuDKRJNqK6ddoXISh2HeO5CO_euTuf53kbsg8i4nOuWhqe7CO14uZB_hLtajSGAq-F_yTBkHXE7h0pLvvJb79ivJxeW9D6z8q08r47QmHTfziCvQV4Pb4Ud1o8YhHQyNywAfxT4WrH11Y0_3LJa-x7yiYbayOUcPZM9hYs6HtKRVW2jSXT-l0mcQzJSi2z5bLylG25DYnYSqkMxsd5UpdLRtgH4znML2u0UHp7qpJoGsz1itNP-L0LqvjK8p4cZqmknzTdJgqPoB2dPgdV0GZkxdQZOEKEATSA2fg7ifkXPFhopaD9oTv8sqSG8r28mSXDbbgxqrxXCd-mEpLHD4rG6koe0Zd1D40J84O7fdrZVCkwDvC6ic-LIh1nNzMpEm-RayfsWH5E0azUlT1aqCm1Esb1TzTBGDQYnZtHiFdn5OJ8nusabZAHWzWjiP2azgsdzD8T7MahJdiD2FToBT5kcjxQKZ5h8iHeufji_65xGF62DSoIJCZhZZ50kwDUpekTa7_QNfezAa6Z2cbwlI2HBGltI01ZzUgQC-5fy82EMeZMuJNfj878mAfRrLmwe-YIuYS4Zu5qblWgxLruewAeNgFyt5MvfK3kcUs28aSzqIzXP8_LY0PmLuGxg4dBFyZCpFXI4mT2RdzphWR47ZeWIBkUbIb5uz-lODgaoOLgMBb28E4tU_Wio5SQY8521k1p7vBqEvwbUtsT-Ldh8RGJk-BrYvUcZY_J2aQ517xImpBVV8cFjH_vw3C81DdJgPzBMtJGxdAo9fzQmqH2KwySHtmF_18viHpG32_w7Bqraq-ffJ4zkriqzbPeNyaNi-POKkypikKMgrfVfUfR1SGea76OQWcZhzIKWssuA3ZU2q7wTGCaBvB8NX72zeoHCFJ__h98Z2nsNfJHBdtw1XO2RJhDmTEuCsl2fAoqGLlEtfaNBnr0VC-leuESBzTlZbGDAT1PKzQJqlAiw-EQIlR1iFs51jnOYR6EU9BQD9gE8sfTJYWNZ4J8MhGmMRp_ED1czgBP8eU-hf0cHwpoj5qqR1igeLNyogIh1vd7JDvK3cLcQOw8_af7QCMVwx4LH1e0N0ciNay0NGEUBBbT9SIoqQP_RQ2N4WAFFER23OQ1-Ml9mhRHy1P90r1NXx5KvPYmHCn9LGuvYjbAAPHgfNBYXMhe_KF9sIFaEf9pjsqawfR2ZQfgo3zAgIkrzDVpYmgj_G6dt59kL1dBWhNDgIECbYtnrs9N1aKptwz-59AjQ9Uluf2CZ6QUN_AarJY-jVtcnPcoy8pRZwn6wImIcbEngnQiJwa7QN1gN7vZNBncTig-ImINHCdy2-eReuTJaGfvZ6Fe3eQbpQgXC7t1FfCUNwFAwKT2ZWOIiwobTl63UssNKbWOVF1zsPMMEvO3NbG_CYkdA_WGHY4qLgF4lbLkMs_2fzDRjKVDS4MyFew3xuS6znTBfoQiO-qyp-tEWekOnxiP9S2wVpv2rITQCM0mbHkBybVC3kVX24PJ2ZW4fwy3DLCAYHwUt5J_ZS0FCI9jrjUvMO4r7Ka-xgwT_5xmGVcfYES_SJYYdVMCOa4hAC9qmpc_8ytRog-apdOOi6b8mWgSKaGXlKchtUF9GIQnYu_J6OS9hy4lWTAajdR99B0jx2zfjnvPVQEZaZMB2RDXWXYrvDBSuf0nxxh8Ps_52wSp1hK9hTizPhx3teLQMQxD_O4af5u6tGrY65JlP-BNswLn7YAn-q-3Vg-GVGcopgJ8y9nzjbVZ3FuvZutWHO5t1q0UwkgGrrUvMC3IwQWkhGIkuVCOoeZrnCo4CuJTH6xrh8uL8_xdPWuaFk2F7xxlreU02d8pAXl1ZB5213suvN_rj3VivYc4prcLayoFRCZ1B63jnGRPW9Mg04Qg16h4PLqSy-Fo2C9WcZuvMYSxHRjMfdRFmf4I7PdyQffnYM5QqD3agTtbyFAFug5eD0zmcDqD2S_wRRtfVYHmH9MJ8QffoXfqH0ZXKAOoP2AVscY7elwicQx5VwVPjf_tDQkBaRpxXoDy_zSAmFrunNycNn0FDC5q5dF0-PpGRqWXw9gzpBJWkW_wKGQRrTGslM5smeKCQLHQn3_Gdtf5Ee4wI04sZ4HuDpFAhe3G_b-rfuxup7tS4f3Kko08R_Qj_mmXIDCGiApeKJf2Ut7XfT3Sj8WUOScfLlztwlc_TOplLAv6-VG4ojsJp3Wo1mB2x6c_mKO21SJFmCI52BVdcCzstITTlucCvbBkBXFzZLIN8f4jXEb6RrfkXtWDesD_O5QciKTuOzsVEFJN9lFQ-wHKilTQUF3gjbJxjDUenYxsFjSJhse6SPHY7tYKrL3qx1_RXjzvRxuLOPr2SRl7M4ffUGkaxulX5jBUp1JKNDEEwpfzzUz9Z6iGCqRTzLVR142iNbpUNvVEJxoIve99_dyj4WUyBL-ku0TlhUF6viOOTMrMheDwi_tzo8Yvv8DxS3bxzWdhtffXhVULxzD9NP7XzA3kwVznWk8FRph1BIKPGoh9cRIh5cKo1hnIxjhSeJh9xaM9bt4IvAvjxaHAY5oMkk3IpR2CCbAECBW4dymB46cAnBwx8EJUNoWse380gx9R9pCH7FgwxQvpxRt6SQ64IVEvxkeqF1qK-WuqIIseiy3KEyaSZuay0yAB8B3_CE4wKg2ldu4mZOibHt7YgCScnj-svWR70XYYrIk1UvQJHRRKdXExKSeheek_JGKY7HVt7WUO7GtpSZj2D_fg9Kcub6_x6C84-8Hi8Aib7IJ_C24msrIoUaukkTKxc8j05_SkTijZEaSgzPA80Y5lcd8tAlIdNl8MFnhnOTJUoV3FqldxaZIDOGF8GFfu5kSHxc5GWlafIcLnwQgjQnGRi7VaZhwGk3mDdIQ1L94L1-WttUakIJUW4vlR9nuTYrvIlPchAViuMfqqnSLkR3ecO11q97HznueD-GLrqWyAk0kR-VSXGlzwAr_830qJBsouUOHVN6_-n49lmVhaFOfcaRqXXCVGXtqFhCEOf4TnD9GKtoVkYsp-OrQuTh8tNM8SM8Gi5OOOI3s6j5cABibdLPFDlY3ft6G5krvoN-CJJx2aH0PiTzZs2ETrEnHgOPTd6DtvmhqGxeSzEycLr-8gu3ZlHdBrhzUBE9UMU4R8a5YA_e1puM8ugYz4gW72il40t2uhLldVCC7wC2nNtkPVKXdrHtJRbk9cm_8j-rCvEoTmPV1nOZXAlsQVfT2INP-WpMeyoWXQdmLlVxXUk6xznRbasp9m4Iz4wzWMsSbVn7X3QYZa0er4Syqs6ZN_HjNdj6lzLpX68bDCtfq9cEu81SJ7gWbL1B_YR0ettaPxaqAYREFH5UNebsz0XpYNZngMCr3ceeMZ6ODOZVhwfRQsbdSCQzI8FajYYClAJR9AqFXW4uSFEjnH1VojXophEp7hkAr-DOgojoDpCFh8NlqqRa2jAYSKLbxPG3SXsXJvq1HmAHIu2qL6ogDZAVTRwUMaAPP7SyhOUUJbMrE1ZD0jQff2_qAFsGQZCrGdW89krTwWTFspEd7XdcbzMkoEhwRgjCzjv4OwpVk3xO7B9oLiXMHrOWdWKqu9Js5ju5_tbB65HqxxwVl02vcBHQ2nkaCUc5412RvPbBu_JlsyRETv_0c7Bd7aWGLexerfcVlH_v_1ZEzK6A20F2REic1Y-2dwqWZFZkOVh8ZW4uQXxZYgX0ADh331fo-89wYaFlinHMAG-ftmtxPBO7YG0GEJ0w9zpq5SPOQ2mFxM52PgpJZxGO7wjj21a3CsKPgCfAwVHlrgGYoKfYkChXq4N0thutC7mw2mTgFIwYsjfIew65iEHjGIaXBcxueEU1EwO8GXZ6DgMcyD_ZhaKQofzizN3VOod7ck99hFJ-xXehcwhD1blEhz8xfDa6yh58AOOCsuOmR-LXjMWAN_ucfpfyCn6QXmBXKbYXtESbYMPyYZitjrB-PYKacccG57puGqbQwvy_4haYJ-aRZ7aPPxnOc-yo0Ox-JGVcOfPDuxvZcbQRwhrlWaBGIGAyy8ZdUzVUbHgI7rMPXhn_1K_ahVxFIIKZR-KAL9oLh5DVJVfwU8Lxb5EKwEssMfKbeYY3JA8XmTaxNfBHRcxj47-GsbJxvytTWMWf-ffxICAB96cWxsWZKlyRyr1LZImGaQHvdefgXwa3Dhg88Edq4KQYIqHJRs64LUPCsOzGY45WT_qJEFJQGLXPve3RS9v8cmMqNfi1mI3JTCDv7t2X4dvqE0LSoyYzDOITWujEuggAarwQbxRp13V0wY32OJZW-RqhzQCZLbFQiPjHnsaRyP2J6couF7d_OoZ-IC5FVOZOCFCAQE-qrVCHKCvNN_OMuM9MuaFg-O6KmgVGaYg29VQUl4s-tTJzjQyeGMqJGaTHRyamVibZDMsmVpReoIdgi5gqGO9M3zRDDvjjZYzz-lucSe9LPUFnjZ2-iWXrteX8IZSFasoNQockyl01xEvLcNyoW36xNoXOo18UovYoC4NP-Wer37qcS5th3LU_c6h4WcpLbUHWIJtqpPhYDR6XgnCUBCETnPqGhv9PzDckf2Wig1BNgvGeXtZyczr5g5yJOUNAnnHHmh6vN_kwJ5bEIt4iCBMVpftCd89uVpsu50xQ3Yg-3hJiwHvhHJl-I2Ta23Ak9vjRjKuT9xGlsPdVqgWRn4LHXesIA9g00l8d1jKEI0FwjrcLvff8utAOW_wWEgcBy8kdLpyKu7RQVVWzcaFcV5SEwn0STW3FkkNRMgu8yQedX2Uv4APQugxsMbbsgzshBI1VVZ3XVXeFrF19p9JNFTM-BlxTOKnfeqL5fSmhdoPaP3Dyif2cOI4Ht9kLBWQahOQXN3FwPzdOkTvCbJTp6zGREkXeh4NMhq8D4FioA0TIhnGLlZ626s4_G2w_axE5mC_VeRcgsEhtCvTvx8fZzUupvDMdtq9P9V5B5MWfnBIddq7s_puT3V3lIYkyvf6otBH0dY3civsDD4dqzOLNYsv8-l_khFn5ym1GSamoo1wRCWcpDUjlPQoJaqj5QercO8T0DdA-AkUGn2LCiBME3eNGo9zrUF7BK_c2uSTlhq5hL75KkfHHWkugYW3_RtHpBYtsIisnYvoFPCu-MQ4ZGYuJXmaU7Ba0ppktyszKBM1crvlqXNov5XVS5jRrTIJYwVWN79Pg13GGNgHSqG0QslUv4aJXfwGw8ZjLVkB8CNzCGlBpmFc4NGAZjiDNg9x1x0AZzWUb4CV9qspC7D2AxCIqJBiWxyQgQrIUqsgZlgzy-vdE3LfOVNfplzWLzmCOSNAverY9vJqeyG1Iec38j4LmCMXFXdXQQd321mqt42hr1YQpasIAy4jLmsaDFxxAD78o5t1ABhbe081GqL8WSE3T1U8qTe6Pr7HqCSqvGxE8T_eNJ40mGWFRJQUXDYy-UtqGLbwL-6WYYt8pRqcZJtFNEC0P8ZgNOMTbWp53DHAYvTGUg6blhECf8EOUtEDXlLHXHKhkt9OEBO3OrHsTpvABBok-7NmCl9dYBJNJjsMAWn4UzoS6C5VVs0m4nJPvQXXnhX7EubQ88TtoEc2pUZogNXnsZN994Aw8J0kWnb0gUX6_6FZR-MWbPEgC8JaaqDQNI2MF8tf1veUDu8eV4DiSBRvVEKgq_aJCqdWNZEw-77m2BYlHzitiJfDqlHx12NXch7F3g34.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_06a815ee81e7e213016ac11713f11c87d196c3369e07958996",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 195,
+      "completion_tokens": 2158,
+      "total_tokens": 2353,
+      "cost": 0.00436475,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00436475,
+        "upstream_inference_prompt_cost": 4.875e-05,
+        "upstream_inference_completions_cost": 0.004316
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 768,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 195,
+    "completion_tokens": 2158,
+    "total_tokens": 2353,
+    "cost": 0.00436475,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00436475,
+      "upstream_inference_prompt_cost": 4.875e-05,
+      "upstream_inference_completions_cost": 0.004316
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 768,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

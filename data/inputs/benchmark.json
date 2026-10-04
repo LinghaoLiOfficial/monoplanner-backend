@@ -1,0 +1,747 @@
+{
+  "dataset_id": "fastapi-human-chains-v1",
+  "status": "draft",
+  "source_commit": "1762adac607a1b29cfc4da129557780beea71616",
+  "chains": [
+    {
+      "chain_id": "chain-01",
+      "topic": "item_validation",
+      "split": "dev",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c01-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c01-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c01-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-02",
+      "topic": "pagination",
+      "split": "dev",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c02-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c02-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c02-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-03",
+      "topic": "permissions",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c03-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c03-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c03-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-04",
+      "topic": "field_rename",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c04-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c04-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c04-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-05",
+      "topic": "null_and_clear",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c05-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c05-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c05-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-06",
+      "topic": "error_contract",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c06-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c06-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c06-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-07",
+      "topic": "filter_sort",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c07-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c07-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c07-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-08",
+      "topic": "delete_restore",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c08-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c08-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c08-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-09",
+      "topic": "user_profile",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c09-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c09-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c09-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-10",
+      "topic": "scope_clarification",
+      "split": "test",
+      "author": "",
+      "provenance": "human_handwritten",
+      "handwritten_attestation": false,
+      "initial_assets": {},
+      "steps": [
+        {
+          "step_id": "c10-s1",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c10-s2",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        },
+        {
+          "step_id": "c10-s3",
+          "raw_requirement": "",
+          "preserved_constraints": [],
+          "sources": [],
+          "pack_input": {
+            "project_config": {
+              "name": "FastAPI Template",
+              "target_frontend_stack": "React, TypeScript, Vite, TanStack Router, TanStack Query",
+              "target_backend_stack": "FastAPI, SQLModel, PostgreSQL",
+              "llm_prompt_language": "en",
+              "global_constraints": [],
+              "coding_preferences": [],
+              "prompt_preferences": []
+            },
+            "selected_story": null,
+            "change_sets": [],
+            "old_versions": {},
+            "new_versions": {}
+          }
+        }
+      ]
+    }
+  ]
+}

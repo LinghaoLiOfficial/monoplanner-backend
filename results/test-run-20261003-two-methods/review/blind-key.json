@@ -1,0 +1,149 @@
+{
+  "schema_version": "requirement-blind-key-v1",
+  "mapping": {
+    "packet-001": {
+      "unit_id": "chain-06-c06-s2-rule-r1"
+    },
+    "packet-002": {
+      "unit_id": "chain-07-c07-s3-joint-r1"
+    },
+    "packet-003": {
+      "unit_id": "chain-08-c08-s1-joint-r1"
+    },
+    "packet-004": {
+      "unit_id": "chain-05-c05-s2-joint-r1"
+    },
+    "packet-005": {
+      "unit_id": "chain-09-c09-s2-rule-r1"
+    },
+    "packet-006": {
+      "unit_id": "chain-03-c03-s1-rule-r1"
+    },
+    "packet-007": {
+      "unit_id": "chain-08-c08-s3-rule-r1"
+    },
+    "packet-008": {
+      "unit_id": "chain-10-c10-s1-joint-r1"
+    },
+    "packet-009": {
+      "unit_id": "chain-04-c04-s2-rule-r1"
+    },
+    "packet-010": {
+      "unit_id": "chain-07-c07-s1-joint-r1"
+    },
+    "packet-011": {
+      "unit_id": "chain-05-c05-s1-rule-r1"
+    },
+    "packet-012": {
+      "unit_id": "chain-09-c09-s3-joint-r1"
+    },
+    "packet-013": {
+      "unit_id": "chain-04-c04-s3-joint-r1"
+    },
+    "packet-014": {
+      "unit_id": "chain-04-c04-s1-joint-r1"
+    },
+    "packet-015": {
+      "unit_id": "chain-05-c05-s3-joint-r1"
+    },
+    "packet-016": {
+      "unit_id": "chain-04-c04-s2-joint-r1"
+    },
+    "packet-017": {
+      "unit_id": "chain-03-c03-s2-joint-r1"
+    },
+    "packet-018": {
+      "unit_id": "chain-09-c09-s1-rule-r1"
+    },
+    "packet-019": {
+      "unit_id": "chain-06-c06-s2-joint-r1"
+    },
+    "packet-020": {
+      "unit_id": "chain-06-c06-s1-joint-r1"
+    },
+    "packet-021": {
+      "unit_id": "chain-05-c05-s1-joint-r1"
+    },
+    "packet-022": {
+      "unit_id": "chain-10-c10-s3-rule-r1"
+    },
+    "packet-023": {
+      "unit_id": "chain-03-c03-s1-joint-r1"
+    },
+    "packet-024": {
+      "unit_id": "chain-08-c08-s3-joint-r1"
+    },
+    "packet-025": {
+      "unit_id": "chain-10-c10-s1-rule-r1"
+    },
+    "packet-026": {
+      "unit_id": "chain-06-c06-s3-joint-r1"
+    },
+    "packet-027": {
+      "unit_id": "chain-06-c06-s1-rule-r1"
+    },
+    "packet-028": {
+      "unit_id": "chain-04-c04-s3-rule-r1"
+    },
+    "packet-029": {
+      "unit_id": "chain-07-c07-s1-rule-r1"
+    },
+    "packet-030": {
+      "unit_id": "chain-03-c03-s2-rule-r1"
+    },
+    "packet-031": {
+      "unit_id": "chain-07-c07-s3-rule-r1"
+    },
+    "packet-032": {
+      "unit_id": "chain-06-c06-s3-rule-r1"
+    },
+    "packet-033": {
+      "unit_id": "chain-09-c09-s1-joint-r1"
+    },
+    "packet-034": {
+      "unit_id": "chain-07-c07-s2-rule-r1"
+    },
+    "packet-035": {
+      "unit_id": "chain-05-c05-s3-rule-r1"
+    },
+    "packet-036": {
+      "unit_id": "chain-10-c10-s3-joint-r1"
+    },
+    "packet-037": {
+      "unit_id": "chain-09-c09-s2-joint-r1"
+    },
+    "packet-038": {
+      "unit_id": "chain-07-c07-s2-joint-r1"
+    },
+    "packet-039": {
+      "unit_id": "chain-03-c03-s3-joint-r1"
+    },
+    "packet-040": {
+      "unit_id": "chain-08-c08-s1-rule-r1"
+    },
+    "packet-041": {
+      "unit_id": "chain-05-c05-s2-rule-r1"
+    },
+    "packet-042": {
+      "unit_id": "chain-10-c10-s2-joint-r1"
+    },
+    "packet-043": {
+      "unit_id": "chain-10-c10-s2-rule-r1"
+    },
+    "packet-044": {
+      "unit_id": "chain-08-c08-s2-joint-r1"
+    },
+    "packet-045": {
+      "unit_id": "chain-03-c03-s3-rule-r1"
+    },
+    "packet-046": {
+      "unit_id": "chain-04-c04-s1-rule-r1"
+    },
+    "packet-047": {
+      "unit_id": "chain-09-c09-s3-rule-r1"
+    },
+    "packet-048": {
+      "unit_id": "chain-08-c08-s2-rule-r1"
+    }
+  }
+}

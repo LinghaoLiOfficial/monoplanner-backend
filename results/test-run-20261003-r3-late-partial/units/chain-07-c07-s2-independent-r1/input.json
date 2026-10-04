@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-07",
+  "step_id": "c07-s2",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：新增 sort 枚举 `created_at_desc`、`title_asc`，缺省前者，其他值 422。时间降序空值最后，title 按 Unicode 码点升序；主排序相同时按 UUID 标准小写字符串升序。",
+  "preserved_constraints": "筛选规则不变；后端排序后分页；前端不得只对当前页自行重排。"
+}

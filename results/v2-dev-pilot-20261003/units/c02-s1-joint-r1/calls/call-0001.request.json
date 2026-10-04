@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:50:24.770916+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Use the supplied current contract facts as the authoritative target. For every fact with coverage must_be_explicit, include its exact [FACT:id] marker in every applicable side prompt. Do not add unresolved facts or alter values.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。\n\n持续有效约束：`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。\n\n本次变更事实：\n[FACT:request-skip-type] request.skip.type = \"integer\"\n[FACT:request-skip-minimum] request.skip.minimum = 0\n[FACT:request-skip-default] request.skip.default = 0\n[FACT:request-limit-type] request.limit.type = \"integer\"\n[FACT:request-limit-minimum] request.limit.minimum = 1\n[FACT:request-limit-maximum] request.limit.maximum = 50\n[FACT:request-limit-default] request.limit.default = 20\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\n\n当前契约事实：\n[FACT:request-skip-type] (frontend,backend; must_be_explicit) request.skip.type = \"integer\"\n[FACT:request-skip-minimum] (frontend,backend; must_be_explicit) request.skip.minimum = 0\n[FACT:request-skip-default] (frontend,backend; must_be_explicit) request.skip.default = 0\n[FACT:request-limit-type] (frontend,backend; must_be_explicit) request.limit.type = \"integer\"\n[FACT:request-limit-minimum] (frontend,backend; must_be_explicit) request.limit.minimum = 1\n[FACT:request-limit-maximum] (frontend,backend; must_be_explicit) request.limit.maximum = 50\n[FACT:request-limit-default] (frontend,backend; must_be_explicit) request.limit.default = 20\n[FACT:request-invalid-status] (frontend,backend; must_be_explicit) request.invalid_status = 422\n[FACT:response-count-scope] (frontend,backend; must_be_explicit) response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] (frontend,backend; must_be_explicit) response.empty_page.data = []"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "64ff4140171f08c361d535c71527bcab14844acbb6ad42b1d826907021901459"
+}

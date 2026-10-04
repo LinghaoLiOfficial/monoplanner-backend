@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-10-03T23:00:22.837333+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039603-FQl0wwpGTUyv1jyBDDfq",
+    "object": "chat.completion",
+    "created": 1791039603,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"Scope: backend only. Implement a new POST endpoint at /api/v1/items/{id}/restore with no request body. Do not add any \\\"recycle bin\\\" list endpoint. Ensure restored items reappear in existing list and count endpoints. Provide automated tests and API docs updates.\\n\\nImplementation instructions (server-side):\\n\\n1) Route and HTTP semantics\\n   - Add route: POST /api/v1/items/{id}/restore\\n   - Path parameter: id (validate format consistent with existing item routes: e.g. integer or UUID)\\n   - No request body accepted. If a body is present, ignore it or return 400 per existing conventions.\\n\\n2) Authentication and authorization\\n   - Require authentication as done for other item operations.\\n   - Authorization rule: allow when current_user is the owner of the item OR current_user has superuser/admin privilege (use the same superuser check used elsewhere).\\n   - If user is not authorized for this specific item, return 403 Forbidden.\\n\\n3) Existence check\\n   - If item with id does not exist in database, return 404 Not Found.\\n\\n4) Deleted-state check and response codes\\n   - The system uses soft-delete via a deleted_at timestamp column.\\n   - If item.deleted_at IS NULL (item is not deleted) then return 409 Conflict with body/JSON: {\\\"detail\\\": \\\"Item is not deleted\\\"}.\\n   - If item.deleted_at IS NOT NULL, proceed to restore.\\n\\n5) Restore operation (atomic and concurrency-safe)\\n   - Perform the restore inside a database transaction.\\n   - Use an UPDATE statement that only clears deleted_at when deleted_at IS NOT NULL to make the operation concurrency-safe. Example SQL pattern (adjust to your DB/ORM):\\n       UPDATE items\\n       SET deleted_at = NULL, updated_at = CURRENT_TIMESTAMP\\n       WHERE id = :id AND deleted_at IS NOT NULL\\n   - After the UPDATE, check rows affected. If 0 rows affected and the item exists, treat as 409 (Item is not deleted) to handle race conditions.\\n   - On success, SELECT the item row and return in response.\\n   - Ensure updated_at or equivalent mod-time is updated consistent with other write operations.\\n\\n6) Response body and codes\\n   - On success: return 200 OK with JSON body = ItemPublic representation (use the existing ItemPublic serializer/schema). Ensure deleted_at is null in the returned representation.\\n   - 404: not found if id doesn't exist.\\n   - 403: forbidden for unauthorized users.\\n   - 409: conflict when item is not deleted (exact message: detail = \\\"Item is not deleted\\\").\\n   - Use the same error response format and keys as the rest of the API.\\n\\n7) Ensure lists and counts reflect restore\\n   - Verify existing list and count endpoints already exclude soft-deleted rows (WHERE deleted_at IS NULL). If they do not, update them so that they do. After restore, the item will then appear in list results and be counted.\\n   - If there are additional derived data sources (search index, materialized views, caches), update/invalidate them as part of or immediately after the transaction so the restored item is visible in subsequent queries:\\n       - Invalidate or refresh related caches for lists/counts for the owner and relevant scopes.\\n       - If you use a search index (Elastic, etc.), send a document update or reindex event for the restored item.\\n       - If you use eventually-consistent background workers for indexes, enqueue a job at the end of the transaction.\\n\\n8) Events and hooks (optional but recommended)\\n   - Emit an internal event (e.g., item.restored or domain event) after commit so other systems can react.\\n\\n9) Logging\\n   - Log the restore action (user id, item id, timestamp, success/failure reason) for auditability.\\n\\n10) Tests (automated)\\n   - Unit/integration tests to cover at minimum:\\n       a) Successful restore by owner: precondition item.deleted_at != null; POST returns 200 and returned JSON has deleted_at null; subsequent list/count include the item.\\n       b) Successful restore by superuser for another user's item.\\n       c) 403 when an authenticated non-owner non-superuser attempts restore.\\n       d) 404 when item id does not exist.\\n       e) 409 when item is not deleted.\\n       f) Concurrency scenario: two concurrent restore requests or delete+restore races should be deterministic (use DB UPDATE ... WHERE deleted_at IS NOT NULL and assert correct response codes).\\n   - Include tests that verify any cache or search index invalidation/enqueue behavior if implemented.\\n\\n11) API documentation / OpenAPI\\n   - Add an entry for POST /api/v1/items/{id}/restore with:\\n       - path parameter id\\n       - security scheme as used elsewhere\\n       - responses: 200 (ItemPublic), 403, 404, 409 with detail message\\n   - Document that there is no request body.\\n\\n12) Backwards-compatibility and constraints\\n   - Do not add any new list endpoints (no recycle-bin endpoint).\\n   - Do not require the frontend to persist undo across page refresh; backend only needs to support the endpoint behavior.\\n\\n13) Example pseudocode (logic flow)\\n   - Authenticate request; get current_user\\n   - Parse item id; fetch item row by id\\n     - if not found -> return 404\\n   - if not (current_user.is_superuser or current_user.id == item.owner_id) -> return 403\\n   - if item.deleted_at IS NULL -> return 409 {\\\"detail\\\":\\\"Item is not deleted\\\"}\\n   - Begin transaction\\n       - UPDATE items SET deleted_at = NULL, updated_at = now() WHERE id=:id AND deleted_at IS NOT NULL\\n       - if rows_affected == 0 -> rollback; return 409\\n       - SELECT item (or return the updated row from UPDATE RETURNING if supported)\\n     - Commit transaction\\n   - Invalidate list/count caches and enqueue index update (after commit)\\n   - Return 200 with serialized ItemPublic (deleted_at null)\\n\\nDeliverables\\n   - Server route/handler implementation\\n   - Unit and integration tests described above\\n   - OpenAPI/doc update\\n   - Cache/index invalidation or enqueue logic\\n   - Small migration if needed (only if deleted_at column does not exist; otherwise none)\\n\\nDo not change frontend behavior beyond documenting the endpoint for the frontend team. Do not create any new recycle-bin list API. Ensure responses and error message text match the exact strings required (409: detail=\\\"Item is not deleted\\\").\"\n}",
+          "refusal": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRh7LkBG8Vs9K6wLIOugMTIHsdVUri7Umjn7AvNnUXKm9_UnFpeXl2KjfWeBN4qNFhXwm0wyZcMobamye2cA6N_XvirY5O7MGi5gKWr3sIB-BJ0-1_Dg1epC2H2E-c1JuJSYThAwHmIl6MROmY_6ZkV7j45GOPYAdBevsQ_uZsdZFBx5rOESDJmTynhTzZl8ai6w6lA7jMGwC69AaN-o1oceBVExz9kleZ-NCDUJ5ahEmW5O1i7q2JfM_iBAEgvAGZ6C-fBCwYwsb8P6v7LhPgjXOIHC_UNdIf55-k1I1o1Ne6N3FhsBe3dUvDhqaRe5WItKIPRwKPApQByQ_B-ZW6EIB6DTRDIBb-gA0Jl_Ot7D-MKjLVeJbPlS4HDyezWwGjbItoz6LTo3_-t33lVHvyopm0ln-uLlsrqtrzFaYIaAlkUOZprrVazhZwxw2spnBruicie7oT5rGfNNZhqdAsnFC2CxEXhFqT2ry00--CG3eRddil51Gbg4FaBGVkqRZxGNw7qYPJwYphyxm3FzP0cxirFOKIwHoy-hnwdX3WbXvWGogF7Qksv2Ft-zRhFAwYxiXzAyks4BbLkD9RpjBHkMhrS3kVs1zggQ-YPq457QqKZiwQyZO0PGLrp53NRuCvoZrveTD43Y6-rdIs6Ipx85dyZpRLFfoZZjbwWfTFPG7LpwXS0YLPvC-L4i03SgKouhoJx4zvJGwtijcDBNS3NKAd2rXDjidGJ-t-Bb5efZPuYey9wBM0gNJuD4xp4zLQgsZOwfkRx7a6RQxJn9Frg5wThiGaIgewPMshs0dW2YzJ3IOa2PELLSr01EpTDqvhUMniBtbmMc4JcnlUNCJ6xeUNcd9fygMMfJ8AFgO2t7_WAgyWw-stZIu70Y0npUQCxymCyH6I7MVfHWN1MVSsMgmR_-z5FMdNuUQjLfX2Y_OmKHRd-ZbYPujuvLZLybrzz1If0lZi4vwresTVOjqxqjXgX6DZYtdN6SxguovcerVnQ54OtV5jT1p9ea2zI4FHaKG-cr0iHyvQd-NF8LzVYgYOlRfJgoZ3TIJuddTBpKM0kG3kFhsXTJRZQDa0OgAKFsvlzmhoqhpWKGRhJHPcFgZM8YMPHw0QaAnSm1KU1pIqysAWps_mLr15RdB1h5D9UVWFJ05ObYEbjvGHbl3a6jz8vmlHwMh5f5avG8EniH_N06_yCKcvTXqrLQY-FaKJPLlNyHLd5-vunpPZw3zKjLXtZa1CJ9urr3UgwjSS6B66q37bUS2lEc_oaaYKWdXigs1YifWGCZCXHhSBf5pod6_0zlS5rh9wCnHaBrVdX1zt9emff6DHyImmswkPFbrTJDtaOyFW8QzOI-WlJ5enorGmHjZbipxvh9pIg72yXKVisUMuDkh6Dan175wYQXyQvJlsmIhZbcqE0FE2JZZ643FlCExUiqE6rjthFCI8kFZ12WYZsoupDCdnbl9U-KuJwksM37-22RJBlWLSr-FFZJWu2wAVJA94DpHI8qhf3s48-rdchfQgKHdVJmfOGJ_v11GUr9YSKXmxFkYYNmkeZJ4x_GVbM2Wzal4iaPl8waPwAA4oL5njCCK43SGOspKQer0zBeP-nv5sc97KRobsj9Atrg2OEUIU7ekeMNIOeoBUtwgA3xUyzrLgcwlqD20rpmIFXHci0jBGwyIMRDTRyi6jwhwihRj3gk8HW7m_J8Uim_8cXS7bmbSj1qGmOIX6eD1E5TKs5y5YL2qJQM_nWZeJ29tGswP5NGXuw6wR9gbofUzaqCy9vT3euTM2PtTylmmtFYliLLdsqTqu_IvlQDLToSRPLnlTlIaTypDxL9C4vACp_Jcn6Mq4bdsPHq_avPmjD07SM3jH0ecv2axkg7hILectM7RLdEJ_VvnaSeILjdj-ZrlTkTvEeR9OVUocFTE3zj_6UU_PNqanGRTn0ShbNqPT6GRBqkkavaALegKHQgoUwAFLiL59qCwQrHLl216Lq0N72Qi5ybAjymH4NAShtLtwN0dMsJmVBkoCdF8vaA9MdAq6ShBR7oebhWqmvnr1xiNGf9dFThfuImtUFtYWcN2DiYmn9WPl_U5_VFrqmCmk_2mjZ1u0-5jA9P8ZT3D2fdzc6cyoDdtf1yKEqKlnkU-uwRZsg4EmRVT4dJsh2Nvt2jOydWtXC_1o_pbuyResoJ3W0haW4ACdBDBRaN8tlc2_LS8KYuK8G5rM4JzCrkjYrAFscoeLIkNSdwYShp-4ecP8BqDAfoVOlhutZfSBeEuAjk0TrobyMCOyodVBV3poXsR89GjZlUTYUgwqro6iTSSGEjucNGESQYxgL_ak8H-5AGI-UanCxsDIjvYQXWtM8A13qZIrRiYxJ6l3JSF-NiPJ5hjkRmLyGlM_cJXeiJcw0CmEqaZxuU2tjs8BU5KK57YmLdTQrqWgzP8Bc0UmbAmV_YUYnBlGiSfHK-85eYRBIgkLTYMCg-gL4rjjJ5BNsEVh0lUEaEg2mEsWoDc5_8VrllEVkFdpk17wcr7gr6sMWTcsbJLaUEmVG6ZmiW9b4slGuCjYGfRk6s3oDDr66IO6f0j3SFj4AwxA5Sq3zmX9havmDmbATS_8h7CWPreoQHix2KqepLQtat_ZrS-2V2BdXrAjdYw6zC8eyuQQQRKXpD-Vx6hKGeWWULvqZhSAimaRQrXtkVmwRygArz_adH3nDsMBnJzFFCrSWs28MPPR_bESX-GWiitg238nnXWwHiiEaQEeLtSjHs7dPRsMe9UPVNAx2NN00hujK2IJaOYNT6HSarIwh8XPEjQHaIIIYO7r_rCg62sd35agl0uOfNvS191qTpyLSopbJHQ05JDlr9AO3PKNwF7n08lMtpFPJRn7_MjO0Vy2K4Xga2--iAsW2WYxt4Caj9Du1yrUZXyZvVWWjqmLlfE-RGIUm9bmECw25JSwP7bFG3g_ru22AipBek1LjgsqqGWTTSb_43pw9NytFNOqyFHODLQ8FWrhChH1Por8ynPUfU6ZCfs1foTth_M39J9fjKZLawE11GG-0uwCFw5otbfcnjrB9kt_CPwmsPS-3d2Exh1PUpd4lAS1L_ZFVsb0NoTB4Aas5FMF72YHe_XTD3G6qFKZ9kI5LSKWTnAbkLbZ8actkJ6c816DClPq0Pe0XpGacKMOfmwO0lgEmQUXda1l6shw0q-5u58qUgAplN6sRMekiKIw1WdEgz00dEEOHAxLCoQUT0JbT1dqV_y0MKeNa1Gzt-vhsuY6TCuiOdfznQ9WW9mDvU9gviD78Neox-NGNqtwsnj7SinHxLy_K_LLt-Ru_ZTEu-VmRrYBeK7WsNPNxGxDUzD0i76HIAHFvH-rpgyNTe4TOhd2BbDNW-yvCWXyG74wUMihoQ8RbxvSvt3Gjz8_216Jq7-W8-u0JpE4ceONnUfQW7DTAc_2jtpe-G_zkpxijo0ktTqp5xgRhP-mFUhuKsEQsUeLp2jfsCfFbDbiEpusPzpgejYvLlWNZ9X3lVSSzPTgIV9Lx_4HvjLEoMOZAvaIBrnJp4EIjfyxZ_9OKeducjAl3GRuvnRxENj2v7eyhlsQBqZ5J7ThvLvIOA_gJ1bzVOV8Cq4EMpTSwFkuywJgOMServ3dg7bTNLGaUinI5HjigmETTjPgA8A9RPWg_1XUPtMZrcOKS2h9su39smCDSa5C5vaU41b8-z1A_vq2a0BAEyOKkFEBhX1sAktO83UY8idrAGVc71O-l48rLk6AtJR2z_zR2veU_vDcGVKQgmw1EZ11aYBW1GINXOmgsgM0VCgJOnLuj_FEPH2-BTrcYaqhXI7nOWkljptYTwWg_-P1IcGdxRv6zjNnJnRm_e4mbAAncnCBnS4WZpgsHVMICZVVzAQ_MikCDFtXawC5r3s5VYAIU3Jxk5VwPu4rwHxpOH_HaOsGsUojxtn9xIAjF78jGrcnxw7MHyZKFzr2ExlYAgjKzllmHCtBP-8vWUXTRoOc6anxB_sXD49eAhUu4nLPRKL4hep5ycQH3iNJXDUXQ1F8LlD8fysYPJYWYj3Sw9nkyv4Jpd4UWMagaXqa979pK-wiPIJklwndPYCWvH3ihciqrBV7eckUjW48BaM-As0G1F9CB5uT_UGiTVeKD5cva_NS8CNc2_1onqKniXXW0HX3-HZoUbeG1_kCVYx8O9fT16tNP2dPnX_cXADPSNrr65ahEFF6U_IDSEcJAc76pJ5hT8X1BfELXTtpNfHrhrcUASod8Bf9u-Dw7qUv5q-MzJ5tK6IoxD99KtGzyWixjYBHk4_V5yAe6YmD5tMWTaqRmA50NgKiL-r3g3ZLcBY7ftSVA6zVNyI24xsqDPkXLSdY92luiwWj7_LiWRMwVo2J9_Lv60G6dala2bGc-EljqSJYgoYFl6Pyi31q-Z6NwpIHLL358QtNMZgOH469o_6yxo0ckYik3pOaqtWuwiSnVRw-7PJPiFZkHH3pULaW04547as692BPtUGKjcckjEPlvpdfh7hUEr9YLuDGCtcSqPhNQlEdKxUWKJ7R6gh3uZU53iD01f_hbktvHvJUe6Phye4rfD1OQlIqmHYebOQ_xlsOwe5eQAmWXABFXb7q1l-jGKEfgzHz_tjU4rtH0sMVGDdNPeZXlUGSaCiCi7ZfbRq27zaWW_BNTuSQHqjIR4Sx9nAWMNIW_X2sp109tbo57QLGS3fx8F0968Vktos8z_88oO0lDL7Ji3xnngyo-nxKFlr-C8Amged9HHH5kSIWjKo2haVlUeDZ2e1nFxgio1Yt9HzY2qZ0mrWP6lcLm4S38fY0nVwrkoP7LrJGBWP6Wee-uMnjL2DQlqszjck0k7OWQvWanSIrRMo9a2h5-cnM6OzVmpvneuw_HyegFBMR6UYoF1IPGdlhesVlmSyu3-UvItyaE9gyf0TCSzNEQsaxBQG5nfknUkuwZ52Igp1fw2rGNcW5Pj86FGnGU9YlFO165m2EhKA5SEX33dVXq9JuJMoUrX6RQj6ULCUU4Zmfva5TjKK4gnrR87MVNW1fSLTswbtyUtvYG2QKwvaYIi-BED6rLbQf20QxA0Z-ymbWXfBbmpyox_nkVEEZ7GiMGijJZHQMiIsOVsIXyDIIm2-V-x7MAjoAyicmSa6XNrj7R9xA2PUx9Tgr9iL6rbWoH1sK9ee6FgH3ZiZKQ54eYMVnQkH7ZnUNQqEZPCsBUFSK_ZxtQ81IzotGJjEnu4VKlQ-h82QjFmaXDEXbA_mvMyffwcx6wO_Xh7MwJXK4X5myHAUCzj5IvAxxzbNWMhhiRiOutAF1jo_1fPHIRjbkdqfK6qktSkxq4U8HC7acUTXQVBf297YQQvta3egEgjle7D6wQpQkOMrfDbTZ9QoNSB3cCbOH_GgqKiJt1cvBGHf-ZndpbIjG9OSDBRlR46hBDlGjeHIlzERZyn1URZl-fYWnEHepIbWnz4Uc6DjBwciTSLkDs5meTpiT9_lelo3_d0LZqRuJ0d9uuoBdXWkSowdG3uFXnGEJInOHJuhLH6KjVjHGKxdp1wEv6ZHrLYHygwID4oinC73fGQgK0bilMBCjc7-cjujnXYbx0o6GXc1aOgEiKrjhnJcH7ycpTHcdEVnMlPhghXmIHxtgbJQE3qiHR3Wd4V2yLrP1LqiFO-dBsnzEDwuI7IRO2v5JBJ6OEbLM6-oIk3yIHQyiAD8LFawFOpV_siLaldi78eKjGXPz429yQQ2IxXQ4qB-q30w91OlL2cvSDlCDFqclr2TrIMoI1yQWPfsRW8eA_iqdalqp1K5lGGJe7fM83gCh172Elsgw6vZd_Pf1v9hLI97pFrjlbdHJxiABTWN93Ur2jZarYntNqElIOfMbJnA1WnTGis6KAYvMvCVijDe9E8DPuKtdgMUYK4pHAqVZiu4bJh68ouF5ZRPH_r8a9jJxB-Dl31WUEY5V6e7zJ5UzYQtU_vK9buWSERdbOOaB_vEz-smjlqy1miPlCsHRkyEejqZfT5WFmDmys4pYNk72qlH3RhVIzj7KSDEvEWWSencdTk4J2opgv-3wIgu0WhmPYFhvjKUVaALurfZ18n2YbDZelc5mAa4p1oh7oJrkc7y0-R7CrZRdJWhff8DLjBrnbqWlBk4KwtrkVia9YOrxfectBevruGoxYz5Z4_XYRDdAWOfvvK_oOW4lxJn4eixMbbtcE4Ag8pXeorQiSPhLLJSKUkK1vMRQce-XdrG1uZa6wsookWfMwPIWznMFw4tdxjCBrSccCWZ0uUYpFtqfd_FJ3AsiS7hdJyz7ktQJ7XA3_wh11JNCQkezBhCaKsk8LtEShLDfpI05V1jja5ff7pRbkgIzReN0yx12ogkgl2-4tDNFtTgaLMsiG51JqHSlQT8UcQ9x9uohXroMwWsH6AYTTQbmoCDyl3kcrMWQpSnM9REsmuzSLYhMOhOfgMI7dw5Z91Wsf_Yn8esu9qDJUnsHm1-J4zgV69oICax__fMtGhqFMjIAfh-DmPRQU8h1eOkimy5VdHu_Qih9-UPbNf5Nco3-70gwe8vELAKrGrZJZmF2Gn835kA4Z4E6aOhVIlLDv2Zgl4uFE6Iy41-vOtoR-bmWFYf_B0CtQ5-AbO7K8aG1qlRhyjkHjgWGAFRMiPSKPjrWD4B_U2o3Ws_r_dN6RIcHhsJD8yBAL4_Fs1q4_emK1vGwRI2VwnFJrSjBbI7urZ1FvHMc5BpJaw95ejzSB5vpPgQvPH2Tc7E0xmXw8uA5YuqZzS-mxAyRdgVl8xq-PN1q4VENNPNUn2xNW7iPR4qm1ugy2Afgxn9RCwpWLrAlcfEMv0kavsPKrpENOnfrxABgKA4wNTvC7LgSMtXSMIQw0m2jFYgYR87ylEPIIwhClMjCkDzsvtmmOnHNYOj2zBgDqT25vLdxnQR1ittWYtZP-1bgESp67TOzt8ibhoadfEv9hvPARCB4DMF49kMoSyMQMRDTzA4geF81XqeHP78lAR0XpyZFPH3N1HXM2r7XjpuGexOulurFWumkvrd5w_RWQ8oLGv1AFWu9QReDMbOIHdioDd-pzYJWhrMkK6PeTWkjk8eUbl9LhJiNvUpB1AGDrQP9B6OFt5ls1QWbDu_48lgqTlLznqjFffvU32dhY1d7GGG8oY_sSQiMnb5sXUuROQwmHC4GGlJdf3wUy5twsYw8OM5woZccS0mrDJDBo4iWG7aAtvlOKj-AUWc6pOWxZ8gw2dZ_AVBPzy2PkL6s-lKh3KR5m1SQXTz4JOWxv7lTaXKdtUrMPGoU7y_33H2k_3izNwrT1uxd-KBoY8g5zCPM71O4aohy5nJAueqioM1WiwnTkl544nJ0FfLIv--8ITm0oi68yCGYuiljG3ZKSiL50TnSvo.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_06290bfc57ecc989016ac11874287087d1a8fabd244387473b",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 245,
+      "completion_tokens": 2309,
+      "total_tokens": 2554,
+      "cost": 0.00467925,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00467925,
+        "upstream_inference_prompt_cost": 6.125e-05,
+        "upstream_inference_completions_cost": 0.004618
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 832,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 245,
+    "completion_tokens": 2309,
+    "total_tokens": 2554,
+    "cost": 0.00467925,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00467925,
+      "upstream_inference_prompt_cost": 6.125e-05,
+      "upstream_inference_completions_cost": 0.004618
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 832,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

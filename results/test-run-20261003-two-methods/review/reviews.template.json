@@ -1,0 +1,4423 @@
+{
+  "schema_version": "requirement-review-v1",
+  "reviewer": "",
+  "human_attestation": false,
+  "reviews": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "70d2276da2bb3831a75971a0bf83d1c5804e801ee34cab98401248a223e76ed2",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-generator",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-logged",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-credentials",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-user-input",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "3e817090671c46ca24e0dc46a288115698b4bc028c28b563b3390232b4a6e03b",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-created-at-desc-nulls",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-asc-collation",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-tie-breaker",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-applied-before-pagination",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-current-page-only-sort-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-desc-direction",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "0a7f80edcaf509a10a3f3f44a95a3692fef974a9987e53df347ff8aadacf6852",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "dc2ec961e7e41192e2b8665c0a2ba5eefde55c3a0e02fca44f14e9cb2f322d10",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-whitespace-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "ee800fbd2bd74bc8a879cea0e649a82e7e4462dcb15745d75361911667bd701c",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-timezone-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-timezone-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-userpublic-timezone-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "other-write-interfaces-timezone-customization",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "eda515fb00c81af9bfaf51d114437621f344b358222077ec27ef6bef41d68437",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "8b6bec73609d0a5f075a591ca18d6d6675afbced25883ce56761bcf07f7f8bb9",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-method",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-path",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-request-body-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-owner-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-superuser-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-deleted-at",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-missing-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-forbidden-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-undo-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "trash-list-endpoint-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-window-seconds",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-window-comparison",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-clock",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-expired-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-expired-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "automatic-physical-cleanup-enabled",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-check-order",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "a71d30290e27631121871790ad8d9a460ffb8b0fec836955fb9e42e24e585d21",
+      "assessments": [
+        {
+          "fact_id": "frontend-title-truncate-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-full-value-accessible",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-editor-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-contract-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "bfb00902f63e7f2e14d6ee9c734023c65f11a1eb5e97f14c15fc2d9e48447136",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-equals",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "804f1f7558467c41d9277aa74b567e8ac5bb0abb29e042776fb60cee34d32883",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "7cd24c2b89dcc90495047fb793ef6b039581c4cc6b0791cd90d536cece26ad4a",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "0b3545e6b04161ce5c70ff582b1ea69f2453edcaeae93297ce79385c633471f9",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-timezone-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-timezone-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-userpublic-timezone-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "other-write-interfaces-timezone-customization",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-self-profile-email-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-email-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "admin-update-email-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-branch-active",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-013",
+      "pack_sha256": "3c824ad5d997f00fe3d1964077acf6270c8c95b8d636eab276711156781fc4f1",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-fallback-enabled",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-014",
+      "pack_sha256": "13451342c825a3e32eef396aaacd9547d41e3503e92d43e59a961f7dfd87d5a8",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-or-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-or-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-equals",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-015",
+      "pack_sha256": "b3e0e7df9f67cdea64adeb669f278f61e941c28b3c50bc9f34149c1217cbf05d",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-whitespace-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-true-description-omitted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-true-description-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-clear-description-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-016",
+      "pack_sha256": "0bed22fb28b2a5a6d34a39f2b82a58541db736e2bf7a7817a078087c776c0618",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-equals",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-017",
+      "pack_sha256": "87a5c2613e2342b172fba49f0965192e1ea197bbb9293ff10b9432909a856d97",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-write-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-own-item-write-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-superuser-other-item-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-018",
+      "pack_sha256": "147e7e5e290b602f01b0751bf0385c5c0c070fa54146db5ad6a41a0fe38e6bad",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-019",
+      "pack_sha256": "33198d454b1f7fe9f1bca999b558bb281ba5917aefee4127bd2524ad0ea22a1d",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-generator",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-logged",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-credentials",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-user-input",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-020",
+      "pack_sha256": "71b1c0e61e2972944e3fdface320248dc9d2a719123ad800dacb90e33f5ecb29",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-021",
+      "pack_sha256": "19d173806c169e860141c9349e912948181cfb301f90eef036322d227e68af78",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-022",
+      "pack_sha256": "6ff74d31b1aff39b65a5df18a375d334e023b8d7ee95de055f4048c20810222c",
+      "assessments": [
+        {
+          "fact_id": "frontend-title-truncate-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-full-value-accessible",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-editor-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-contract-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-request-display-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-request-display-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-detail-response-display-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-create-update-feedback-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-023",
+      "pack_sha256": "8790492a5156cff2cf408b06a0a6c667483be024006bc4a800f3b2d95127d098",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-024",
+      "pack_sha256": "cf05133dad88e52c061660d6471b9994b6fc367515f007b89e4ea3ff32bfa7b6",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-method",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-path",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-request-body-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-owner-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-superuser-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-deleted-at",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-missing-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-forbidden-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-undo-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "trash-list-endpoint-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-window-seconds",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-window-comparison",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-clock",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-expired-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-expired-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "automatic-physical-cleanup-enabled",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-check-order",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-025",
+      "pack_sha256": "d351f86c07858955fe21d75d212eea644233384570b1d536720eadaac3dc8d08",
+      "assessments": [
+        {
+          "fact_id": "frontend-title-truncate-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-full-value-accessible",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-editor-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-contract-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-026",
+      "pack_sha256": "c4e5f9072822673cd772ebe769e7fcad3e068b8f0ac2fb11b419dbb9c785a6f3",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-generator",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-logged",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-credentials",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-user-input",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-message-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-error-dispatch-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-027",
+      "pack_sha256": "fb0789cf1ede686e002a1a3746cfd6dad525e91c23753d504393e4439b837436",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-028",
+      "pack_sha256": "630205d1a5e088136da4141f803c99db74ab6e2708c0c55578c6c17b78e61e74",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-fallback-enabled",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-029",
+      "pack_sha256": "dc57cf0fdd46f45e55bc020cc6aaf9c9a26d61854916539726e8915d95347386",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-030",
+      "pack_sha256": "bbfd5f9e4b849aa92f757a3edf94a9612fb8a546a5803f598098bb219717d6b9",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-write-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-own-item-write-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-superuser-other-item-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-031",
+      "pack_sha256": "e4fb973ff449c8c0e3f433c53fc9fd9b8c0318c90a9a31ce55f18abeda6b3fc8",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-created-at-desc-nulls",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-asc-collation",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-tie-breaker",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-applied-before-pagination",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-current-page-only-sort-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-desc-direction",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-032",
+      "pack_sha256": "7fc3c13858694823318bb7e0488a05c70af3f91003790a6ada776453cf220591",
+      "assessments": [
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-code",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-top-level-detail-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "authentication-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "validation-error-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-generator",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-logged",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-credentials",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-request-id-includes-user-input",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "forbidden-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "error-message-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-error-dispatch-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-033",
+      "pack_sha256": "c72f991c066709b0d8163b683ff302b43406c22b0dd00cd1bec16d2e49deafb6",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-034",
+      "pack_sha256": "e78195d61df567994438071071c065a649dc83afdf08146785e76f9a2a1128bf",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-created-at-desc-nulls",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-asc-collation",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-tie-breaker",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-applied-before-pagination",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-current-page-only-sort-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-035",
+      "pack_sha256": "b00124d7eaa57e311ca1513b033568e53f852f460ec523b2933fede80cfb3b4f",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-whitespace-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-description-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-true-description-omitted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-clear-true-description-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-clear-description-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-036",
+      "pack_sha256": "677647f808e8cb28d5f1763e51e30ea95dda5b9325fa1a6d1a078d543d98e5c3",
+      "assessments": [
+        {
+          "fact_id": "frontend-title-truncate-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-truncate-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-title-full-value-accessible",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-editor-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-contract-changed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-threshold",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-prefix-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-display-title-suffix",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-response-title-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-request-display-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-update-request-display-title-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-detail-response-display-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-create-update-feedback-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-037",
+      "pack_sha256": "8578a3428a618e172ff0bd116a296bd14d426ad19bc8d224bae143a180fb3802",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-timezone-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-timezone-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-userpublic-timezone-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "other-write-interfaces-timezone-customization",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-038",
+      "pack_sha256": "447a6b22c22248544b770c6591d91552b1b8d8c215c081f6c229e24852b4db14",
+      "assessments": [
+        {
+          "fact_id": "request-q-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-q-empty",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-title-match",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-percent-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "filter-underscore-wildcard",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-q-changed-skip",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-sort-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-created-at-desc-nulls",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-title-asc-collation",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-tie-breaker",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "sort-applied-before-pagination",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-current-page-only-sort-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-039",
+      "pack_sha256": "4ba829550ce9dba4c70e1068cc6df9a4f488d2a6d6c803cbd3a9453a23a30a06",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-own-item-write-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-superuser-other-item-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-only-error-active",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-040",
+      "pack_sha256": "2dec2cdeb01db86250fa3025ae519919619c1a9fa783b3c2d711336ede1b7a1f",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-041",
+      "pack_sha256": "6fc28d38277c2004f65f2288c346e4e6bc6ba9bb3348378099ef529103c51cfa",
+      "assessments": [
+        {
+          "fact_id": "update-description-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-clear-payload",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-description-whitespace-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-description-empty-string",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-042",
+      "pack_sha256": "178bd94c3765303f291ff63ec438604d830116e8d89a2bffadbfdec3af373517",
+      "assessments": [
+        {
+          "fact_id": "backend-success-log-actions",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-fields",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-timing",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-actor-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-item-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-occurred-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-title",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-description",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-token",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-failed-request-success-event",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-audit-query-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-043",
+      "pack_sha256": "13f0d61fa12c3779de3400fdb6bfc892c3b675fb4b74965b0840758163da6474",
+      "assessments": [
+        {
+          "fact_id": "backend-success-log-actions",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-fields",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-timing",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-actor-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-item-id-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-occurred-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-title",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-description",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-success-log-contains-token",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "backend-failed-request-success-event",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "api-audit-query-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-044",
+      "pack_sha256": "d0a450fa30c3ca59ae5e5a220da691e271d5852d68bcc1ada8d2669bc0256960",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-method",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-path",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-request-body-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-owner-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-superuser-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-deleted-at",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-missing-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-forbidden-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-undo-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "trash-list-endpoint-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-045",
+      "pack_sha256": "214105fa177eb8599f18814d730f542bf8f13f1fbedb8441af6062838eb1567c",
+      "assessments": [
+        {
+          "fact_id": "ordinary-user-other-item-get-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-put-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-delete-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "ordinary-user-other-item-error-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "missing-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-update-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-delete-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-own-item-write-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-superuser-other-item-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "superuser-other-item-read-only-error-active",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-046",
+      "pack_sha256": "e1745210fe6023e0eaa08afb3f93b7b18aa881e814fa0df7495c9a51d2f86d09",
+      "assessments": [
+        {
+          "fact_id": "request-name-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-both-names-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-name-or-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-name-or-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-title-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-name-equals",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-title-renamed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-submit-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-display-field",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-047",
+      "pack_sha256": "3834be3ab5acb0d50f1573641f8e0c7d7996f4dcec42deabec6b91cd81481be9",
+      "assessments": [
+        {
+          "fact_id": "self-update-full-name-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-null",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-full-name-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-long-name-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-allowed-values",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "database-timezone-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-timezone-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-timezone-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-userpublic-timezone-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "other-write-interfaces-timezone-customization",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-present-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-self-profile-email-read-only",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-email-present",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "admin-update-email-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "self-update-email-duplicate-branch-active",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-048",
+      "pack_sha256": "a513686c1973e408a62783453c9185e209627f8a4ccd9988a7fa2925d03501a4",
+      "assessments": [
+        {
+          "fact_id": "delete-mode",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-deleted-at-format",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "migration-deleted-at-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-deleted-items-included",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "list-count-includes-deleted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-deleted-item-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-deleted-at-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-authorized-already-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "delete-success-message",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-method",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-path",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-request-body-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-owner-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-superuser-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-success-deleted-at",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-not-deleted-detail",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-missing-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "restore-forbidden-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "frontend-undo-source",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "trash-list-endpoint-added",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

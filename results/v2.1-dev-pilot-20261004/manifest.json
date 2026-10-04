@@ -1,0 +1,22 @@
+{
+  "protocol": "requirement-contract-v2-pilot",
+  "created_at": "2026-10-04T00:24:27.337551+08:00",
+  "methods": [
+    "rule",
+    "joint"
+  ],
+  "repeats": 1,
+  "workers": 6,
+  "model_config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

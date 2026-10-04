@@ -1,0 +1,26 @@
+{
+  "protocol": "requirement-direct-v1",
+  "created_at": "2026-10-03T21:56:44.921980+08:00",
+  "split": "dev",
+  "dataset_sha256": "17292630295968dcd7850d031e734947d5181ee6edff2e969937cd45b6db6cca",
+  "model_config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "methods": [
+    "rule",
+    "independent",
+    "joint"
+  ],
+  "repeats": 1,
+  "labels_excluded_from_generation": true,
+  "fullchain": "not_run_missing_asset_snapshots"
+}

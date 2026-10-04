@@ -1,3 +1,5 @@
+"""Command-line entry point for the durable background generation worker."""
+
 from app.core.logging import setup_logging
 from app.services.generation_queue_service import run_worker_loop
 

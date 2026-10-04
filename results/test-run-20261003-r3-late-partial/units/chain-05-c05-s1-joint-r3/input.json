@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-05",
+  "step_id": "c05-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：PUT 条目时 description 缺省表示不修改，null 表示清空为数据库 NULL，空字符串表示保存空字符串；前端“清空”操作必须提交 null。",
+  "preserved_constraints": "description 字符串上限 255；不得把缺省自动转成 null，也不得把空字符串折叠为 null；创建规则不变。"
+}

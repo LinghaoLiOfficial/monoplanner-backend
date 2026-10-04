@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:54:39.037992+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039250-LvxabpHo48AZkOUjAEMY",
+    "object": "chat.completion",
+    "created": 1791039250,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施概述（仅前端改动）\\n\\n目标：仅在前端恢复“超级用户（superuser）对他人条目修改与删除”的可用性；同时移除前端对该角色的“只读”错误提示和界面限制。不得修改后端。必须保留并验证以下持续约束：\\n- 普通用户访问他人资源仍然在后端返回 404（前端不得把这类情形回退为 403）；\\n- 超级用户“读取全部数据”的后端行为不变，前端对超级用户的读取展现保持此前逻辑。\\n\\n实现范围（前端可直接修改的事项）\\n- 角色/权限检测逻辑（仅前端呈现层与客户端授权判断）\\n- 按钮/表单的禁用状态、只读样式、隐藏/显示逻辑\\n- 客户端在接收到后端错误码时的错误信息映射与展示文本\\n- 与 UI/UX 文案相关的翻译或提示（移除与超级用户只读相关的提示）\\n\\n必须不做的事项\\n- 不修改任何后端代码或接口行为；如果前端无法可靠判定“超级用户”身份，不要假定新的 API 字段，需提出明确的后端契约请求（但这属于沟通事项，不在本实施内）。\\n\\n具体实现步骤（逐条可执行）\\n1) 搜索与定位\\n   - 在项目中定位所有与“编辑/删除”相关的前端权限判定点。搜索关键词：canEdit, canDelete, isOwner, ownerId, isAdmin, isSuper, isSuperUser, readOnly, disabled, edit-button, delete-button, permission, authorization（具体关键词按代码库命名调整）。\\n   - 定位显示“只读”提示或错误信息的地方（例如组件内的提示弹窗、页面级错误 banner、表单只读覆盖层）。\\n\\n2) 明确当前前端如何判断超级用户\\n   - 使用现有的前端用户上下文/认证对象（例如 Auth/UserContext、store/state、cookies、JWT payload 已有的可用字段）。\\n   - 如果代码中已有“isSuperUser/isAdmin”之类的布尔判断，确认其来源并在下文复用；如果没有可靠来源，停止并记录需后端提供的契约（示例说明：需要一个确定的用户角色字段或 scope，在后端/认证令牌中可被前端读取），但不在本次实现中假设其存在。\\n\\n3) 修改客户端权限判定逻辑\\n   - 在所有因“非所有者”而被禁用或隐藏编辑/删除操作的逻辑处，修改判定条件为：允许编辑/删除当且仅当（a）当前用户是资源所有者 OR（b）当前用户是超级用户。\\n   - 用伪代码描述变更（按实际代码结构替换）：\\n     before: canEdit = (currentUser.id === resource.ownerId)\\n     after:  canEdit = (currentUser.id === resource.ownerId) || (currentUserIsSuper())\\n   - 同样对 canDelete 做同样调整。\\n   - 不要移除或改变普通用户的所有者校验——普通用户对他人资源仍不可编辑，且若后端返回 404，前端继续按 404 处理（见第 5 步）。\\n\\n4) 移除/调整界面只读限制\\n   - 查找所有针对超级用户施加的显式只读样式、禁用属性、遮罩层或“只读”文本提示，移除这些限制，使超级用户能看到并点击编辑/删除控件。\\n   - 如果某些控件同时对普通用户和超级用户禁用（例如全局维护模式），只移除或调整针对超级用户的分支，不影响普通用户既有表现。\\n\\n5) 错误处理与用户反馈\\n   - 保持前端对后端返回状态码的现有映射规则，明确不得把后端的 404 映射或替换为 403。具体要求：\\n     - 当后端返回 404（针对普通用户请求他人资源），前端仍展示“未找到/404”页面或当前项目既有的 404 交互；不要显示“禁止/Forbidden”或“你无权限修改该项”的文本来替代 404。\\n     - 当超级用户发起修改/删除请求时，前端不应预先阻止请求；若后端在实际请求中返回错误（非预期），则按后端返回的真实错误码与消息展示（保持现有映射规则）。\\n   - 移除那些在前端专门为超级用户显示“只读错误”的逻辑分支（示例：点击编辑弹出“你是只读账户”之类提示），改为允许请求并基于后端响应处理后续错误展示。\\n\\n6) 表单/操作流的细节\\n   - 编辑表单：允许超级用户进入编辑模式、提交变更；保留所有表单验证与提交逻辑不变。\\n   - 删除操作：恢复超级用户的删除按钮可见/可点击性，保留现有的删除确认模态和后端请求流程。\\n\\n7) UI/文案调整\\n   - 删除或替换与“超级用户只读”相关的文案：例如“您是只读用户，无法修改”此类提示需在超级用户场景下不显示。\\n   - 保留普通用户的相关提示（例如他们若尝试访问他人资源仍会看到 404 页面或既有警示）。\\n\\n8) 测试计划（必须执行）\\n   - 单元/集成测试：更新或新增测试覆盖以下用例：\\n     a) 普通用户访问自己资源：编辑/删除按钮可用（与当前逻辑保持一致）。\\n     b) 普通用户访问他人资源：前端不显示编辑/删除，且在请求资源时仍按 404 处理（模拟后端返回 404）。\\n     c) 超级用户访问他人资源：编辑/删除按钮可见且可交互；可以打开编辑表单并提交修改；可以发起删除并正确触发请求。\\n     d) 超级用户读取行为不变：读取详情页展示与之前一致。\\n   - 端到端/手工验证：在一个开发环境中用三类身份验证进行测试：普通用户、资源所有者、超级用户。验证编辑/删除能否在 UI 发起并观察后端真实响应。\\n\\n9) 回归验收标准（验收条件）\\n   - 普通用户尝试访问他人资源仍显示/处理为 404（前端不转换为 403）；\\n   - 超级用户可以在 UI 中发起编辑与删除他人条目的操作，且不会被前端以“只读”或“无权限”的本地提示拦截；\\n   - 超级用户读取全部数据的展现与之前等同（无回退或改变）。\\n\\n10) 日志/监控与回滚注意事项\\n   - 在发布后监控前端错误率和后端收到的非法请求数，若出现大量“权限相关”的后端错误（例如后端返回 403/500），暂停发布并回滚前端改动，同时提交问题记录给后端以共同定位。\\n\\n实施交付清单\\n- 代码变更点列表（文件/组件名），每处变更包含修改前后关键判断的短注释；\\n- 更新的单元/集成/端到端测试；\\n- 手工验收脚本（如何在 dev 环境验证三类用户场景）；\\n- 发布说明（仅说明前端行为变化，不包含后端契约变更），并在发布说明中再次明确：未改动后端，普通用户他人资源仍为 404，超级用户读取权限不变。\\n\\n明确的不可假设（严格约束）\\n- 不假设后端新增或改变返回字段；如代码库中没有可用的“当前用户是否超级用户”的前端方法，请在实现中停止并提出具体后端契约需求，而不是自行推断字段名或请求新 API。\\n\\n结束语\\n- 本指令聚焦在前端：允许超级用户编辑/删除他人条目并移除前端只读限制，同时严格保留“普通用户他人资源为 404”和“超级用户读取不变”这两项约束。根据代码库实际命名与模块化结构，把伪代码替换为真实代码并覆盖相应测试。\"\n}",
+          "refusal": null,
+          "reasoning": "**Producing instructions for API use**\n\nI’m thinking about how to use the existing role-check accessor and API responses, but I need to coordinate with the backend if something’s absent. We should avoid instructing any backend changes. I’ll include a step to stop and request the backend contract if the frontend can’t reliably detect a superuser. It’s important that I don’t invent property names. I’ll write the instructions in Chinese and be clear about the API facts, like the different responses for normal users and superusers, and I’ll mention not to modify server behavior. Then, I’ll create the JSON.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Producing instructions for API use**\n\nI’m thinking about how to use the existing role-check accessor and API responses, but I need to coordinate with the backend if something’s absent. We should avoid instructing any backend changes. I’ll include a step to stop and request the backend contract if the frontend can’t reliably detect a superuser. It’s important that I don’t invent property names. I’ll write the instructions in Chinese and be clear about the API facts, like the different responses for normal users and superusers, and I’ll mention not to modify server behavior. Then, I’ll create the JSON.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRch4JQjHDZfHDPuC2nOQUhwQ4DLgTCcBJ1OPNpJs8g0qoBfdRAuJA9JiTMNMfjdE8mc2P7kutLshTUqcTEbl-8rVvJg53jDrKW5L40BarGX6vD9CmqI1iPMhQhsekyR-Jz2zwlH91SnuLIf6pw_LnhVTuakSQGLVm3jaQaYQbsr-sOG8a5zwPrgqwHF1Sd-SNnt7jhFz75Ha9vUECCf1H6HkdUtVROAZnEPll6OdiqCX02dO3g73GPVbx_j97zkTynI1rULZrvFKy37Rkb8XRAeRm8F326KMe0p0iMZPLfnFloTrBwLfrcfoqWzf1O5ulODTwwn1e8oQD0nCijsJSF9KFrgcEQjFqfU8kcLP9QuQoz6kxH-v1MGw0h2-u2BZjQsvYxLmx5oQaLQatreHY_apm5taWoApHiGIfkIbYOPI3ysxPOpQsgsrSs0-95LJzuQczuzJDfDGhP5gHZh7hFyfkHhU2rXbReoVLshAyttuWi1l9jIvhznqgT_6mIA4cVa-a40aHvo6z5ehMzGYS_DyMfSzGddnW2ObcNaw4oxA0pBOT4qYIYLXZ3HVNJtH6JsRxNXSl7g7lfnfk5EJQb143uuLB8-VIJL00qyAmFx3DFwwgFpEhc1gbojOpf6Sc6ApgqK_EgQChJI2m0JHtbFfAmrG4-fzz5uWMbHKdbwterv0hRA3xUdxDnIcGe-YrE5BW8B9Z3UyeIYR9vaiWHDzE73ezGrqKKqa56zuop9YtO8vg1_Zf9FRvQBMFcVbU59NG3Wpe4Myjl0H7zrjzVxlmYxwM9g-6nmd-VKj2O6hkFXYhMO062tMslP7T87zoV6a8SYPIATrgLDiuaZzTa7FcufCF6D7JjVenl93aXLmzMXeJoMXju_8F9B185n4-2_-1dMUU9eqFwcgeswCwIzleltM_da1278CgePVHp_6TCv3dFQuiiuDn4xPVjDkKBqwOFjBkui52T_wjMiyAgx8WRZ5GOnQ8dXWU4PtITWG3RB3s0MokdFb-4Wi9Vc5kdgSI3RorcQ_NPQcPvNQfSLBnlYwL3jN7cacgmwN73mbAiAz4aYFP-tVySCu02g4jR7Labqs8yZuZtwblIcGmV7-sT2X9qoYcfDGnhNEbRfAbD6ebLhI7XrR4fJiK8ZD5MlGkEVDNFEYd4NmwVWYBw9B3Wc5JW3aa-5GPBLbYc_opyQscL4eic5COFeBxa5gfiINzz8Z9h3WY1pWbQ7jLFXbg9qW7RhATgCv6iyk3wabuCU9ae8vw4ceNLZBjlJgy7bY5GmPMEDGw6mBvHTPCpg1qXi8RVQ0IvfOL9Qkd1BRjdrX5BczcVA1_sJ1hVHYESKzQiwwIRD-JN6TfGNkmjDapQJyqN1E8zkdDQzGpXoLMRTCgth294ZKrCqBvgIiWKJ1qRuC5mlkwugEjzGaBcmI3hwtq0cW0FdiLIU7VtaXzsU8x_uR_8ve9JbKfuVsjJXp4Gg81o1gK8qmKZmT8CGe2Z5qWkuk8UKomqb9orSDbM9lYvek72HIk2AXIkXGLipbW5gYfgVY52MDkg35AEJH1ni2_JTmsEiocSf_PcD03-hFqvxmipIpkKrDRaj7J-C2bRZMT3e6SaCgTt4p-JG3bWMZD3xIvZJRH7D643BN53jJOmj7ZGwMOcNCi_KMoFv8FPh2hNiFgNeVrzfY989Byv4XBH2m0IgWgJK1sJDG_BiBy3qzF1M9w7WKvPN0JJUErI2Lxn3xDfshEkRROqQ7CQf0uOcepHWXye8ux3fbj8GxE-z1yuZo4apgJ-S6PLJi0S3LogCgQoD1XxkMOqwtvbp_eE_LQZOBw3yOd20UrW4EwiKoMJj2tc3eCooPxflVR8SmCPZmzKxvgUDkKtQngOTIpoQsSJPTkGqKJeRT5KT70OtYxGIygeS7DOOU3guEhtOC2Sh5Z79brHRRkbUZOd11v5AtKQwOSKSeiJzaNvA0GIpVCGzVHWS2whv0Hg6z-icfGvi3dO1SrmL59w-j9E3rJZzzoOrtRoPl_IYNqJPK7eUfHpdA2BQ7wy_6Hl__r_nL9xCiW3UwltcjI8Odl22ag5Z7rAlMBStYYpYjmcRygaXhhRxqqe6Tw1IIzODXcen1P32fdOW18HERGpjfQ585caLBa2fvwIq5klopICRVauZL8Hb0kl4Qo9dFlxv_0wPx77hyxp3L22EgIs_trnEvBS3z5Q-jAVD8JtAJ7Eiyt-T6WGmmz7Nu-YTOU03tpdCFw1hBo3XSsnvPDRGRMfwXmTTSJ_Z-lGLrzHGsPc2SRSBkh42wuvI9cgB9aejYwyJTOBkHOxSULDuLWPDgos0bmhjvwoWDZieYbBxyLziYfLU7Il7UN3ejaQMQwFWlpCXZ5ECmEghSPeyA-N1afA3O9G8Cg601ELX8JbA-qKtewtt7gqRhMUBKyO6H9EBCC3ADY1TCTeEkmOp0wq1gdYoCe4KhdxJbJRSLsl9wmNyv_19ti-Qig0uyeKLrXHu18f3uYekhuwDTkhK9XqMg4c72WHkrJgrCfiBXZTJrfEQiU-V8v8zT8betddPjw5MWLdaYtvSLkfBLaTUIz6duPXigFmovoNZDIcc6n1tLhNM5v68CkDurD4RVHY11TeJ2QWC2C-pEzwrhG9pdtDsHT0xTKj4x1jYy8ZE1ASKApu40iYsyJjOR9xQmqz8oOj02Nc8JMCdUxItpMsCLfxbhCt1Ffnncb7pocpxtxEe98bnV5sRIFk8N0DubdYG7KpAn0FQFxRm1poYcA3O_hczwIGk40IqChkf7JV0E_1tY6WJS_jPTfL9huN1o3LA5qtjvDEoleKEw6dWRIJbAkWba-jmIhSODFoEXXrXkKQlQrKJaahF6MqM2QmXum-mMEfi0a-vLYKzAMs399ImX4WyTUaDUTNPjKMJjox7FExwOzuDkwk_8-6MYpHqBtPvXc3pzzb2vOKzdTM3LfoukhfLrud3xVWjDOyqEftDwb_n3H45bm_5Q-FPavpRGKsH32Zae8RW3LeAx4HS84Ecf6XpDGygoMFtipigIwT9Xno7AD3vvZ8NxgxDdtWR7JqArqdnIwoVaqar4v39zRoPSEBeIrvF4Fbf3tufRtFRyT1J-ZI0TX9N1y3Jc5ly-f4-PueZFWO7M0i48wP84uoo6bHhhOQQd_4AJJribE4mnmI5SpA5rQWsUaxhewKmvJ17lc5qfAH3zlyZ9yhjpX451m8uZx3AnI1WInTz636Q9HQ0nN9s9vCSG7Mt0YK-oi0tdgwi4i8oEyD2jsPrVVejUhF_2Sb0UnevsAHsqwtyfgW0fxsCaXtbDxKfsXa1Y-vjpIH2VsCaNsUJYSdmQrIFiq67Z4cY7zZposKF9usuji-z6qcsDMXZVa8HmHzbTk5sIxJKfQxZxVLlQwyopKhtsL_RYBz2JJYTklVeF0DhyngdOw4OKgFbf6SPJxpMDqEDCRYOegwQFJtM8fO0oalWX_qhzMMj0N0IaY6rSoJAJU1JHLQa28mkeiUWL-0_ujPiuXK4s0QRWJty09WI0K72Swa9kzVH-r-4kRxnwchPaineWqg-7hJY8vPqqZqNIvqnU4gW7JFvis0bUMgr_lTx5SctWmlnJ-tp3D6_R2FbPHMF5I80KuBzh5PPft3kXAxuxzQCKLC6L0NGYXMO4FncpRPE7BriJRXUSTquJnWm9z7QQUO1h1zpcrHi-utcfdCSRiyu6_X_T2lCVh2hHG7aAjZ_yd9DMgRV-pqda-K2WDMcvDJN-yjGXhxD1jEQ-GK4YSJiT_ziOZhWhUT7O0hsOSU3gmFMt8-F8Hn1MnCYO6MOxW8NlvBHQ51wzIHgwtFSl0lsAgE7jMITHjnTlOin-4BoFspITpLQMS0hjOP6HtS66hx4zgoD_OGnSgRfuN1lIaBH6ZnuarEMeHHq16jL49nXpAuPOoflXTMez8RtY-G00WgYApskuIolUeKHN4qQo7xEm2ahnRom74IGxDMJU4R-hpYNnN6L1xI_ELvyAvZmfxh8skWHKoywoIrd_AhPGdIVSeUKI9Kg5XEr8HKIk8CA81o5xrRX4Zit3SWNg3MzoGfrXgKa7U3d_WA0M0s2dSHo2GM0MxP1gSBZfKm4OBp0yJrDG1o9_IKLwka18KOJ4vY8w8myvDWLYyVuaQ4b-_jPIq7P4cidChvT-c6ynS6PZnQUITQB020DJ7CeHueBWPpt5UEiJDeZSfSKGBt7T6PYGuadwVLSEiXIki2sJi2JjkorjEsd6cPo05J0XrrxnKb3SpLsPDXaIB1SZKUoyQ3dnjbVFVQvekGai5zTBxFppxOoeEoS3krvZ_O70Q-n-2hdm4PwuXJ2YffO8Y6xf3a1K6HCEvWOi6vvQaFmm5z0cfWUlo1yiKAJlvvThiFcsvUjsSqaCzfYaDPXyIiSDzEYB0sTpV3judC3_pCTrPwnNHyiOaAGBHF2NucKJmAmTmc_Y6N4pFU4gmb8DJywXRYuya35Js51R5veF6_aMJ7ogz7_W9Lf-xKs6Xc1gE2VOLdAzw-LP7ys6HPj8CVsLst0lhoCZ8Rq1liO9RJQk92Wt4qWFyVMBp1f5ql4RzwFFvLKbakhfyszkyBvFuJZ1zVzPvoce92uLwlC_M62LNkGfotjFPcjawX4MVKprI8B5zxHxsNAXAthiPiqCtuJEiEtvLjwNIfeA_c82l5PXG3HXYA4MalJveDObWZ76xCWdVwbZc0ozHg3pa2S7bFFivMaTNEDsUODfiMzIqQmcAaRl70PLR5Wox8-B5XiMCpD80k1LBH5BoIvDGElwtY7vLZxxT57ODpMRmoVXgFTlDKBzLsZ00G7-9ikvOR8pRhFe4RkP-12m7QMRtHendS37LpL56gnu1qZoD8sVYQ7icxtYYEr7TQzEanfjRHeUrpHcLei2MjgQujK9ZpCTzpstugUmsy4VZkyv5EnRfkeNlr-jzfQy9kl_HuuD4uChKTgc0eGXoLZ5A2D7g8oxgYE7G1p0JQXhghdTgCPEZmRVdwvELcnRbsiqzMn0yUCXBk8tuIWyY273KFWW1myra767IEN6f0qVTzUpumWAbcJywWVvun4DBrfrNbXUIzuRDckumu3x_lEupOmb63iN_pkS6seoALKy4tgMEJzCLhVsdNnQRRW-MxAbEGzkzplMrM2D0UO3ciicZz1TakLbE08tISOwrukmf5DheVP5PoDSkOPlXfL6D1rowsPSj20tdH3IiQUGzIc0PpFZrerHKDQqXUs4D7m-hmDLHgHsW4e3OSO5qWHMyBcm7Fz6yvz7WW4hoPnh8hxFrKXExlp5AXbU3gXBBHyYxK2MKE-u3Iw8VrqYZ3Y_oAzGdbdFAN6ZjVxCfKB65E5vu7IoBzWtLINDWzCMWSykRyTJnwyX8jKfGRqJCjxCxFtSp35dJNTlTUAIMbVmyGgSkwmsEX6RhctsIKM2hOIhAx07X_8vwJttNRWFTnVE8APE4WdK_NLZ4y4zM2vdYo1Fy22btfY_nLXG_YivVbPYcDT2hfJdNjIn9lg0vWrTbPTtal4J5ups6Rz82T0zaML5Y3opr3HFBr9zlU9RA0xsalLXeM_iHYyIqPVX8eTsz_Z-oQ_mbD2A-TEYQoJV15M5xsxTfz7tAq65mHk_vMyR6SUp74oDWZUNzbasO32kvnbUlP-VKUWVef0M5gPabZhcHVsc5D6ZgOoZ2blCQ_UrCMV-c0D8X6V0EErm4ZeyFOTBFr9fMQBavIdECevDpo8K1_0eIVl98RD6vosIJiCXV4NYrB11n7hU7iELP_85epNcKYWeVyzPeQhBprZMUfoGZBkoZmL2jTojOcMilYpAWjAIkYkZODtpaknc4MmxYiX1qTx8Szw8hxN8HgFuXWnVE3OS2cxgEEp9h7Xb3sxItd6_cYlEj7QsaMfBAmJ6fZ0DGjGPldxuC4ws2_8yjFg_LkY8OdSA8ht7BQFBZFjdsqw9jlzuSh96iAoNd-Y7scY0hkNtq4SdQO92Sw-_RnzkunTs4STpiCxU6ePMAOn6b7D6sRJBJ5bh9lUK6cXHDFHpIw164w1twecMf7kiXmUQ3bo-jWcw3vHMirB0ZR2z1uh_rNiBfr2MG8hlkgNVhrsbZI52XVDPUrcsuSqo9HZkpvlgaPIIz2sgEIQ0tqIqUJichCX-X7ZyROXmaMJITwd8tczhqA4tP-5osEC2XWbl8HBGDVJgiyFoUh2QLdxjPOPDUn4q5HJ1KES_rEzT0J7sCGI5yzg0h9xCJs78tx0QdES3XkE5hcObZvUPcrxcXeFem5KLay3PWZPjD5sLEAF_XQlFPu_q5vGFVAFyki11TqjKlY1v9hjaFB4Smq_Z5ZKIzhukp7YkxTum1jU7dMzJ01Mx6gVctZIXFXyw7_WPUPx5J_B0VrTdiApgj_d0sJVDq4t9p-Lq_xaTGATHDg0dzektQHa2eW0fTYVt6EbsYVpUfaXQw7jiXUcUqWdX0MMrzifxjSIKlyY5u01iFrnD-TS4ApuWKcyBUhE2gb3JBbY73rvWDCyAB85Zb2Y7qPcy5Qs0M3TGvPfKa9MpFfe0Vo8KUbLllfSyONGVgo_OnSL0xdU8nQqD_Ew7RZwClSC9-WfAuUe1OukKVrCN2XgP76E3sYSgZsPxXQ9wSjGZ6noDX-JxgJwB5DealM-LY9YU_H_fUhZCUs1XlSVpeJxHmHJyunK_6ugYrk_6W5EbLqmhDZk8wLhriaxq3Pqz6E870YC6iVtyCDFvUyCYjpEfvO3uf8wlIoz3bx8t23l60cXXssj3K1_F41p19CGtzi9fHxiNwFRHTe3dYoX2R8IM9D19sD0W7YSYDMzXNAYoI_7HWjxFbITTkPV4AljQxPeLvpCgEi4Sll32VyC_GNcwK3TXMfPrsqy_lV9fYTzfPRyIRS_nrEXZCnTHTs9TsOlqk2pJALHHE-1NBs95A77osGcotlrd-Re0WBSzDaIqCthjiJNPJDhx4zSgWN7gm7VLNVhqg6m1w6GUhI8Wa_sLSrAliR2RmMo7utQ2sy4VO_Th0tnEshoIxizh4getoQ8S7TiEAKOB_4iJAV33CEAQe4G7sXgyHVucoCgj634etU7xmG1WtGOYKn4VQc4vN5jBRRJbU9HpaSVLLLBy92HTiJz2muEFmMbirwlxBEBAG31qGWghV7UaSXYogor8k6ZcE0TMnPlQJSd_Po28_GRmwI_bsUxQoyPgqq7y3wbG32JMeJEt87VaDC59hovVGyA2KPIsrtlbltRgR3RbVtHMSgBWeCWfaxl_w6EPvs7xuxyPo8ITp2Iv7DyAmGYWcKi8RnCA7XL5sM9ashu3AHMGpc1yLAOyBYutJQAmR9ikz9NjHYxSXdaFcfpsiWWTkZpTVGLlJElsmpK6gMqvYBIVMUnuajCrnA1R2miMoxQqsxY1d2s_tvMvuXWE55h1hVEPL2bvte96dCTq-Aoh_Bn7T7mD1e-1UqcvAJmQb7o-GtrMr7okibQpxSQweI4UWcgmTKYqJUaE8c4A9g0bzdKI4r6EYc5LNHBxUtubpPxy1vjaTVlUYG1MBzEo6bvQPypaaQOMJKrxlykF2RkZoOJwNtBXeu9GrrMHXN3ke_NQ9GJ5FaXGolvz1v-oZOxPrur8kQgMl_zWkSjsNZlPMJonW_pc8nusnWjH_W4pZk-IFKpXoUGAgmJZ5VaGkQrEz8IuPOTTPJPnJbc-zLBUdUC63Y80JkyhH5u7qPtzdMraq2YBuLSJqhdJxnDaWWO9atIjlOrerIvzvxLZz0AeYdBgCOAcL0HKnGEvAtGwWdKBpLRyDAWhrDlsTz3g2Af9bbOpVXQgp4Wvz8WSMP4YF0xzDkHraZECzhcOBS56aQ1rZTTWI-XWsCom_j6vFrGlLR5Tf_KVvxy95Le-wOmepkrhRwBVdThs_Bdfe_N-cCR66bXEcY6ZygL3ZohVOHTr7hGTuNrr-nIqVMexmVkr1Jpq5lzqNftbiQ15QRvpCcBkUXpexQ3ZN36bYQUe0uSVNrV2Qz9Y4-wud0OvKcPL3ZfQVjM_Tdm2fBkDhDm2-mG7-JYstGdhJ-JSH_FbGPZhGJ0T9APP1Efz9rwBw8LU0dz4KdhLLVg7Fh3H62Qkf-BK6Z8QtbAnVpXfFLrHxQwFrQ1_dd7Azf01s6r7PetLqO3p5lvNTD2SH8CIfAeIxeth6mD3VBM2sMFC0qlkmXEz3q-qTd-GZpvTyRlYRu2tFWsyWoF-p8PkdEYB1FKujElS5AzLmyS1ondTLgf8Ngn24ixESOV7eXch4VR1a-Md4h7TvJDK42dJpqDftPb5NeaETlIz2EeqtOP70VBvoDk_pIKFXYIynWpMWn7mWVHnqGtlUnZF7mO0Y1HJ5yfRkRioJUczVErvu5NVP4pam8tYnFhiTPB_Likwgq0XgxiRsTdO53B4wH5jTNkXk8syCuRhxeu4TJDkcXB-x2MwtKgRI95OUOQ1TxjSkaoUAs8DUWuEzxgnQPkMnyn18ofSNtyr6eEc2eQ9XXv3dQM-UcOmgEVAz7UXk4lgmosj-Hmbf4g53RrxSIZAtbaF3eOM6OSu_8ufhO8pe2i8psQFumbkxrGOFhgjvsGtl8IBpC2toiT-ygqay86nYEmKN7jqMVuQVCoc_iqigulqaaQZCTYMsyL-SMBQQFSYDyKpwYesva5yNTBVLyI9d7CH2y4egWb-vWLryE7l8nOxLzZm2Hc0MJrgYeMIRSkylShftuUee9j1nBMnveI5fx7rGdFWXU-mcia2nmqUqd_3J1yQfy0zFkpEuUySnjS8Iy1YAn4WeW9HRddXOvByPH9S23fGa-1R-h8jp_-4HRMGmV3O5i-VxbfQZBSB3bV_ktlHCid2fAgAUTTCGeYrzkc4cBXzfLoxb8zwnru-U96if-UyDevRxbz_msUvZH_rDRYas-bCw8ZA7ZOCZOrE0YopNerhIaXBDtLpJtypLu5hGKw-Bbv4vVgIlQbxVuvK2c2vA5hRzzGszYG-QCmI6Y6Sntfgc2GNI90v5k6gyBop8QN.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_09615d4aa1bb8e34016ac11712b11487d1bfb01a0bc9f09fc4",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 221,
+      "completion_tokens": 3079,
+      "total_tokens": 3300,
+      "cost": 0.00621325,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00621325,
+        "upstream_inference_prompt_cost": 5.525e-05,
+        "upstream_inference_completions_cost": 0.006158
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1088,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 221,
+    "completion_tokens": 3079,
+    "total_tokens": 3300,
+    "cost": 0.00621325,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00621325,
+      "upstream_inference_prompt_cost": 5.525e-05,
+      "upstream_inference_completions_cost": 0.006158
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1088,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

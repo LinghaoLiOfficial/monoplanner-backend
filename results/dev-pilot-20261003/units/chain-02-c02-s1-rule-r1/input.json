@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-02",
+  "step_id": "c02-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+  "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。"
+}

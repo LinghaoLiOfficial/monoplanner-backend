@@ -1,0 +1,473 @@
+{
+  "step_id": "c02-s3",
+  "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+  "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "change_facts": [
+    {
+      "fact_id": "request-page-size-maximum",
+      "statement": "request.page_size.maximum = 100",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 50,
+      "target_value": 100,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "request-page-size-default",
+      "statement": "request.page_size.default = 25",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 20,
+      "target_value": 25,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-type",
+      "statement": "response.page.type = \"integer\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-value",
+      "statement": "response.page.value = \"effective_page\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "effective_page",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-size-type",
+      "statement": "response.page_size.type = \"integer\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-size-value",
+      "statement": "response.page_size.value = \"effective_page_size\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "effective_page_size",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    }
+  ],
+  "active_contract_facts": [
+    {
+      "fact_id": "request-invalid-status",
+      "statement": "request.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 422,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-count-scope",
+      "statement": "response.count.scope = \"authorized_filtered_before_pagination\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "authorized_filtered_before_pagination",
+      "target_value": "authorized_filtered_before_pagination",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-empty-page-data",
+      "statement": "response.empty_page.data = []",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": [],
+      "target_value": [],
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-skip-accepted",
+      "statement": "request.skip.accepted = false",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": false,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-limit-accepted",
+      "statement": "request.limit.accepted = false",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": false,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-type",
+      "statement": "request.page.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "integer",
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-minimum",
+      "statement": "request.page.minimum = 1",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 1,
+      "target_value": 1,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-default",
+      "statement": "request.page.default = 1",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 1,
+      "target_value": 1,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-size-type",
+      "statement": "request.page_size.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "integer",
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-size-minimum",
+      "statement": "request.page_size.minimum = 1",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 1,
+      "target_value": 1,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "request-page-size-maximum",
+      "statement": "request.page_size.maximum = 100",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 50,
+      "target_value": 100,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "request-page-size-default",
+      "statement": "request.page_size.default = 25",
+      "operation": "request",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 20,
+      "target_value": 25,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "pagination-offset",
+      "statement": "pagination.offset = \"(page-1)*page_size\"",
+      "operation": "pagination",
+      "state": "after-c02-s3",
+      "category": "pagination",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "(page-1)*page_size",
+      "target_value": "(page-1)*page_size",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s2"
+      ]
+    },
+    {
+      "fact_id": "response-page-type",
+      "statement": "response.page.type = \"integer\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-value",
+      "statement": "response.page.value = \"effective_page\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "effective_page",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-size-type",
+      "statement": "response.page_size.type = \"integer\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    },
+    {
+      "fact_id": "response-page-size-value",
+      "statement": "response.page_size.value = \"effective_page_size\"",
+      "operation": "response",
+      "state": "after-c02-s3",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "effective_page_size",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s3"
+      ]
+    }
+  ]
+}

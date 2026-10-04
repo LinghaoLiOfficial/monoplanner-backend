@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:53:38.454755+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039202-UKK8falemTOFYUh74JeG",
+    "object": "chat.completion",
+    "created": 1791039202,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围说明（由后端负责）：\\n- 目标：对“所有向公众暴露的条目（entry）响应”彻底移除 title 字段，只输出 name；并确保任何请求体中包含 title 均以 422 响应拒绝。不得重命名或删除数据库中的 title 列；description、id、owner_id、created_at 等字段保持不变。\\n\\n实现步骤：\\n1) 确定边界\\n   - 明确“公众响应”的定义：所有对外 API（GET 列表、GET 单项、任何公开的导出/公开视图）返回给非内部/非管理员客户端的 entry 表示。\\n   - 若存在内部/管理员专用 API（不属于 “公众响应”），说明该实现不改动内部接口除非明确要求。\\n\\n2) 移除响应中的 title\\n   - 在所有将数据库实体转换为对外响应的地方（DTO/serializer/representation layer、controller 层的映射代码、view template 或 GraphQL resolver 的 public 类型解析器），删除或忽略 title 字段。\\n   - 确保映射后响应仍包含：id, name, description, owner_id, created_at（按现有命名和格式不变）。\\n   - 不修改数据库 schema 或 ORM 映射中的列名；仅改变序列化/映射逻辑以不输出 title。\\n\\n3) 对请求体进行显式校验并返回 422\\n   - 在请求验证层（请求解析/校验中间件、controller 入参校验、schema 验证器）添加检查：如果请求 JSON 根对象中存在 title 字段，则拒绝并返回 HTTP 422 Unprocessable Entity。\\n   - 返回的 422 应使用当前项目一致的错误响应格式（若项目无统一格式，返回 JSON 包含错误类型与可读 message），示例 message：\\\"title field is not accepted in public requests\\\"。\\n   - 适用范围：所有对外可用的接收请求的端点（例如创建/更新/批量操作等）——同样仅限于公众接口边界。\\n\\n4) API 文档与 schema 更新\\n   - 更新 OpenAPI/Swagger、GraphQL schema 或任何对外契约文档：在响应模型中移除 title 字段；在请求模型中不列出 title，且在说明中标注“传入 title 将导致 422”。\\n   - 保留数据库字段说明（文档中可额外注记：数据库中仍存在 title 列，但对外不可见）。\\n\\n5) 测试与验收\\n   - 增加/更新单元测试与集成测试：\\n     a) 所有公众 GET 响应不包含 title（严格断言没有 title 键）；\\n     b) 向公众 POST/PUT/ PATCH 等含请求体的端点传入 title 时返回 422；\\n     c) 验证响应仍包含 id/name/description/owner_id/created_at，且字段名称与格式不变；\\n     d) 数据库层测试或手工验证：确认数据库表及列名未更改，title 列仍存在（但不用于对外响应）。\\n   - 增加 API 合约测试：对 OpenAPI/Swagger 或契约测试进行更新并通过。\\n\\n6) 回退与兼容性注意\\n   - 不做数据库迁移；无需修改 ORM 模型的列名或删除列。\\n   - 若现有客户端依赖 title 回退逻辑，前端方将负责移除；后端仅保证对外不再提供 title 并拒绝请求包含 title（返回 422）。\\n\\n7) 部署与监控\\n   - 发布前在预发布环境验证所有公众端点行为符合验收条件：GET 不含 title，含 title 的请求返回 422。\\n   - 上线后监控错误率与 422 返回增长，若误报或误拒绝需快速回滚并调查。\\n\\n验收准则（必须满足）：\\n- 公众 API 返回的 JSON 中不包含 title 字段，只包含 name（以及 id/description/owner_id/created_at 等未变字段）。\\n- 对外请求体中包含 title 时，服务返回 HTTP 422（格式与项目现有错误格式一致）。\\n- 数据库字段名不变，title 列仍存在于数据库。\\n- description/id/owner_id/created_at 等字段在响应与存储上保持现状（名称与格式不变）。\\n\\n实施交付物清单：\\n- 代码更改：serializer/DTO/mapping 与请求校验逻辑修改。\\n- 更新后的 API 文档（OpenAPI/GraphQL schema）。\\n- 覆盖新增断言的单元测试和集成测试。\\n- 发布验证报告（预发布环境测试通过截图或日志）。\"\n}",
+          "refusal": null,
+          "reasoning": "**Reviewing testing and deployment plans**\n\nI need to add unit and integration tests to ensure that the response doesn’t include a title and that POST/PUT requests with a title return a 422 error. I want to verify that the existing database behavior remains unchanged while addressing any potential updates. The notes should include high-level deployment steps without database migration. It seems better to provide framework-agnostic instructions rather than tying it to a specific framework, but I'll include examples for common stacks.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Reviewing testing and deployment plans**\n\nI need to add unit and integration tests to ensure that the response doesn’t include a title and that POST/PUT requests with a title return a 422 error. I want to verify that the existing database behavior remains unchanged while addressing any potential updates. The notes should include high-level deployment steps without database migration. It seems better to provide framework-agnostic instructions rather than tying it to a specific framework, but I'll include examples for common stacks.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRbs2Sb0RAXVepK2gpTctHawZgcQFHaf9pNPQWjQ0sUObOYGnvA3lYkqHhy3unFSYQojw39p4PbNSrK0ZrDJsoPCdqANAfEvGKHPjzMiydLWfZv89SoGjv0kxCxoOqNvRjaExW_v7wQzh4HIs8ynCSn7myCI2bnmWL_qAul40AuHZVsB4SN40pOuCVL3R5lA_SUIx-b9OPvLH0FV5cT4o9EcrnX4HBhR_Bl0GxQEhEUIahvOC1lyUpaB9ptGsMX1cFDuKMsX0NqxCdMSsJ40cyPzvLXz4FqmBN1HXMDO__gscFd6oIs12I0ujihnhXPIIkv2FA00DlLTx6XdnIsu7jXNkL7bk4n3PG_RGxE-1KgijT0IS7XaN79rM5YVgwsWQ7Z4IV_kaoWU8CSfmw9m8XWh0Kcw_-HQMsNCuBN6WvlNjX-Nog-hznpba_KxqlxgY66u0neY_mC8mIBN9CMBFlELte3Fxg1CQ95WDj7TREF-m7jOI56DFBrX_MrSot8_CXB7tMrH2TFFm0kwSruP0WdXiZJx-ghnVhLc3J8tV2wpUNOqWLqmkdQ_dLHB_RJce700fj0kFtsW7AL_D-I6tA6JXctB_v4MNVIZTpQm0wb7c_HWOyUhCE61eU64PILc6K6WeKzhYIY1KI7HfYz6m2VZxRnNPQ9cOaHzd5VYpcbk_Wx1y8KUjt2zr-_bOX3kPjZSyeDCx7WhNexPs-2J9kujU4YLf5RjKgf_Gg6Eep5FC0sdPmn_FFENr2Dub4uVHEHDB257P6oMsOke6uTHT3PhYEeRXYLgO2Ke6LFEnA8T0hwDbFnllVWqM0D-CiH7JkoyH7rfW3uXpOKQQqzm007QmZLnPVIWHRuGvBaeEdKQRDjCm9foDhUs9gngGZn-aKB9xRpUs5--3dVSUr-XeKKr8eUeoThCMdlHaBMeOqk29MFOUR8Y_Qnyppl92_nKobWkMtPtNnfryaITUPfx8VauWMzOJx4hfmCajBLcldR89n0X7kyiBijduF4e4Mppf63OrKLf7-f_KD0OFchU17xAsbi5zLuFjQSqQ5f1xJmeuTUxAyM4WsIfyHS7do-mjUVT4vvVx5TNVDAMuNCK4b7_WjcZvolY6f5o0a6ntnOVv-FUVQrzWvBvyl-vQoGaZEOEp6ox6c_UK706pm4PwdzAAl-1lMiRoycxTZ1PfdQZo9lwKd4V3xGKIdHbe5n4NhJMB5XwKyBRSatIEnwa-m16QnLIlpvotRNXuLQ6BbQ6CdS--Th6Bza-UjlR8G7WOuaz09qZ_f1rITImhGaBXBFFBpdeeVZXwKNu1pwswSJpNT4vmOWnTHbbkiOO7pf79ZJUimx0zuyTKyligm2a9fAO-n4D4nhTPvp6McPSA1WJq63xNBAwNuvXNvTD-hIJCv3xpxaYIzkg6DxbWeks1DRR6k2IOsSR94HacuvQS5tBoB36yfp-9B4sI98Mh1uRNCkI1-5syV4n1xC763eIqcukIQpW-O9wIwFwPbmwkt6o7HPcrBeJ4GXXj8BjUXEk42iwFmPQUlUHy6l-on8TGdtjaEAkPJ74k3YWZWehjC23qwVn1L3wtMAlpaanGDSAzFFqL78ReVHONxf-JXNYezG5HhMp-HtXWBlc7lsqFqiEL9OXSOGMcQGhbtvAKqhyrDXqsAHExPtW-bQgdADOUCrrJNJaFjs-XUPFtC-uk-76GeHzPbH-HfBFOrW8mEsSDrKrmcPO_juQuGCugIjIqOOaJ-uhOJwK87NxdlivfzL7wXSB9pZpdk41OykHE2e7y25oY6ogd5QUdwYr978YWCkaiLgVXs36vfxfcngM-v0YZCSpA8KAGFyIa74xZG08yOG3RqkDC_5owShb5WS4t4Bn47nZH4n0Y9Fx4o_8533HRq_9t-xvs2LMMcVtfM3W8bP5yjLkDzx0kJB3VpBBWceP6Uiogoel0bGWM496ou5amtj3g7tKWUrZZR2md_hq1LohqHx730BqdGEtnWNKaki4jTqxZxVFJzZ3BMSPoMc_Saf5PlS2EDKh6mlc03U_DrdHCAvadfcq0kw1BH_3QDMAuCr1qoZZE9BS7lqXBLVX4M6OdAliI1FAhO7OtxvT7ySxrfX3jGUckrBi2U_tgcCEo1NeSLPWyCLDoFjorpyZ9M40bQE8FNjZGvPF9mgfUYkkP5DkmxhzKp71bwcKT6FHL-Fbp6oKM92f27FkJjXcFhFD5p_WSrexiLusBNUyw878D1ukQPaTwE2kYoZL2NdYcXcKDByT_fXuMKiBzKFE5-YOh4dBMmhJucIuMU6bec-nk4lywWGzcdt8YlLx30J-jPdRgBHB3-BfPsLyBUXWVZhgJ1qeVAjZt7HjItAt1KIoNXG-ni-tM3j6EKB7fUhzK-QqvGdwLRn-xCtqyqe_bQEEirG61YMxAzn0eaZz4qV9LtoHsqmdMURoKGKl_QTE1OXmrKmiUNZNPn3SQiqlp-9eSzRJFT4qsz92mopg63iZlfJ77od_VxRkJB6Sb584eb7EEL6lSSUlSe1W56CyxpawbGrEE534lS4jv3ZB9-0wduyZEmZQNaCsHgmSuz5L-fxHMLEPJNrf_PMx2-_zy2Ft_iOPSjIDdLLAUBd4Dz6QjceDnO6CRh6PFqKVdlgcqvDPhrQs9nTsCElEIroBxV-sI5g-1e0OMtw2nUIb7ZM88MC-chci1-Z0VDZBPlp8mYaH3f9STRM_TMTiSlhs3GaTLdY8Uz3MhUL0b5be_dtl74Lr8LJZccMtvjMm4x8sCa17Y8s9k__Fsdj4Zl4_puPwXRsn6ubA8XehdjWz1zXx-AgfQlKebbyrjil5-erSum31WVAo6Pq7sgJWMfQdpu_zkNv0fC3oZ_VyqzF_aeeCorN159KgdfwSF_AtM92Ti2u0oMZGJfGdypBYXxC3L3bvqKX15WxceAXFWFamW1Mn2Y7Afdh8RX4LcjNEjaGo42biZiCC7L83iU1zMaFTVnHwwNjkXFBF49pPXWb14QwLUDlBxqeY4hHzGObzpg_dG8sFJNHxJZM_FqYRZoU6npsOr1BLf1KP_RLcY7L9IAz0lTQC5erjbb8IlUp_Ug7OTtri3ooWmx4AR4NTFT9XXoic4ogoKu891JMWzm2Ou1rwmZGH0BYkbWb8tfSu1e9mmLKA1F-l8LmpmN_AXA7GVeH90kNA_LQDhAth14Hvd5K94tW9JIncU2jpIBBEEbR3Qq_PzHV1qi9SBKoJ_Lp0WPk-P7597osKGfwd2mzznpjy66fSwW7oNEeEPcVFI_-xNLUShT97o5Ra7Y8agwY52Lri6I3p8Ep2KeKjMj77VH7hUr1RKYCYehNoL7gC3rw_qjXS2BAyw2ZToM-i32LNDgB_c5GlBqf4ZayyFlHhVSuJpCCtX3cGDR8IdgLC-H1J8F8YKo8ATlY5ku_Gk0WypN43pmKjnXEeYOQYu8k0sgofH1g0DHNWCSMVZkaPAjdJotvcbKaP3CJe7C3qobiM6fm26ukzafCORlwfobMOE3z-D7pYO-AgNom6Ae7G0hax1cD5xqZFKreHvljy08LCd3m_c6du2nG4GeEccwp1GE743rnKFOdyZONVsNMNFRQ366wArDby-gCn0LTrFIbsRraGQ2S6RfnX0gvm-uBdX3TCAIke4RQvNKUo6gzNM_50By-sDTh81SKi0Uw902gdfZG3igbQYmBNmAMH1k2y7HwpSx_TJp6EpUWmYwFFE57FaZZ9wkd3OFM2ii_LMbQiTsd_UeYnJTxYIzmwEHMnaOt9YOS6oPFUlVCyzeVkD4EV5V82LGdwm1sLCiinctyqe_dFKAkEPgk5ynEHp-rdKfYnjwyAwH89ocOzXRJpSWy9Nf5D3UaraiiT5xggtU6FSFJiATy8MW3Vkbsn_CIaMX0XipHXbrkgMMKzyitxKuFwTPpN51f1DJjiF8dztAOZLNDweD1k3viJ-dXuvUYmWDOPSszua6aoN0SxeuSRYvIoEogajZ3d3l9rYUb6YdAbrxKfVZcmPJRwdFmnAllYk8-SdXqwFO13GfAfhCaXI7VRckBTKY4uF_foIaigr5s4E8rCG-eCFEVQIv4ts44RxEMs7nDENgqSTPu-iVWeIeLe2vpLBa2o0dAVBTweeIXN7nPDOYWXuXYhaoKprMDdnAwJT5Mu2lciFgtp-Kflk-G0KBh1Rq9xtg8puN0LeHdNRUcC3RnZ4LPnggMjLH6P1ySB7STjUDyMefNFyydRb4tu0dKP3-4fyAtVQJZ2JA70UGAwISujjoB0PsGOi7tMUgTQscGwQSnFIepe8KRRy1kXKzxfx28wZpMsi7TcGnYyuK9ZqnPLTX9tyvSG9ITVu2b5ho0wYpDC-o_g_5yddofDyvIBmJbPE4qRkbMvo8fzOi4mdnrr9ZJNor88XI9WnHt6GKUNqMfYg8aA8QOvufP3KHrq9HfbUaef387clxfxza9KjMLlPlyvM3zmSmgBEGKIrKM6y8-mXaSVIm03jDZnYdBnVmjpSevTWUQVUt77eGwzj1TUoAhWdGmuA0atszIRKx0lpGIlZtK-zJXD-h2M8rZaN2RuHm4uETw3-JKtGg-uDesYmg4D3o6i7yPYSrgZZLDQ1mTV51kgCU6EVb-K8lNjQLfs5jUnr9eLQRiERn-sf1hZGL_dxmGciAjyQ4HTbNqsUxbX8UoIHhAm0UzwfGb3sCI2Gjc_NO7GH3e4bVighmrbexRMY7it8asS22WqO_sKXH2fNajk4Be8m0RW7j4YP4R9jwkqadiydzFE96uz1iWbUWUaGb15MjStPhOvhKkDTgjWRUd-xwHBddCjSRzurj1Nn3tXVFtb48AnApl2memP57-AFfx7A1zQk-l42OWkBonGjxEHRImtDeJvFouIrjNHIvqq_Z-5VpCGLOlknwBBjostqIxDvix0HGuOdF6QJW031gx28MGDspIb4msjqRtqOnQXqxwz9iTUSoaRwfEEaVcWLjhDDnXiEQ1asQURqt6HDsqP_llXMyZYKIa21z4DaDXWuldDnw7Ov7-EpVRU2ZedA8x2V3ydmt7XHmcwr4sQIZZRrQIOPp-9FpJ8APJHqO8ZlusXBZhgjVLl8hcPtlXb82tPx4KJM09hAVzw5e0BTvAjF0eo9EHB0p7NmYhbnu6LRCFzjwGCjDF7fJpTK-IJYeuMjsx0zwEkpWCpn5ZpIoTlRaREC1_GxidCccUSmkak8mkUngIXjpNm4G0baxDwsSxx0VkeYCQXMse4WDexLai3-Udeo6ztpVQpQ-awHIIg9X7tv3n6AvvcemWRPpYP8x8cqBn_bmvpmbIamHuCzdIMsehKuLVNIwEG3Z8Zu2NP6AypS6aa9C6kxuo-oacMVHDzM42jzMOaIaxioNcsLEz_h_SXzpOoJNCgp_hEx3DQGsInh-NK5nLmcsTloOxVUMBpXhwL9DUwqQKs3S41rf9sUbyEm3BeA7SCW33SXtLSw_VXa67aCMD2faX11kKX_VObYtfcMQxhxHoZ7htNtFrVEfutfElR7cvtCh8pBzqTR8F2hsmBumdKLJ1kZKc4heVkg0Uzovi86mYb7UHG3RR_RsmRuzU7WfBULeNqGKZyMZyBQHhlG4tMp3XQGBb12LGA4zbBiHrlpclzXTpk1iC7rcxbsRs_drk_VUa2YZIiTf90cutmF3aF4ob64C2WDGLY-_eglXKZKncTxuF3z7CYXxruXE3E2WsQhyRaMDCSN7HafZy0Ff5Xr-fGFMfNLIb6OWOTzyaa3K-CY0oGA36AVCYtuIDoSYzoBvU6Pbv_M5nLazi6DDsnVVUQdIpq9vki63B4XjqA1l1omQ4yLgOWBwfewgq_aJGFHOBeNkHLoAanxG6U6m0OMQTkna2oA3XEwqTrefjWULg7_BkiWa846rPWEof3tyDqwQj9MrFMOWvdvqFu6RKnLDbWWjeF8klXcKVyosw52kMjv0rKHn3m9x9lHYvg_4lvY1nd9hUsTWYLE8h6WpvarN0R86yyw-OoQH3PMu-MKPu8xgvZIGKDy4qWg2urivIoEirdhqe27eZLnwAxKERNxVGZ4Q1l7dCuMOdekVBSGPA0RzEOfGgs7OGmnF7rDN3qEKtymHt8T6-MaYwwNAFlwbP4W4XOB7go-hFIAKt7mBqW-VzZcdTSK-Y2YmCGBp1ngnBjVPl_5Mt3UXJlT2wGZBkExOn4oVgvvQaO52QAwLKYOvC8p6r9amJjp3Uohe9aool0j8UI61UuyuybIdicIfGTryotPOFBS32AjfYp1Enk5Xuz9fSd1sSDFHjkvwbXawxVPHAfWl8k2kPf1hjoZCdbWAo4EfF1J_Jyrvc4vqFJSiLbTGUv1RQmsGyI2D1szTBQKabWyy1iEJ_OkkON3OHJfXcSIH4GMv9Gx_w6tvblkije1brD3sP5sDL1OKrvEUjdh_ABHjlc8c98wIrLWAh6CUnX_xkSO2LtOtQfQTqdCckQBNlkRAsDhVrUoFXwkpW3k3tD2SaGHqkIMES3u0MOGr77-zXNGY0SD2mwkjPj_yWBRURFnt1paVMZmxCo7dtONTW3kLhYd_0P6bGcaVj7UJv8IhhWaQYAdMqPUptmV2LVgHlUhlFfQeW6BHVYe2Iwl0S_bAff9eBIwugV-mVyyVhYb4fncpD3JOmxFK496o-s1uUcOLwK0hU9bZKQHbTy-SYUgBc_3G6-3HTa78C3UZOZ6hHBFmGBSSp110bHy4_RsBNlq44YmYRWSR1oPZhSLgSNgwq7ilb1gBeRq5s3Yjl4R2xEzaYUzFgibBKcBvJVeVlvPzPUw3fcUMHj8pdubtixs4hqVhvBu72wueyFeookZX-1ziGwcGu2NrSzVVsGgOgoVgW-qMj-m7iShaMcju_THxc2ya8HR1JE6A4sn51qVsFliFv90Iyyk5iMVXmr_8IfOdHTZ11bW-bbHoQLEPcE4yX761X-xJnrPTv02UoCLKE-mQqMs9uOLV4DBQZm7OAJvuNtIjK0-gw5iBFDIUJOo3itgr5DLgKd8rnTkC1DgJPYzHUKaWfZ1bpr9uOBFUIQ1BSQxhXjA5Q4RHqlqJk81dFq9tuTGRMg1yb2bSOkFYVt3z4c8QwKgM3e5FdenyyXmQosUgOee0niNVrMN2SIGR5yBWVO7CMOpJpZgd2rRKDYuhDJOkW1N2HrrMw8bn87fOqME6CDdYNjn0kqvFzcrnslLj3uZtpbKC3XhX-Gvg_hJpa01tV-s3Bn7yWQqnnrwchaE1a33JOiAd6XG7-LcoQ6RhHUq9N2xxLXMmDPlHuESs4tDvCyc0o1aCklrnI4VeWMSU5sm4SYBIXjPDlN8Yolhk6NgJORnRogUnfWyHJEtOUOXAzcHXw1H9k1usxXH0Pa5oMWW-vkvrD0xy1F2hwg_KuO_6tZ4fwgT6RaRcwV69LuZtjSdeoR-FPJqca9Ct_E0EXdy-lZA-INwwvSGFFdTyC-a4I99rncJN5W481iLQYsk9tj0OlvG6gQ2eiUP4W0s2BkBU71vd8qbYFpnU3vmzA9tW8CfTVeG4iS2_AivDDAKbTH7etP5FpMUbtJQGRQZ_QS7AyT9U1DGdja8l1j1duM9TZn7qdffI64WxrZZc3RNWyJ7N1QxySrkEDSVd-cEwk2vIRp_faMlJVgwKnvj0Xs3i-ORd3FkOqsSD5uZsfpOaieqmYoeaaPkw3qfXlnTLcyajW-OpHaoONJVpWgPx1Q7EOgSn4czIJSiNFOUJdmrCeJ2Oh-Bv_xi-bXDcHWSLxq8Wu_Z4noxgb7dssGvJDLmk4UHaGbJKQeV7jXUWolEXyl4mjIHQbV3dLSt3BcN_cQIL599vd694u_DcQGZ9bxE43vdADumJXPS1eD8REK0dw8rdUCSsaOuBHyUJ0lfajknKhxPo-jl-HLNdzU_Fbs0sogWpdGE-70tL71_QLqDjF1CPpEp6f5r0Md20AdkEl-I0xpUwcYQuzn97en8uwqAXsuhIu0JGTRr7FyfsgRe4k_swmVCgXkQZIEWXv9meJPlZECB-F8hJBk6z-sEzil8P0vs1ibIIHUDwoEvijmS_K4ewN3355BdzHc8nfQl5M3uQAe-aDthOMVmbp473x8_Wo64sTa0DLpUOmId5UHD5Qy-OnxoTB5zid4XD1udpXLkmQ8iPCu8Mjsae2FdsfkEGKRnmFvi7ZM3ZYRw_M5ttQAdgaVdIwiG-RGs4hGCLjDzHJoJxrbHToqcUmoNBbpV4o1OtzQw_dAPVC0N2lplc6-EoYRBAFQ5-isiY9GV9jTJjNMaWNox3YjmtuP_7DTK_EzNoijNtXpmUXvxmIliqSJkA8-bu43OxNubWoiQl_BAJsekMmIrvxmdNpCTcC-vUH63pyAPCgQ21cpWXuecAuc157O0OwGwZ5_CKknU_KNsCnQ5SHGAgJlUhQhWozpTpwQBKa38q0Yd77srpsGPQVfMvlX6LcR999a-vl-YqwAsXsXtfiwcjkYFQAQsAs-rprM3IG2RO2yNuVUIlmPK4ZqiLg7P0uHXBms5QilEnxnRtsn8zt1lQ03ra4rZzNKY6KfFA55Y57A4F0dp_s1uGMq-4yD9-P7EdO4YdZRLzv4oEQssCqrTF2d9OtqbuOGRG2VKOvy6R03hFIfTgQUTjqhUSAzXG6dcVDFv2uk6tpwXeQzrjtoWNip6vlPHVQk7BdzbFZ6VEl17Tb5x8oxkf0XpFnixPAHD6ppUSDVIOnheZtHL5FFey-JjNS9yt01xomD8vkEdCsg6UiaAJ3N7n7Xb4gQ9Bq324p0yeVTM76jud4c72WPotbsQzbI8AVTGa_GauPxqY4uKYDftExqi1VCrvX1a6g0Wevh6fdz5U3jRFweM8pQ0WqZLzxLWz9N5yo=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0901e255deff375d016ac116e2faf887d19188c44aac9d5e1d",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 188,
+      "completion_tokens": 2175,
+      "total_tokens": 2363,
+      "cost": 0.004397,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.004397,
+        "upstream_inference_prompt_cost": 4.7e-05,
+        "upstream_inference_completions_cost": 0.00435
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1024,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 188,
+    "completion_tokens": 2175,
+    "total_tokens": 2363,
+    "cost": 0.004397,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.004397,
+      "upstream_inference_prompt_cost": 4.7e-05,
+      "upstream_inference_completions_cost": 0.00435
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1024,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

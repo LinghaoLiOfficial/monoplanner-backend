@@ -1,0 +1,9 @@
+{
+  "chain_id": "chain-10",
+  "step_id": "c10-s1",
+  "required_sides": [
+    "frontend"
+  ],
+  "raw_requirement": "仅前端：新增条目标题展示规范，列表视觉展示超过 30 个 Unicode 码点时显示前 30 个加 `…`；完整标题可通过可访问名称或展开控件读取，编辑框始终使用完整值。受影响层为 frontend_pages、ui_design。",
+  "preserved_constraints": "这不是输入长度限制；请求、响应、存储、校验和后端不变。30 码点不截断，31 码点截断；不能把省略号提交到 API。"
+}

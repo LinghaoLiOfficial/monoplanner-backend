@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:04:01.779180+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791036220-b8ZN8xoA0sau4FSYJfkS",
+    "object": "chat.completion",
+    "created": 1791036220,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"后端实现指令（仅后端实施范围）——将分页参数默认/上限修改为 page_size 默认 25、上限 100，并在响应中回显生效的整数 page 和 page_size；禁止旧的 skip/limit。\\n\\n范围说明\\n- 适用于所有返回可分页集合的后端 API（列举/查询/列表类接口）。\\n- 不改动前端控件实现，但后端必须回显实际生效值，前端将以此同步控件。\\n\\n请求参数与校验规则（必须严格实现）\\n1) 接受参数\\n   - 只接受 page 和 page_size 两个分页参数；其它分页参数（特别是 skip、limit）必须被拒绝。\\n2) page\\n   - 类型：整数\\n   - 缺省值：1（当未提供时自动采用 1）\\n   - 验证：必须为整数且 >= 1；否则返回 400 Bad Request，错误体指出字段与原因。\\n3) page_size\\n   - 类型：整数\\n   - 缺省值：25（当未提供时自动采用 25）\\n   - 验证：必须为整数且 1 <= page_size <= 100；page_size=100 应被接受，page_size=101 应被拒绝。\\n   - 若超出范围或非整数，返回 400 Bad Request，错误体指出字段与原因。\\n4) 禁止旧参数\\n   - 若请求包含 skip 或 limit 参数，立即返回 400 Bad Request，错误信息提示“skip/limit 已禁止，请使用 page 和 page_size”。\\n\\n后端处理逻辑\\n1) 参数解析\\n   - 先检查是否存在 skip/limit，若存在按上文规则返回 400。\\n   - 解析 page、page_size；对非整数、空字符串等不合法输入均返回 400。\\n   - 对缺省值按规则填充（page=1, page_size=25）。\\n2) 计算数据库/数据层偏移\\n   - offset = (page - 1) * page_size\\n   - limit = page_size\\n   - 使用 offset/limit 进行查询；绝不使用旧 skip/limit 来源。\\n3) 响应格式变更\\n   - 在原有响应体中（假设返回 JSON），在顶层新增两个整数字段：page（整数）、page_size（整数），值为实际生效值（解析+校验后的值）。\\n   - 例：{..., \\\"page\\\": 1, \\\"page_size\\\": 25, \\\"items\\\": [...]}  （保持原有 items/data 字段不变，仅新增回显字段）\\n   - 保证这两个字段始终返回（即使请求未提供对应参数，也返回填充值）。\\n4) 错误响应格式\\n   - 对无效参数返回 400，body 应包含字段名和可读的错误信息，便于前端显示错误并同步控件。\\n\\n兼容性与约束\\n- 旧的 skip/limit 仍禁止：不得向后端暴露或接受 skip/limit，任何包含该参数的请求都应失败。\\n- 不要猜测或尝试兼容之前任何隐式行为，必须明确按本指令定义的解析与错误处理。\\n\\n测试项（必须覆盖并作为 CI 测试）\\n1) 单元测试\\n   - 缺省不传参数 -> 返回 page=1，page_size=25；offset 计算正确。\\n   - page 非整数或 <1 -> 400，错误体包含字段名。\\n   - page_size 非整数或 <1 -> 400。\\n   - page_size = 100 -> 成功且返回 page_size=100。\\n   - page_size = 101 -> 400。\\n   - 请求包含 skip 或 limit -> 400，并验证错误消息明确。\\n2) 集成/端到端测试\\n   - 对某一固定数据集请求不同 page/page_size，验证返回 items 数 <= page_size 且返回的 page/page_size 与请求或默认值一致。\\n   - 验证 offset=(page-1)*page_size 匹配返回的数据页（与数据库直接查询结果对比）。\\n3) 回归测试\\n   - 确保在修改默认值与上限后不影响其它非分页接口；运行全量测试套件。\\n\\n文档与契约变更（后端责任）\\n- 更新 API 文档/OpenAPI：\\n  - 更新 page_size 的默认值与最大值（default=25, maximum=100），page 默认为 1。\\n  - 在响应 schema 中新增 page、page_size 字段（type: integer）。\\n  - 明确声明 skip/limit 已禁止，使用者应改为 page/page_size。\\n- 更新变更日志与发布说明，通知前端：后端会回显实际生效的 page 与 page_size，前端应以此值同步控件。\\n\\n部署与发布建议\\n- 在部署前确保 CI 全部通过上述测试。\\n- 若存在向后兼容性风险或大量流量，建议在变更发布前与前端协调上线窗口；后端响应已设计为向前兼容（新增回显字段，不移除现有字段）。\\n\\n日志与监控\\n- 在初次部署阶段增加日志/指标：记录接收到的 page_size 分布、被拒绝的 skip/limit 请求数量及被拒绝的超限 page_size 请求数量，便于回溯和问题定位。\\n\\n交付清单（开发完成需交付）\\n- 代码变更：参数解析、验证、offset 计算、响应字段回显、skip/limit 拒绝逻辑\\n- 自动化测试：单元、集成、回归用例\\n- 更新的 API 文档（OpenAPI/Swagger）和变更说明\\n- 部署/发布说明与监控配置\\n\\n注意事项\\n- 不要使用或接受任何未在本指令中规定的隐藏/历史分页参数。\\n- 所有返回的 page 与 page_size 必须为整数类型（不要以字符串返回）。\\n- 错误信息应足够清晰，便于前端据此同步控件和展示用户提示。\"\n}",
+          "refusal": null,
+          "reasoning": "**Preparing implementation steps**\n\nI'm thinking about responding to the user with some implementation details, like potentially restructuring the response by placing \"data\" or \"items\" at the top level. It seems an example might be helpful, but I need to avoid heavy formatting, as instructed. \n\nFor testing, I'll include unit tests for parsing and validation, integration tests for various parameters, and an end-to-end test to check the returned page and page size. I'll also plan to update the API documentation accordingly and consider if a feature flag is necessary for rollout.**Clarifying implementation steps**\n\nThe user emphasized that I shouldn't make assumptions about undetermined contracts and that coordination is essential. I'll make sure to include \"coordinate with frontend\" as a necessary instruction.\n\nFor the implementation, I’ll start with updating the parameter parsing code and then add validation for skip and limit. Next, I'll compute the offset, include page and page_size in the response, update tests and documentation, and finally deploy and run tests. I'll ensure the JSON response is correctly formatted and includes the instructions in Chinese while providing clarity.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Preparing implementation steps**\n\nI'm thinking about responding to the user with some implementation details, like potentially restructuring the response by placing \"data\" or \"items\" at the top level. It seems an example might be helpful, but I need to avoid heavy formatting, as instructed. \n\nFor testing, I'll include unit tests for parsing and validation, integration tests for various parameters, and an end-to-end test to check the returned page and page size. I'll also plan to update the API documentation accordingly and consider if a feature flag is necessary for rollout.**Clarifying implementation steps**\n\nThe user emphasized that I shouldn't make assumptions about undetermined contracts and that coordination is essential. I'll make sure to include \"coordinate with frontend\" as a necessary instruction.\n\nFor the implementation, I’ll start with updating the parameter parsing code and then add validation for skip and limit. Next, I'll compute the offset, include page and page_size in the response, update tests and documentation, and finally deploy and run tests. I'll ensure the JSON response is correctly formatted and includes the instructions in Chinese while providing clarity.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwQtKu-Z1-rs-qDp8VolzddTz0a1r_6cCg18qpwlfKTiPLy8nMHZmrgDfrrOLXS65gtr_DYDdYV8oi86B2Zk-vJWwazeJzzDufwU3dTgmGBgPvNA7P6pN2JHuwBC54WBeAbMJ91iqyyZkBChn8dhUP626W9meaRTqyizCKG7XVNd8RKOZ8TodV7GVfyrEE8BVqiOaqeDliaoizJGt9FoP6jzJwsHCj5ygsjVkK2uq1pJzDzj7VMPVf26ywBCJ7AxJZHv8cC52Fn24STF5RQ0v-pFQ-uNVym5moiJCqK3c48HyfnEx3s2HET6maGt5jxMtpArzLnnVusn_hCMI0nR7u_Hl_9jrNfhzMFwKie5GY3b22HaIPh2xU7f52JZnqWjse4XSzch4VDDWrSwSrtFoncMlnNStVHKVwxSWlQfYg9x9enbt--e0oaI4llyAcGaTtolRrp4JmuzYnsprFQB_cW0BGIWa6J2AnUP8gBRuoX6CbZx4d0RRKllCEWOTq9VuJCe3V2KgMA5gjootfdXLpI27RvVNXqkPG1QFHwMkAywCyejL1RZq9jyntDqqmMQ6ihC2OQEj3zN6sRcP4OoIm9hi2s3JWhon9vpvjGEpXcuY-y06MTxAw9Dp19krnWywRM_1Qa5eGan5a_jQVoRl6KNk35ctdb9VPHQGGdCkdJANIi3iqPC66BYfyHC4eo-hESr9oNyNWe81ABtigmhz9PGpEwoGZBml_jjtUBOI4ZCJC_YwgvvA2LJvlsX-70ENv-mSWoFZKfKs4d6tGBpbZ3o6lBYXGKVB2fLfwE3uIicSjJV2XP3gSoV-09xtWnTYMQ3DT1o8rvehfkIWKM1cz5-DLU2feiUu-u_CbW9TLJLOlIMvZUGfNN3sCqyz3eIEN_p75hObbZfWLEF8_v8eeVSaKN3ueJkzWkJ1sX27lWcNBykU84ON1UXlVty_U2p_7q0J65qI8ff8zszOnGsOWk6rkDAOJQWE8BuS7Cb20alX90FsnJ4jYub39B7ZyPcjrFzSV_Jav4uON0Oi1SE1fX0WOoZ4bJiMYZwGTo5JMyFh_OIpR12R4s5HvcoRRLqvH5vi9GwFRq4YPjsvlbefSFxuZQCMTNMSEM7CuTOXEvCrrQgz4AbsxatcdJjJS1MKWuEuggT2pu_uqFPStfxXdY3-Pr8lGPAY9e1gTWAv38v6BKIFvXuL6B8fO0nAC6EBsVEIRyYVRYfyE1dTUc7Ly8zsvjVzjvjwb3bUxq0BwF5SyBs-LmuhjZYUtbLHB4yA39CnbgE4BTY8HVU8eVlCwQ2DBSDa2JOx7xyeEOsmeHXVnivvkWun5sYxvjl-MF51WIRyTLQvSJlaQ9tImjrq1QfUQNqJhuOwEkiGGRetvLC9iYnyzg7bd74ehQQ_wDQ5D0sIxah6-czpqjJ155Qys4HwzDoD8r6vdNNs-teKSDCAuy5WuhFlHenRn8jHy2HgjxiwgvxqfpBu77elzsGLC9TbZeSzyij9UmuH7j4V9Lve2zA5T8Fr1_GpLCYEUoCHwwzCZdFovRXt323ifaSiRiA5a1kmSU0vqWeRNqEgjNMf5h7FMTJQthOK40kj9eeUJ1uUfFIG1zr8wowuZKolkLdUsCEW-2pkOV1b0s10E_jSCeKo2zQBj_pOTgfctsTZP2uz7DGIdqaHHy16mIZfQssGK1Fr_8UTOqw4y1JJgWRNqODUi6hvwlscSRilHkr7Ky8bHRBR1aBXS1HoHD6-TWYc3AX2OdI71oBpl9X2R2tjnM4-6cJ4NOtDMrz2i5Y9O94_tdAF3kyrXS1PkSR9Y0G8Hsgk489ACD2qQdkWxh-lbUXiOIqRTxBXsC9uGs7HaM4zG1zLsZ2EXrqgPrpHweSkddCCPEEmYU9z6BA3E1j3weD10wPTyumJ9uJQ40QztCkVnj47UjfTbtWQPQ8p2eqmzrxsgi_XlSwriuW6VUVVvNuht54i39cUoUk2xG0s5mpmMgCa2tlRNx3Qq3NiYsiwDnQAULG8nwNUjKxmiq-LU7AODxSoMAfnq8mfv2C-b97Mdsrqy8TVz47dIiOO491ci0cbU--f8tVdIwXVgsesVYSl_K_QOcXUaNj82I3Tf05XaklLBWBwzS3pcsKxxHq5d5vOC83H3b-dQw_dDMX86YOrMqr4WktgWwyr8lhp-LW6zFmxKjo_rvhHAd4fm4zSlMR7Pv7vD1uzC0qpAREHPIW0c2L9N9p2q3LlDfmB6RapRR-3dfiYk_pvibpHLwls3aiYM7fkUhvYnV2_c1gfzfFPqB4gdpCSulDZUSr_fiW5v69KQjUdXMq9R34KQOIqIUcaXNXNrk-XAHAzjPLyIAJ3Y42-ihYMovelyvwMowXoIi386A9tzR3bIzju2P4v3HkSF6TpqkUaqHp-7j8ZJOH-JfV2JsNxEyzD5b-Mq_gYuhvxknQ8nGD9dA4np8Fk5GgE5oySeBmL-mh1RlOt-qQTV3yCZrY3oeMH39NVG19TSGzS7gFhrPVK1aB8p1jVRSsS00dGOM_kmvC4nptwv-m5mf4jzgxmK069KeC1MjG75QWo3zCoA2Kh4CHTvx6c_3zAq1AM4gUHWoEQUS96iRyQNMkUOVKOoBBWJY9cm6p-swGb7a7vbywKGr3darVBW5u2wEfcT6XqxaLneqInOEFGnndQL8ZotgsHbgWuM0FkMfFmtoKmwNCQqE7-wnzEsZUpmw3FlGEli1Ntjr2TH5B4hLR_8jNIxKNXmMxwiv-LNUfO3cveEUcHdKKShtnnJXShwIWw03Hx94cRKnVPATDttMJS1fsTWkddpbfLJ2FdQj_Wa1U2pLHZOnQEK5x6nMSgXf-Pwnuj9RU5Ek1xzB4r9pObopAEUydnV8SpALj4DueW7MugrZZTnGbxJ2zvOAYyLNsHkrowUAHfQDUG28a5teGZp0BHjM0YjWwjmiXYJmy9BCUwwDVnGK9V5gaqvzfA9kuu_MkDib73r1vtq_XUK1aMwxv3CESZqb1SuEiAEwBA9IUHEKjITj11Ow1XYL9BdRE2cP_JakFNYFNtMcQtcOakdfMVOVmfV-6oBtE-HHBBU-AQFKOcedK6_gxahuwHTf5GAq-P3hz1pvimNl-JQjDztf9-4vM_y9ajWtdFzQ1quHz3sqBZYRBzZJuFqa7J_YgMNyU-pgz403aFcARgsLyqDKdbjpyB-ewjeAvNEL2uXcIsdjiMs_OmhNPgFvU1x0rCNhAACA-WgvCeP60WkWZ0k8uZy3iPUAjvwyS-73IQSAesaHDzKHphgDmRvrghm0KJ6BUPhNq0MTz5YAbwye--QcUhL0qL5PhZBARzojEX3hJRbV4d7NrKOMwOF7KOrDl0KTfISa5t73WmDqWnhmbRBGRXpTD2EeITG52-cRvFNe107yAi6STAo7itrRaARcA2qewP2NocaV8K9TfOSPb5OdQTmNU3EzAd9YSbzMIZkEedywIuviEBq1jTmPjGwUIPM_ZfAK9DLsJ10XSsAmyH9MPh1WkZclsm7TflKYz1JSzD8YnnPBbyn9abSA3CbbWloAiyCn2lFJL6djBgMnOSgcc6upg4zrK7YPu5mpwWkbQLa0pY4FZhrgICKpyxnLfqy0yoGJObfTG62wzWoqw8wS7OsMSLPu4Q1XDPq8Hjk_T7h2kBFckIMKl3vVYPV9_1qFXoCBOrP23Fa_tplkSeL5oOmcOu_9PjK0lsWBH_MMOOAhLC97AR3SVHkPTKHmApszGU9Y3h3bJN6KXbFB2cBQDf0XlRdGbMrifCX2-tDLhAUWwsPIF_9zS355PIRt4ZY1tUIdVT-0BFGp-AIk8IiP1dW96lFedHWbRxOu6_GhTsxvF7LzQUlkyf1zmvZwwLacTk45jI60Zzp6W3W2OUUrJ_6tY3hqOKVRceA7fJfWYmlj2gEhKZ4nZs5hcPBcdzqqSg1kgM-UCTsCiEeWlKwaOO9IuFhnjb1TRhVHrjJ1bdcBFTCSMxtHXFVqXOfrEQsuWYgkOb6cMkjj3MqQfUA-aNRItParRP1ghOKwuYEwHhMUsNppsy9PjN-hdIYbzOxhyA67pa9EF8cjiatD4qs_NUMzyqqFhDzt1Qc6ICILhv9uYlzL9BONOZoepDy55_sHD2him_qoA1NvHCNyZaU_H5CyBo4wfubiyCD0z1-_SZ7Il6uURYB3DlFDNTq320wWhdd70mas1Xk3xFcQEIRdsidNZZwoOeieOOsTiJrwL0AAxxPW9X9kYOEOFQ_Z-rsU4PrJXJJJvKHuC9DliUcmOFvPjK0VvoAfsDytaUPr2e3LZZXn64j8HyzemMKiKOukU2O5sT7H1Rynqh8WxZ58Sz_8mJDShkP1Laju5y7yoL21kxeqrseiGXi4W_VazJXHBIls6GVgOX0vYzY4m_hw0Zv010E1p2AXG1rzYOq1zYNg8nUWEwYAohqIm7aS-T3QfzolCpDPGUU1K8t9vUYEAGxke40uA1nOl3L1UbXPobALX6vtzLXDxgFXT-cYnrc7ZyAdn-XyZBoZJ4OTb__3kgxE-JEHIX-g6P9iiJ1vLm8F9aAJcF0C_6yg8PPkRzgZSCOyMB6PsukV0SBSbppMcD1aPOhDwnnQ-n1JS0AOjw_KZU6Dk0c02gf0MRHci1X42MwGb37O6tKMjGL2Uw_eK7VXL2RjL-JkK0t7XhKzboBlAwdwaCVcswvOCLkHgfwpPrgd5YU-_21VOFP2FWFZzojcW8TLWvzO-uOGZypI65bgvQ9si2Vs4rxyUgR0K0AR0LDeHvg3m7W8nKr22aEqK1NDor8ItnSXZ3kxk4jBkY6tOtTMqcgQES6fxXSRyy3xFRsqcdhxH7Ojn7-YugAiySNumpsg92VcwFsPdvj-SzV5OdKAPKqG6HPNtJlz4EVsQwg3NxIMM8yrOi8f7GPyy52BhIzobHrKzHLwzbFrRQEC3BP9jLEJUeIsaibukAQGp3iPHnoo-_cj8kJBsWx-G90gGoG9saZD-4bOV7qdOJElN_9b56ekWBcv1vjMHzuYJt5bnQzLU36vcucrKpN0Qcgsn0o4aXhnNTlILvO9Yi7QLPkSdoMXBly81sGGrZLtBL0ytw6hmAWK7VkGQ1w-_60FHOoH8OFgO5ZgHTjWKJzRrmIZIat2tdv6pz9s4i0b3X12iP6ksCcqzfpc97ZgxyXPeA3jmk1r7s_soO8iMyfbcO8ZGi-npwsUo1njnbjL3ObG_EZuDHWyd90XtCig3-RP04kb5Vz2uC3fWy9fWj62C88OhQvErRpA2ScJV8UO2n_JVjg4EaV_L59Uo_Tp2qC5MNasNnLj4T5XGBDU7V_blQ4USA_iEEx7Uk39yGToaTYmwp2q9KGpwhPKQE0QDq9ADutki8XUC3DUNgfCI3cvDbYZk9SfWSpIM2Wt2yHnvthUC5RloWeIwxi-QsxaIIGVTcXT_W8o9r2tBizs9kiXS-sX_mNXIJ9oSEu8LOKo9De3A-5ihoLHDo4j_jFeu0eSJ011ga6ThquO862YMqC4oJ2BM1UNA9tGvpq5KCqx2vFeeQrG_2zmGihP-87lzEmaG22fBkC5OPla-HEeMv9eBdCO0555onleeJm0rQRokuq2-uy537TqKs9IYfLYURZSzLJrFyTAh9cqDyxo8Fa-i_cvRdk2Q0sIW281hEPMayQ8esI1hW8pO68Rf4bKNprE-aWNS6eahdQWlvllWK6sEWYw1DrQ7dcM6UywL8pirhnXrnKcycg0hqegE9g5Zgv4D3q7e61RLj_eOoqxAzpsto3z9X_teBOj89mHr6YESUM2r7K7AlZ9SVyoPzV2Pxu1Pqkb5bfpT4j4hDztBNyao2NoDtKkU8v6G1iMPLRosrirtOYbCiy4ymmqszoj5CZ0d-TsOLhqvUiCUUmT6D2hUKk7cOk5iZMEirGXVwstUqhv9oY2etElmx0zkvJOgpheNMmG_khV-zbnfDLstBmCCCkbNGijasdmS4PTQVhoyrRJduoTma8pQojnDu1_l3OUuHkaqaosjnIx93yA3pPT7qUo6jnXRXaIJ28NfF-o2-OTwFtYxRj_aCrEmeBIiCmzscbOh8-lxKwfnjsNqiYC4CpzLaKxd-TxshSucYt7neplEQoW4fwzx3MPL8Ej_spb3okH1PW-r308L33dukWqMKpqj_K5J6ouFMvynV0NYUgSYmpvqFNvJFsDh78rMK7_prqqm87QET47M1OVnOdCiEbeal-69FDnGLe75ZrTSFtSpNaBTbES1Bqy6p8gVJk6OCkjF4j0DUnPUDDYu7GeR-yXMia7JMNF8ZhHkOK3cwQx2S9tcHQ41vn2w8lUokibh7dPmsZE1mxLTluPyev84w6e0qYxRa9jQbuwFW7EbSbUsYFm8nok3Pcyq04ZxJoAl725LOcQnxtEjC4XITgPsXBGHGYD0IebZYTiVjJBQbp24lrlReOncKcKkEiVGfqzKYPzf1v26UakHfyhY2jIo_LyGuTHc07sfS8W4GC7yc7Wxr1tLvoTzbQHIXjfDJDKlM4OF5bVwZS6OEa89CkD4P9ypxV283SYEFVgztz3azGU8q3IQy0Ca50iqcnXEeGj5oE0wSKnT3rwuFC2lrCX62fryat6RXmOO3esTQyOED6o2469ooLxTAkjxCGzMl5hmC0crkfTadKB7aMU30tEmMqGNn57MsTZPV2Nar4I76TiAIA2RCRdk5t0aBAaWEojRd5GtvYeDniS6iCG4GZvZrBuftONoYzkimF99oG68GIeH__3Y-Ec5lMtFjjd_e1wch8F_pJnw701lt2Tp-C81aQ5lJFqa-K6JKV0ht63nrnqWyLfAtHXJNso-2Bg_JtAHwv-jP3ShuP52FwOudaE5UffX0aAZvGfbjRQxytEKXwFU5yqYAOQZ4PEHBpjuHu8LWdOvp_SqxltB9jROr3fsz1QJwK7Wh2ytmzA_24ClRnvC4vxr28n0RYK3IqDvlccnmNui15Cg6ttd3Knj_H5P6jJG0XCDkEte0dkO3tJlRgYxPrq5KBE06TQqBOqLo-w5DOFPn_fTQIerZgouQKnLUnEIvozbq-GRgauSStuhkr2CjX-DDfOgBcaPuxCvh6_oHTOM2biahY9LMNjHJOlUYnrWDYPAfxSDP6Ug_nloTh4hwFUzABkXC9iCYeQy2nKE1POWepBzWKJcz3aephLUGlDlhYwWhOac02eelBXUkKDUibVvit4ZPM_OriY1bG2xAZiBVCjSBVcxFrtHvwo0SnKAMi-HIRo7llq8O_H813MZzrM1YQ0-i5tSrRYfCd2nLazpQLkeKn4NydGjYOe_IowM6xFY14PfN2ROoL3mGGBzQhxAM_xm_n8tXfgb3zcLcP5NGKsKYOqcoo1cxjlm7M_FXubXT0CrGDrv15rVbAE8ZwFoNtYjTyq6cSWqZXUaIr1ee2pBfC3QwJAJbV-TYgIfqOGp9LJxFsvQhuHcc6Ol1F5RInBUtcXKVxTe9A2vsE_iEtw0F_0QSzTQKWSXfWEBKVMqZ4oby2-t4cWirQMVS19sR4Vkt_s2Bg_J9ZU1_eKxMhlNfGBYBskV-91-0PsvtioT7QSq4gEFqIeb_2LQ85P-kKT8A1xXUDd3-gIPHXlSt08ANhCepHQmmIUPw-MD7-St0FGss3nlyJl7U61iLSXElxcsEHCVs6T1DgtNOvk2IP_pQq9FkP0kralX_Ea1zwt3sL4dsUkSg2xUpYD1RzNGMOCbcP1e30UJ6Xq3e0V11L6heuNPHNF_SKwgq0_0k2hEChRlfGdlLD0HWdRCGj69WkRNbc03UU4KvhxwB31v5SZBZKznkWC3ZDeD2-h-bBB0GkQYK7ygQ86wZbLA9SwCQyVBSAsI0h0VmnEerl9cFDznZRMS6AsB1KNSTElzP4DcVCjOmJpPhinjTeekw39umtqEvQ1LKHmdQyY8q9Q9_YECC8twHLIMbP1vLGKzpq1LXvi698ZC1ImWSFBaI440EDxhK_m7-2HIad1L1Q01c_9FmsJDlOey9t2lp8LGL9GtcOGngd7Wl3D1tYprT1R5ql6V2oBDWGR4QSBOoKSnvceGGifgTwCnnq3-Lra3t-kgQRTnvz4i_vtN8Vc1vupmFW47Vg0xjjXE_P2E_QBzOxfxUpKoNC42LQJbvqEmxXyyfzmGN3hApNuzK_Trv3qoi7-yXZtvqbPI9vVQLCcpOgxXeRpWk0AykPZsOBwS4G8p4aDuoGfyj5Z9q9CUhLLAW5y3m7Gh-wb_VvboR-eEryHrq3SFFgF8IrCpaFwRrwPTAeJb7lt5yPDS5qauk36SLeKcOMFWOJ_AqHijOkHd5iQg6C3lfY9_Z_XHpp1ZTxf1BmqFjuIX4YpR9k5qX8VYbaBIH_E_HUjbTndKQMMuChoPTbsz_YjzEIYX6kSpeGrJ1MRr39P_fthO6LUz6TXDu8eTzSTZxLGlZvzlmak3SVhzCzEcZ3QEvTXz3w_pCXNOJzHwYdvdWCK2wxWzsdV4DhmRfi9GO5p6ovSyweEnITkxWMWSN6ymdsaCiXJdhvtJfZf5A--BD1IDtYNCOTjuvNl5z-JydymulamkGnbsfUDcThmEy8mWBI5Rdqztadx6oetXDfVBzLuZK7wdjFsEP4tVGdKP23BxVkN_5c5wd1Q-5YY374uQNi00UbFzOIPpbr5Ek52RrBw29DyNwjIwb0538LW3Vc85ar4wgD7E-hF-iFXYGBGPTgixkBHR6KPtDvgIhrcw2j1kG9jcjg_FfjKJ2lvrJhO2Bkj7B-x2xZgpH5vuRtyOL8ZXFrdlp_pky_nK5nIE9DAVMsyhPtcdAQyAgpRwz3WtiD_DiumfaUMBiEFujnB2hdjqNu5S5n59uBUtA94Oue7syGj6bHE7gsZWNhyOpOBxyxtymC1W3lexVwbUL0FgI7vBC-R_Oy99HNk-eT_sW6zeOI6dcFUGVcg2fMdbrKnznYv7OL2__6BlVMbCoWFk5-UY-q53F076XgUhNo6f2FnXHc35AeykOmHD3RvXFDAeOtNvWXWMRQuuGEwZ-BIrMNcCxb_HMkIhak-42Qc3lDaWMEqB69ttEqpDrnxdU5S9NeBlzpRYM6ZVXFMfZNvHIxhxVVKE1CVBofZ5g8gkxbHGlOPcwrTdgW3kjDCvSg5s4VfhfRU9oxUCBugChE9-2-GaNhLe0OMqZhZQ8J-bV3lMJmVigmj1tgnz-EOCLUamDc5lt2O5bA2pl1z73hTrXgNe9DTtILOsd0YZ1PnjQQHgk4cgfnx9nXYJT6YLoHJBoE0ShpQt_VwHkPnApKxWSzCMCx6rLfpQUKd85JRCQBZP9Wfe0dMzJCbkWiwlMQUM5Wp88BE8mjbV_2yIAQtw19Zby3Qm004B24Fw9bZN4wDUh5EhUTnrVVcGD3nob5KMXZ80ypn3sF3WHSwHKBXTZu1OQzepNfE9AD6LuJuUkpzS_yNRf2UIA0j_ae-MG-jOpom1gtY6onAKFkI6o0pNNlP06wUScfTsByQbT04z3zfE9X4Em3RaGqBkkm4C2j9vhZhUc4QOUWe5ULvn8fdqO0LV9e1nKrjFSmwS-R_Gty_969eXAe8Kv4kfYVgSgeju8a2j2UbGH8yasu5-qYgFO9shPGj5QngdtUW0jDFqIemSZS8UFDnk4PyDs-5cdB6EZMkfWfBDrfl0_gJoRw8VgJMaMRuGBQchLPg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0f469956f1b57bb9016ac10b3cf39487d1bc64c72a11e62d4e",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 212,
+      "completion_tokens": 2678,
+      "total_tokens": 2890,
+      "cost": 0.005409,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.005409,
+        "upstream_inference_prompt_cost": 5.3e-05,
+        "upstream_inference_completions_cost": 0.005356
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1216,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 212,
+    "completion_tokens": 2678,
+    "total_tokens": 2890,
+    "cost": 0.005409,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.005409,
+      "upstream_inference_prompt_cost": 5.3e-05,
+      "upstream_inference_completions_cost": 0.005356
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1216,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

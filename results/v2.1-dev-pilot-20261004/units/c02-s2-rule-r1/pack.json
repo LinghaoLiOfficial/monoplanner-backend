@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:request-page-size-maximum] request.page_size.maximum = 50\n[FACT:request-page-size-default] request.page_size.default = 20\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:request-page-size-maximum] request.page_size.maximum = 50\n[FACT:request-page-size-default] request.page_size.default = 20\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []"
+  }
+}

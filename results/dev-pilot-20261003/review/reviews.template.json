@@ -1,0 +1,1429 @@
+{
+  "schema_version": "requirement-review-v1",
+  "reviewer": "",
+  "human_attestation": false,
+  "reviews": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "f3d1296eff9867806b6784ca6c197705df8117faa0e4d6fd3a89057708dc36d3",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "64fc383676a3a6f0cf212465108417f233b1c3f56a4f59d731ed2dfb18e2befa",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "c73b073b043b5446f4d5bd3043709ac4037c799cecfe9c6c32234b31ef8b2d2b",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "6e6202d4e1c28386e89432ef0ed3b36c96deaf25e1fb97319e4f217c75c55632",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "ddd866d9922584dc7b643b9f2754ff13c7f8dc2f03194d0dbdc083a1d62a202f",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "4e982db1a50f68e6d388635034572866c1247a2488630cd62eb319215183a136",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "b2e99b241265dcaca3b3c39287f56f0828b414e37c5c1cd21147acd621147f11",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "c18a49cae6979620156b542abc5190d29ada81098a349f51218bb817a4b47bed",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "6985385abee31667d8703cde6208afc9d20cb20a8105e7e995e487891f6801f1",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "b891092a4131701f07dd03aea0a246096f1da8fbcd0495d71256699776673607",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "d5a2e025d0e9059f195e8c01c351e9b224f9d31aab82fcdc91e7b056a1159ea1",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "5f6967838858fc9b26a9e1e1d5cfd7df6919f77be7d5f65a46dfd37fd122c183",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-013",
+      "pack_sha256": "eeeab7b1c16f20ba501c9fb84edc7c1a07c8034727b9f936c9522875643bbc22",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-014",
+      "pack_sha256": "f5d56e5172fe2c18c15b475896c7f6cb2338fe500b535e78eec28cc978076175",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-015",
+      "pack_sha256": "43c5995cf8e6f9390a07c38880e15644cef834a0060ffde9026682ebadab3899",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-016",
+      "pack_sha256": "fc5e2b6b31b987f523b2b8d8a9c1752128f0cca7236dcee84c7ea50c7fae0966",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-017",
+      "pack_sha256": "7964be93e1364fc1d9278a376d2a2995e5331fd819fbf189c89f2e71b97903e8",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-018",
+      "pack_sha256": "3736cd4b87af947c1c7f3c88151b8ed90129d89d75d2169fe1c1eae050eb1876",
+      "assessments": [
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

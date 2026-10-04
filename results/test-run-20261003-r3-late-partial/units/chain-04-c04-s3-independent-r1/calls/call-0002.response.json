@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:53:20.492334+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039181-WpfhWQWqek2Obcc99EST",
+    "object": "chat.completion",
+    "created": 1791039181,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围说明（后端仅）：对所有对外的“条目”公开响应（所有用于客户端/公共 API 返回条目列表或单条条目的 HTTP 响应）进行变更，使响应中不包含 title 字段，仅保留 name；保持数据库列名不变；保持 description/id/owner_id/created_at 等字段不变；保持对请求中包含 title 的校验仍然返回 422。\\n\\n具体实施步骤：\\n1) 定位影响点\\n  - 在代码库中查找所有用于对外返回“条目”数据的响应构造点，包括但不限于：Response DTO/serializers/views/controllers/transformers/serializers、API 层的序列化逻辑、GraphQL resolver 的输出类型定义等。\\n  - 包含的场景：列表接口（例如 GET 列表）、单条接口（GET 单条）、任何嵌入到其它对象中的公开条目子对象（例如在集合/所有者详情中嵌入的条目数组）。\\n\\n2) 修改输出序列化/响应模型\\n  - 在所有对外响应模型/序列化器/DTO 中删除 title 字段的映射或屏蔽该属性，使最终发送给客户端的 JSON 不包含 title。\\n  - 切记：不要修改 ORM/数据库模型的字段名或删除数据库列。后端内部模型或持久层可以继续保留 title 字段，如仅用于内部用途或历史兼容性。\\n  - 确保 name 字段仍然按原格式返回，description/id/owner_id/created_at 等字段保持原样并继续包含在响应中。\\n\\n3) 保持请求端对 title 的校验行为（请求 title 仍返回 422）\\n  - 如果现有行为为：当请求 payload 中包含 title 时返回 422（例如 title 被视为不可提交或禁止字段），不要改变这一逻辑。\\n  - 在请求验证层（request validators/serializers/schemas）明确保留对 title 的“禁止/无效”规则：当请求体内存在 title 字段时，返回 HTTP 422 和原有的错误格式。\\n  - 如果当前实现是“忽略客户端提交的 title 并不报错”的情况，则改为明确检测并返回 422（以满足持续约束）。如果当前已返回 422，则不要修改该行为。\\n\\n4) API 文档与模式（OpenAPI/GraphQL）\\n  - 更新对外文档/模式：移除响应体定义中 title 的字段描述，以避免客户端通过文档期待 title 出现在响应中。\\n  - 保持请求体模式中对 title 的定义为“无效/禁止”或在请求 schema 中标注为不允许，请求包含时仍会触发 422（如果使用自动 schema 生成，需显示在 schema 中标记为 readOnly=false? 或在请求 schema 中移除但在请求验证逻辑中检测并拒绝——确保文档与实际行为一致）。\\n\\n5) 测试\\n  - 单元测试/序列化测试：为每一个被修改的响应序列化器/DTO 添加或更新测试，断言序列化结果不包含 title，且包含 name、description、id、owner_id、created_at。\\n  - 集成/端到端测试：对主要公开接口添加自动化测试，验证响应 JSON 中不含 title；验证在包含 title 的请求中服务器返回 HTTP 422 和预期错误格式。\\n  - 回归测试：确保其他字段（description/id/owner_id/created_at/name）未被修改或丢失。\\n\\n6) 兼容与回滚考虑\\n  - 不做数据库迁移或重命名，数据库列 title 保留且可读写（内部使用或历史数据不受影响）。\\n  - 发布前在测试环境通过所有修改后的自动化测试；若出现兼容问题，回滚应恢复到仅修改序列化层前的版本（不影响数据库）。\\n\\n7) 部署与发布说明\\n  - 分阶段发布：在后台服务中部署仅响应层变更，执行自动化测试，观察错误率与流量异常；随后通知前端团队其需移除对 title 的回退逻辑（前端变更由前端负责，后端发布不应依赖前端已完成）。\\n  - 在变更日志与 API 变更文档中明确写出：响应中已移除 title（name 仍存在）；请求中提交 title 仍会 422；数据库字段未改名。\\n\\n验收条件（实施完成后必须满足）\\n  - 所有对外返回的条目 JSON 中不包含 title 字段；仅保留 name（以及 description/id/owner_id/created_at 等原有字段）。\\n  - 向任何受影响的公开 API 发送包含 title 的请求时，服务返回 HTTP 422（与现有错误格式一致）。\\n  - 数据库列名和持久层模型中的 title 字段保持不变（无迁移/重命名）。\\n  - 自动化测试覆盖：响应不含 title 的断言，以及请求含 title 返回 422 的断言已通过。\\n\\n附加注意事项（禁忌）\\n  - 不要在数据库层删除或重命名 title 字段；也不要在迁移中改变该列名。\\n  - 不要改变或移除对 description/id/owner_id/created_at 字段的返回。\\n  - 不要在后端放宽对请求中 title 的限制（例如忽略或接受），必须保持 422 行为。\\n\\n交付项清单\\n  - 已修改的响应序列化器/DTO 列表与修改点说明。\\n  - 已修改/保留的请求验证逻辑说明，包含 422 返回示例。\\n  - 更新后的 API 文档/模式片段（响应部分不含 title）。\\n  - 单元/集成测试用例（或测试清单）及其通过证明。\\n  - 发布说明与回滚步骤。\"\n}",
+          "refusal": null,
+          "reasoning": "**Preparing API Documentation**\n\nI'm focusing on creating a detailed \"prompt\" string that includes textual instructions, testing, and deployment notes. I need to ensure that it covers acceptance criteria, especially for requests with a title, and that certain columns like DB columns remain unchanged. I should also mention updating API documentation and release notes, along with a rollback plan. It’s important to keep everything concise but thorough. Let’s get started on this!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Preparing API Documentation**\n\nI'm focusing on creating a detailed \"prompt\" string that includes textual instructions, testing, and deployment notes. I need to ensure that it covers acceptance criteria, especially for requests with a title, and that certain columns like DB columns remain unchanged. I should also mention updating API documentation and release notes, along with a rollback plan. It’s important to keep everything concise but thorough. Let’s get started on this!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRbVgNC6fKXC0B4IeeUCbw-mt6l-PDUnvd44new3JSiCxM9imCN9KPRkyIBq_Db8ZDEK9MBWBi4GU1grV4mFA8YoYmGCxOj8L29STO8-Co6Xcqr2kTplfjddr9tq4xFGJGueHxUUGY-BStk4aqr8TNcKWD1umlsmNAD51RJxMhd-Yt8J5Kd66neJBKqRo9nIfhkihR-_TePLK55eK5JPRiHrMVEIsJSxwOeT4Ewy7VFoX36M6xHK5WRzJrdvL_MjcRuWT6oROffZ4waNBeSlZHGS_GDux4wErubO5ZYzWV4Hrjx5r8I48A8oMxRwvrwnTdyly2BQiLZ1oAPcA0N-06dZC4RFYKcgAKBaISla6g77LL8oRrRHsTYhFMLCBPQcywo6xeBCgwurDxZNG6tUa-0Eb-F4KddYtR656Tg7QIYWkPqydAC-Eq6vxnF-hkWIzdROgxLXII_tYim_zJuUDnByZmfSN1EwyQEh79A9Y5e6B5P0UPlgl1ESt0w6LY_vLG-gdh9OrNJOwneVKx_bRzHVUicx3JPUDkj6SlQW2_totH6_ZXqltABx55jrYEn-ZefLIuL112EcjayikaPLYUZb5ocsxLlJJ5ckLcOzx7cTLkmtdlKYn9_xcYoSZtGnYy2DtljazvMo6h2FyNJLCJVPwE1CtlZj1YWNrMwpBFhjNWRy5Mw3wNmvX7Jy68cviMKeomJtnl-RRUxqMNAu0tlUIeGafsQ7ZzAu6iWHA6CMqXTwm2Fygl1EX8YsQbiV3e_oocsqS5p8-j8V7bnSiK1OKA3itfSSpTLRbROBkSKNZz7C5SANzxZY6pVLSwv7O7ktACqQuVIh_MtzlE5HbUfb0oLBM20qE0DupqDFqlXHGlOT8OTQzOmRhxM6HZUCsXzXtx5OP62_t2HN5DUrqB19VPwz6AqZB6zIlcDZ6BUcrM5SmRpm_MJLpRdFqIB8Ignxgt0I_S9bUxNDKnyyOiwtn4Il6kRWVt6NVaM3311YO3rH4sI4NTL-vCFPKwRtq6lXwW_q4vkS_DngMtdv24xbCNAIXW75hvvp-tl9RbIbFY2lemzXoOxGS0az_9PBk0hSw-1ZQ0WrPsA-yolfQENFSzt5gEQ_sZDawNEWO_vy18_lWj3gn5uF3HGKBCzn8PMeNy0rwMXVPYEep5rmpT0whpv2E96sEXnXBGyIWPXaIaGZ8SRfqyYuuWhwfxDcfiWbPiCAb5QLxeFQg6pYB1uDk5_9Ac31gC8yLic6vbM9_3lmgwEFDZT7wgilDhURODncMrVOfclKl4lgMZLe53KvlR8wpE2ElumuxAkKTiLmv5EjHKXlGAIjfjx3F29yuomJp98F6JRplJ5qxGT8aJvU3gAA1G2AnAhiEnO3OIeblve_wdd_19PgjoLQc7CheIdMLjXt15BR4-awCIKLTAuy7GBsDOABiJ_T-1QghHD7hHbu6TVlctnr_dPrVEoGA7-5Wgyccu3P5sgTAPrvxq66uhN4kMQmAxI8CxzdfWBmkN4Q3xlPXuCFY4exehwdINYiWNcq_TLJepSbkRzkohHs7iHy_kpcXfJQDNDPe_e6CEwiOgij9g-4DsKiwPIVJV1ktFV85_RYeQtDy0FgnFbqlfiCMLosDWR4DebQ5bdcqHLQFliMZpeb7fZoGHJrNgrtT9KfIP2qWX0haMDGs1PAbYPyUKRlG2FmbLN7KypX8RmII0bJ7rDVNV60Zbg5EIELCIiCjGMyGW3AwhM8L5gE1PfLXpatCfkZd2Qx6pFhKV7Wxh3dVF6e4DKYdNGE3S7fFTSojJogPmtzjSXJkveuT0N7Li0C_YeIIK-QC60t2W2TIadzvoq820RbZQCPaKkuIVEayjJIQI6fU1zgp3XeLfB-Rz7Of3ThhsbVwmAogxZY6e7-2AF6Wb8GS8XK-W7OJUJkIp8RDHL1kz_4gK_HiwixiBdlN12IrcYsBRtkbC_DhBROOn1xpUAd2vRIzX984bNoIgrvrQK4TQku4K0DfYSUW6JdVZHVZXgCn3TTXicqdve3qRS-aY74ITd6qUIs6QQYmFHGKxT0trutV_et9Lkf2qQL69kpwAQCokh4pH3Vn26yyDduOPb6_5wcWPiUS-yNJCV6NoaTkL3z5u0rt9LRnCTMHlJEiyEuRigsiYYBhuqQGyp8jqw8eMUbCSLx1hnzVVAZ-44w0oCWxL16isQlV1NJcfNRmzyeVF2HfKZohVG6gQEQY_zUvYvR1agFcEgsP7fK_DsUhLkbaWOehX-HtFIV_QaaRr1aQssHam9r-c1DZMNCJKKARVJvRDK4Hb9c-f6COVUn6HYm4TuKaAXbX4bRpDPCah8aKR18gEg22_9hb2Okz4eTVzUCsOlv3rPZQjqA-rNh3VmWOniPtE_xU7DufsGVci_IKTFSrTjBFCAC7h8iTuo29SNvXaOLm_dfiUzJZLxZIh-cVuipIp4UzwfPSLKhGRuaf3Q51k5TOcaEWL-L_HASg2SeEuYPfh55PTdz1sIhCpo6MOHjBvEJU3oA_mUscsu6C1CLU2n7qN9ojs3EF453PugUUqbdXKuNkFpMjlwY_9dtMFxMwacVAPwSGNqPCD0mt17eG-djhySeAe7J04sGQ0jGLgoVMV14J52oqcw6N2CE0t5g8tD5LQx7yG29yriM-dpHVHdBvAdrJYQY1BorX_cs_7vd39dTYd0ensK59GCfXJ8YgPQxX_1L4INKSChLbmoOOQYwMPNRgXqW5kqpPaKky7EQY1JvqeG1Eo62EUgBQdm3WUSaw-ruH0bbE-INaf62AWy4MJgH6ynjBum6dXJKwYP_YuEVgIclLPVQcrCTum6ss7TxNb_u6V69gHzyAPmpMq7a4Tn_SnR-K9YnOv3Tm-Oxon9iTLGNf6eRe9ZEoKUJKh9y7lwaBz2rJRRBOLXrjkajNKKVOXD9eftbp9r-bdWypTqimYmK5DkHtMYJmo61sUCxKSi4QusmmPH4dD_81oO7GLOiG_mjG-9L8oN3hoOpfRdTco8Njr9D42iEGfSjrupXmlUStk658nb9UbFUPf30-69blL0yu-lQ04pRxB48q3i7JSfkJdeoBasdgUb_jxQPFD6K_UprVKvgmsJRsuXJTEl1DzqiJIsqa-9gNcMd7Cxfby__wQrRqwFbMMm-lsAV0647rl3EZ5j1y5TPGog5fOQcR6xTVl4SS7l8e9_NJj4b6AOwQdoEaR_QVZsygq13vV2E0I3wmB0jGVuzvyEklBluJsrFmZtOgpLnhI9vaALLlJB_nphLcK2xE6DXb_VjCvnZ4w5oeXK1XNBt5xDSAwXOJTkblvV9JfVTkWxhOcwJjj25CTM9DR3c2e0mbfvZQdMo5evu9F9QvGlIQ-xMK0th3PMXZNUzSq_M43NGoTaXRI2TkirwqQkCMnxwpQ-iy67k32YwKE-Tix73IA04KZas0hFRcbfF90MbqrfB0UQLM6JzWEaOZLLbg9t7fEA_zJM08Vrhmjkr186-7FQAlOlLgsEf-kc9_iSJHSwaZn4LdV8UfY8BhYceh6WdTWY8WvGws6iDCiS4GkfBmXIYcrDeFr5isO9iAiS6vecQpjdaRskEHebFuTq_GdI5Kd314liEjO2064G0SklGcsxW0W8DteSO64jwHFmKQ5-l8OJee-ixu0qfjE54DSTCZPvTBBBTzKqyfC9UoQ3w1Cyzj6DPCZ8FeBWLrAl9Fhm14OU_Xc8HaD4diTgkIJzUUpjqs4DRhEtvh3SX9mE0Ngeq3kA_-8UrkoG1nSdnxYeWyb3sWqAmDQWyJ0JTAQPcmoLm7BtfmzQIa-EZXJZ_PA3F0huWrxwlNH7jAbdoeaM_RWn0WnZB9Krfhs1zaOylAAOa2WS3mxj8zeQE7wVqSKhX3CzXrXAtY9AJxi3Vr_u0UNDXCqzFF2LmvUUp7-5kYkMw8t01c8xLTyLE-ZHuM19k-OfnxeekUvC6FDl6hcf7o8QnnTPMOEizkFexESCYb2n-BzvH9eU0KlJss1h6lN1SLxcd30AsmBQYxDlZN1FxmO4oNftUOjogUgQy--QefFxPr5T1kXmtaKMfvXIu6I45DgbkPHWxTGmsYhbhadHMqEEBHY_WzrOpLaSMPNnSODp9TNVxkDS5t0COvNPNkvAAf3eEEpy45ApL5o0HZLiZ-DBB6G5Q5e0ODYSWreWUhn5mVYavmjIvHck857NB0f1-4jAVQ51lKu_QHvkMvXMY-4dxTiZqTut4DF6_j1SsqtHMjTnqcFZcd3AyC_mVQkbxbVSC7WbtuIwx4eH3573BSa5zUEUBXzdb49WMnOPrj3LkNBNRX70U18EqB8VT6Tn0chkarPKQX8dqsvvQlVbTCixkpyaQff-2_MPi1pT0wDWLlyGRQos3O7Y87OLXXO7vpGGfNpCn07aE8Ehh9BmHuV5VcGjO2gD9Ot2o04EuR55PQK0e5RCRhBkY5_OlsjsexZJg6CpLHN-UAOjtFx3G6H2w_2wTaNxF7iU4Q8Pdfd9vqsizbhR9xEyfeT4pRZxcSDdt2VoldAJ_sZbF7qW1gthbbwPsKintOUA2s-DZ1k2N0DZSwWEIwdRP_sbzfQLygEiqYh74cqKkg-gQtZpy3j2hARLFPoo0QSmSplRsFUXF26JfJ8h16g3gyxLZppzu599IJlnnH53UBHKBBmvws6GNAXBcETBQJyRmI8XT_nAlg4KDC8RVKiZ3EjBV34gof4Ksx4aNsoBIEQ47IRqhk5X48xDUK8325yIVphUvVBaTZTUGmO6IWY67C1HunZ6Hz9DnPQSt6ieTRmdgTpkECXis5s_-nmEBGaGAgoban3dOoewcKbg9CSYHxG2uQ_i2WnSGA1hhm0MLc8MeRVx5n2_UNnup9s7vadMryTN0_urw6PSe8jBGFn2JEShq4saQeGt6JDdlU0mLzKX02v5nh4vXcccomO-51s3khnlBiS6YqiJyaYYNUON1SHgMkHfy1uYW9E_BZjTLaFlDAZ0GuMkPNi7f3egNrGBoElYdMsIfeN3LtjTYnI5-6mJGVlOgGVvmnUQ9JkuEK2qfDScgCUZ1H44heHHIhwp_bdMYbJVfIHSxGJs8z0p5JBR8yquS6JeQNOllgKUyOOwckeAcx5_kgS4404aS41rZFfdwK57Ll1SAtfaIRYaE_qty8XjMKPhoOIGjtD8t6bwJva_7XA1o_OjuPzM_2alKPKvocijo02ykSKcksM19kvoejfJmVb3s-K9e5VF9kPE0_MsrEgrdO9CMiFMkGbFajLPr3x5zA12KgiYMJniB_fRf8kj3OLAIcyTnlhKVebjRK27G6ZMR9pBLKKLZSItMNl7U6JQMXtoTEB_2zzbOBlNqFQ3DOAB5BCat3W5AMltybSvAXHu4zGfAML5ZbFs3J5284tYmDiqPaVd8KgSiJWseb2gs-7Ybw8c0hOUuP_S2Fd7z4caD9F39L9LttcAyotYLfFliMHF4G0NmLLP8UeLZkSP9zi8RI93SselNJsdrkNgzgcNAdh6rj3FuR1r9poyrngC1li1j_kVd-fsIrAv80pvwKhUN3MP41f2wT5tUIFsneFfdo4HI8hcPRCXsNEwcgagjTvWqFa0rCt9JmhuvF5ysygY5wLhqX4EW4AwOQJoLmzL0DHPpHGk5Z1ne8qNB6qj-YsJ1SwYOf-SjHhDT6DSePGOnIBV6s5SJQ5fkHfonHiv9VApZn78oQOC66ENJX_5OIgplp2IUPWvAIJ39k7h6B7wp4r0yJ4mOw5ya99M7DRvYOOb0wpO8OUuVHRyDuVURoOAxeRO4Fpdra4ZUihMBo86hw-ErWI-g0m55nwsaU0QhncfoIRtTQ8QEvhqtnB2ObU7ijY4wjDwSV1vj6nFSlWDYfqDsM77Yt4_lMgUbBl_ggZx3aI1hHMhGeSVKDtoiC5yggpdjLP1kdWFqsz-56XnNSryaMe9uufNe2U6v_CEQxFJODi3Wa6lThUdWcBCEeOniejU5Q-A2_rUOCZmXUbyhzaFbwKLOFu26QnairxZr7zdh7HEiMMvGnQ9faF1ocOlNjaCBKz8YP_MsQsCM_pS8BejUatHtYfXXiOd7a3VTQRdnLfIBeEfIf2CisccV4Ahl4iq10o6TfzzW6s6NptVhVoeyDqqgzXNw5xra1Ejz-otHh4w2yGdvZQ5DvY3oNgt_w4ArulQARxUh1aTt2JuhJfrr1D-i9qfLK2qisGBnGwGY1k-TwMpFrU0gdY2F-3-r-QBAQ5wDICysFpEuS-KcfVHAEwDc6p3bOrfJBF6F4iqKd1giyyuv1P-8mIgnXVUt7XZXoyRYawipIcjcaPcTJo1rAABmSxcF4sv9vAoThMfHeb0lv3chJvfEuXKk5RwLWfJNVxJGh4Plidru9PsSGTRKHYeXMuCe9QimCGUQSMLX6j7vrtA4fVmtWLUIwLjeXU_WMNppvphgHBKX3G_9EJQgwIisJGpdUMKYYdjhnYzw9I8HhtboWneG72qYejiGBDvcGljFtWrGmLWyWOBD6Cmp7OReHoFHozmv5H2HAQmA6oQaB2P1HAbHvwwUhmi8ktPoFxWcIajM_f5UlzHrbKbOReOxhIcjOnPuRnpZEroFgzSnPkQLEKn6fp2IJ390RDiSlfZrf6PYONoSQWpsy6zuCfG2XWgvDcyZZGrIIeaQtEUzBp4qgr5vHXppUpqX-kIYaNLBx2x-cEtroo8nAPpImv0jJMt9XkYCaSkKMjxs3s25BHjp9r8pnzjt9VvSvFBmxAaGNDwVteozwxQFSbQEcj96pSjCJrkuD5DWtaQKmw4G-VIDEomZbvC_CnxtsLQZmFSdtb1gOjvytE1YaTYf-iH52Ui0dtCq_GYbV6YpueWDZa5ka42ZrYwUyGv2uMka7Rdgd2NeBZqoqq6A2IG7_VUch9f-EZKybIGXTkHoC9kWrpZ_77sPKiCnCJl3gho_jQJEEHtNVvTzQaDhs2nvtZlymvtss9PULNLDXdq-pEl89CWmJiDbBR8L9VbyIHV7VnEnshh8U4qhNWyAxR3DZSfq00S6ZUdpXnkTHOPSgjiQQicMVPqThVE9ABujjUaSKdmRJO-cXaw81yXyza07Rs4Sq8xtfQBwdZfwpgIZYVSOLzlxYwaPRnn6Wgp9vwEfKC7jZj-cdaDpBFNTtQigV8kU95s1ayYbPvH5UEiKHXttJIXut2KQgoDoa4y7ja8ikMOyUcicZaw5vGWN3F-hSujeGWYJR0j0zU9YL99WWmLNRWEMZDhMaO5kDxpTy2hL71Ha6qa70wo=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0bef24cda194b2b6016ac116cdfd8487d192693cc9422ca782",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 188,
+      "completion_tokens": 2192,
+      "total_tokens": 2380,
+      "cost": 0.004431,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.004431,
+        "upstream_inference_prompt_cost": 4.7e-05,
+        "upstream_inference_completions_cost": 0.004384
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 768,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 188,
+    "completion_tokens": 2192,
+    "total_tokens": 2380,
+    "cost": 0.004431,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.004431,
+      "upstream_inference_prompt_cost": 4.7e-05,
+      "upstream_inference_completions_cost": 0.004384
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 768,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

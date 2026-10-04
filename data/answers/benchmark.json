@@ -1,0 +1,217 @@
+{
+  "dataset_id": "fastapi-human-chains-v1",
+  "author": "",
+  "frozen_before_outputs_attestation": false,
+  "steps": {
+    "c01-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c01-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c01-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c02-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c02-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c02-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c03-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c03-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c03-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c04-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c04-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c04-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c05-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c05-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c05-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c06-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c06-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c06-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c07-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c07-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c07-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c08-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c08-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c08-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c09-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c09-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c09-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c10-s1": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c10-s2": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    },
+    "c10-s3": {
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "facts": []
+    }
+  }
+}

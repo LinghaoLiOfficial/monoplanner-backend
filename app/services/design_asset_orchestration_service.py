@@ -1,3 +1,5 @@
+"""Apply approved change sets to create validated, versioned design assets."""
+
 from __future__ import annotations
 
 import logging

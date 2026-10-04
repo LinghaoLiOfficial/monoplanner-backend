@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:03:02.074841+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Decide required scope from the requirement. Do not invent unresolved contract decisions. First enumerate every explicit contract fact from the requirement and preserved constraints; repeat each shared fact clearly in both applicable side prompts, and state any side-specific omission explicitly.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：前后端：新增 sort 枚举 `created_at_desc`、`title_asc`，缺省前者，其他值 422。时间降序空值最后，title 按 Unicode 码点升序；主排序相同时按 UUID 标准小写字符串升序。\n\n持续有效约束与验收条件：筛选规则不变；后端排序后分页；前端不得只对当前页自行重排。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "c7c08b31e081698cb2b3293caad012edd0a0314f805b432a1e0830e25486adad"
+}

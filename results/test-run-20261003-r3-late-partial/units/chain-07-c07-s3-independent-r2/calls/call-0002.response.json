@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:59:00.617463+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039523-O1SaAsalmElzjQX4QB38",
+    "object": "chat.completion",
+    "created": 1791039523,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\"needed\": true, \"prompt\": \"目标（后端实现）：\\n1) 添加新的排序值 title_desc：主排序按 title 降序，次排序按 UUID 升序（用于确定 title 相同时的稳定次序）。\\n2) 修改缺省排序为 title_asc（主排序按 title 升序，次排序按 UUID 升序）。\\n3) 保持现有的 created_at_desc 继续支持，不可废弃或拒绝。\\n4) 保持 q、count 与分页（limit/offset 或现有游标实现）语义不变。\\n\\n实施步骤（后端）——按顺序执行：\\nA. API 参数解析与默认值\\n  1. 在解析 sort 参数的公共处理器/中间件中，新增可识别值 \\\"title_desc\\\"。\\n  2. 明确缺省行为：当 sort 未提供或为空时，使用 \\\"title_asc\\\"。不要改变其他参数的默认语义。\\n  3. 保持对已存在的 sort 值（包括 created_at_desc）原先的解析与行为，不要删除或拒绝这些值。\\n\\nB. 排序到查询层的映射\\n  1. 为每个受支持的 sort 值定义明确的 ORDER BY 列表（示例 SQL 语义）：\\n     - title_asc  -> ORDER BY title ASC, uuid ASC\\n     - title_desc -> ORDER BY title DESC, uuid ASC\\n     - 保持现有 created_at_desc 对应的 ORDER BY（例如：ORDER BY created_at DESC, <原次键>），请使用现有实现的次键；若现有实现使用 UUID 作为次键，请保持不变。\\n  2. 在构造查询时，将 ORDER BY 子句追加在 WHERE/过滤条件之后，并在 LIMIT/OFFSET 或游标之前应用。\\n  3. 若后端使用 ORM，请在 ORM 层显式指定主次排序字段顺序（不要把次键省略）。\\n\\nC. 查询与性能\\n  1. 为提升排序性能（尤其在大表上），添加或确认存在复合索引：(title, uuid)。在迁移脚本中创建该索引（如果尚不存在）。说明：大多数关系型数据库在复合索引上能同时加速 title 的升/降序并在 title 相同情况下使用 uuid。\\n  2. 在创建索引前，先评估写入影响与维护窗口；将建索引置于标准迁移流程中。\\n\\nD. 保持 q、count 与分页语义不变\\n  1. 不要在实现排序时改变 q（全文/字段过滤）参数的过滤逻辑。排序应作用于过滤后的结果集。\\n  2. count 接口/语义保持不变：count 返回匹配过滤条件的总记录数，不受 limit/offset 或排序的影响。确保计数查询继续在无 LIMIT 的情况下执行。\\n  3. 分页逻辑（offset/limit 或游标）保持原样；仅在返回页面数据前应用新的 ORDER BY。\\n\\nE. 验证与测试\\n  1. 单元测试：\\n     - 测试 sort 参数解析，包含：未提供（默认 title_asc）、title_asc、title_desc、created_at_desc 以及非法值（按现有策略处理）。\\n     - 测试映射到 ORDER BY 的正确性（包括次键 uuid 升序）。\\n  2. 集成/端到端测试：\\n     - 在含有相同 title 的多条记录上，确保 title_desc 与 title_asc 的主次排序行为正确，检验 uuid 在相同 title 下升序。\\n     - 测试在使用 q 过滤时，排序仍然按预期生效。\\n     - 测试 count 与分页在带/不带 sort 参数情况下语义不变。\\n  3. 性能/回归测试：在生产类似数据量上跑带排序的查询，验证响应时延与索引效果。\\n\\nF. 文档与兼容性\\n  1. 更新 API 文档 / OpenAPI spec：\\n     - 在 sort 参数枚举中添加 \\\"title_desc\\\"，并把缺省值改为 \\\"title_asc\\\"（文档中明确说明缺省发生在后端）。\\n     - 明确声明 created_at_desc 仍受支持。\\n  2. 保持向后兼容：不得删除或拒绝现有客户端可能使用的 sort 值；对非法值保持现有的错误处理策略。\\n\\nG. 部署与监控\\n  1. 将索引创建、代码变更和文档更新作为有序迁移与发布步骤。\\n  2. 部署后，在日志/指标中监控排序失败率、查询延迟与错误率，若异常回滚修改。\\n\\n注意与限制（不得假设或变更未指定约定）：\\n- 不要在实现中推测当前次键不是 UUID；若系统现有实现已用 UUID 作为次键，请保持不变。当前需求明确指定 title 的次键应仍为 UUID 升序，按照该要求实现。\\n- 不要更改或废弃 created_at_desc 的支持。\\n- 不要更改 q、count 或分页的语义或行为。\\n\\n交付物清单（后端）：\\n- 代码变更：sort 参数解析、查询构造处的 ORDER BY 对应实现。\\n- 数据库迁移脚本：如果需要，创建 (title, uuid) 复合索引 的迁移脚本（可选但建议）。\\n- 测试用例：单元 + 集成 + 性能回归测试。\\n- API 文档更新（含默认值说明）。\\n\\n结束。\"}",
+          "refusal": null,
+          "reasoning": "**Planning database updates**\n\nI'm looking to add a composite index on (title, uuid) if it’s not already there, and for PostgreSQL, I might want to include storage, but I prefer to keep this moderate. \n\nI’ll update our API schema to incorporate a new allowed sort value, title_desc, while keeping title_asc as default. I also want to ensure we support created_at_desc for backward compatibility without rejecting any previously supported values. \n\nThe implementation steps will include updating the sorter enum, implementing parsing for SQL ordering, modifying the query layer, adding tests, and monitoring deployment. It's essential to ensure that count and pagination remain unaffected by these changes, and the search semantics should stay consistent too.**Preparing JSON and instructions**\n\nI need to ensure that when a query parameter (q) is present, the ORDER BY clause is applied after filtering. If I choose to apply a CI and schema migration, I should also include the database index migration. \n\nNow, I want to craft the text in Chinese. It should be a plain JSON string without newlines, even though the prompt value can contain multi-line strings. I’ll ensure that newlines are escaped for valid JSON.\n\nLet’s prepare the JSON object and write concise instructions in Chinese, focusing only on the implementation steps to produce the final JSON.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Planning database updates**\n\nI'm looking to add a composite index on (title, uuid) if it’s not already there, and for PostgreSQL, I might want to include storage, but I prefer to keep this moderate. \n\nI’ll update our API schema to incorporate a new allowed sort value, title_desc, while keeping title_asc as default. I also want to ensure we support created_at_desc for backward compatibility without rejecting any previously supported values. \n\nThe implementation steps will include updating the sorter enum, implementing parsing for SQL ordering, modifying the query layer, adding tests, and monitoring deployment. It's essential to ensure that count and pagination remain unaffected by these changes, and the search semantics should stay consistent too.**Preparing JSON and instructions**\n\nI need to ensure that when a query parameter (q) is present, the ORDER BY clause is applied after filtering. If I choose to apply a CI and schema migration, I should also include the database index migration. \n\nNow, I want to craft the text in Chinese. It should be a plain JSON string without newlines, even though the prompt value can contain multi-line strings. I’ll ensure that newlines are escaped for valid JSON.\n\nLet’s prepare the JSON object and write concise instructions in Chinese, focusing only on the implementation steps to produce the final JSON.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRguwyR94JmqjdtAI-GJOlpDz0LVHV4qA3K8hQRCO7hekeA_yyrr2L5BzLjTIcT9xvA6zraA51K2NmRrEJXYkYEf0SrAyM0viC_kkZPNk2hzjI77aapS4v95M21hgbALPhRvy3bbJfKHw0FCcVBy3QhFv8hsxXvkVFh4kcVyKmYZnK39EJk2ci8Cruu8DtpBqrKFuN3MG8Pe5XVr8RmFuGT9fPsChcFJ9Pf3vhRjRpqKwdedORAtq2ppzOaQ8LettnlRSeSEe2FDfy0Zq9c85cUMUTqMhGivISeGqIZvon2B9E-8G407LH0h_144M5dMujy3Uow31Gy7Oq3VXLP-dmMykFPmZ3sfohDhyA6_dCxSkq0BWbt-P1RL5C7NjRTsvmOMlrtXL--DXBx55Ghu1r6aLGO_nFQnWhv37ZceazMK--WQ5L2lWDj6rskyjWq5UX6vVgHWfaRjYxOzTMzopp8EW93EiFsnZig-bK6mPX6-d7itPxf29WMeQlhIjVyzb1fVQrl7gVXPMX9Perss7HFRB3czljh7NVlhdNogb4uSfT-yoS60XkWW0tG3-iFq7pK-zJidjdBIpOGIppHwm_gxBwQszfVoVUE1DHf0RzIaFRRvjLUbYfkytuFqSwKS4wy5Mua9Qu_jKwYexmeVdjq4dTtli5OQlHg4Jb0fHZF_8Sne_GjPbgNv__-jrRvtAK9tAwd4qY2jbMc_H97YwkUbR0_L3sCVfECPUuFBxJSATDZUsqEE7IpN6vOoKw6o3yY4h9DZaHZ70BaJRrJJ7G2bNeNVstLJ4R95bEX4EgMLpGX_4CW25gB6XujaGBqi_5oMSdvUwGpiIWIyX6AWE4_Oz-nvhvgwb_p6rbhzpSIWsIOJIfOq3N1WEBenUPC1hY8fRKoregrRJf8czbeec3t-1TvqwS-PwA6URupuNYLhUsSPXBBEEP7S3TMsB0cMtVpu-jqLPLJugm2XtqKCJ85Gaxo8S5v3ukv-nmn5TbnIH7Zh7eQK_LvWwYQLTiginZPiQpYwyslJCxRz2_Xwo87wzwn-Oi5mtkCvsaMZQhA3aSzeDybIT4sLqbsBFBVCdXL4vBOBV3Hem0Rk_T4393AVDyGGAvuQq3PP5cOYqU5wNH8GsiSZfPXcu5XyCx1aOguCzCEDFR-1ViSlh5s-3WpljOqIIRQIvYAevhrq0_oh4Aw9z9X9VutPTc7-nE9OtPxhitHIQYi6SW7MnQ0T3fQiS2aeM3GOMduSP2tVaYFnwqmjvEgTZ_FPHf_V9h426JFs7WjSZ-lWCzn7msMOKftGrkEA6IRbZ_gP3iB6kb1ACoe-Pg4gxiLG0dMokIw5EB_YpIFFPOFbW2j59ebgYEpKc1HG_I5GcH4UO6wQffcdZ2xeAyDFseBTNCwM2lDqqJM4v9COahMvAlj_NFGIVd43yh9S7SREtIZqxOyYNBJ5etqSPQTr36LrLtOlV3hw2ozsbXvubq4njwGCNSMAHJPUTh2Yu4sly4y5Yz0ggAvPjjhlyLjcJFjvSYPHkrAf4do4qZItQ0VKfBvO-B7icp79ggNUMFrDQBtRxtv0_949TAU2V1NZEL2TnFIbkwH4jd-9d5qgBlR-VMsJiifejsAf9T6ofZAcxxJ8Z_idZ1C-4rRYnhb5TM9xvn1dYz_CKqE8vehMYbJ_5YxAKYQfB8ThSBSzACedjaXiuW5MF2YRXBN7MXGdTVFaWnz01SN-bfGxX3uGypazF-bdjq27YiY6Q4rh3dPvU2bgldste-uRIG1kWsA3fQTXV8GiSfvw9zYPmNh_-y9nCRsjamAA5paRUlk9Q5v55NDFB4HiMSiAf-SIp3glR6kCHv9jn_jzWklhrEvwy3pzgT-evNiHoblUzOd_P7JTXWidDI7EWWFy4L6SNJTraQc6lhfxlpvLORwjXVtJaV01htcDo6I5l_28tpbYe-Z63ncqIvNHEE3eW5JqeB6daa2NxgGvBVVi1NTtF4RBEzUrevRqFRkx3hRY8c7795FxoY8ZM_QG23O2SnM8zkiC751gUOcMGsrafH5IB58CvOZXVHeUaCSJRiJUPz1N6XCZhx5OOyrzm_zvZt3QzQpRhha-YIUP-Yp4CpsBCQcjwmzgM5PyTofLvEsrhZCmVlrJV5hPDHyEN3GXGQS_ov0nf8AVCJ_GZ5g9jA7-x7iDjKyIRZ1eD6ixBghjHb1pBHR8lZukSMnRaGichUJ6dtJLsAQZ43fsvP_mhcz-7rxzUiEvEpl6GzCLTHVYKuzmPCrPBz9HCjLE9Lz8wqKO4XYquIXv5iJU0Zv4_RM-MvjQPtIJG4RNYapG63-NCy4XFb2slEcSMJmDTiFjqs8uXJ1ZE7kyZgKoFZQ14IrtqrkRrB1J511_MZFxXR7BjdaVJdINLNNpu9Zp4cjsAAlcGZaMvDuGBpjtVr4Qy8qYt7hrXsNUaRUJkwaUHNsLg3hSd8M1bbpvkP7FnGWPYB2Wm1WUs_8PpSgdbCmx54chbzFJyyr0J0YVsaKGcGDMiXCS2WA78x0G7Mis2mmMBucE5BZWnOXRjrlUkcoPLUoxdr6QdTMwljoPLc7UKrow9sQavAN-AsRGVnA6MhMqysrCgzg7RTT6kuBCHuEfupISD6J4E5DRmKaRewJkE80QVkg5VceBPvTP5cHKU0hqPJ7ANZGlCutgUMBuVi8tTZ960m1hl0jCdsEE101ztTljNdus4rhzZKQyFBCxkn1h_sCZiya-JD_67KhIc3lX5MRt74jf88paEbXVcGrCD9vOx2XfTNsK16kP2rZp1yPxQK9K3qajtikFH8Zx-jMC8ngFGm5MOF5YsYuRln-ydno-aYUbEvnFTkj_x7-ycLHMkwOBvWt8MoDpVRVt4pTCuVk8YM-Vh5uk57KovftQX3Dz_kG3bkpthiR3q8ZtGo6tg13iDOA20ZLlR8b_9fWvbtRaSfU1FkpqPYzuHsmJzLvA_5UZwMcOLdiQS6W4HXCVRnU1Hh4MHrXjLwuHJewUroyUKHXBsLCB8PPGAT2BgU5kYPsyOse29ipVAKv_Umwy5hVbJG7RmSyQA5A9bBwEN2ZTfYpxvOnkYwJjyiOtO863b43pwyo2wzggtRZD99j1cEtFPmFLf0ud0GDSR0xAd-BFKvTIu7kSDG9qLow98MEOpjnAwYLwXA8V0GjCVAhiw8kTfZKgTq1vL4xnvtJDUenvkcL7GlvRBS6UeKz1Upf6AAkxbQIEEgPLw0pHQzNNBSmjPZXQ_F1w5LV4H7GrouO50XZ6c-6k0KMBgvioLCrBpMrzAmMwb7zN1MJEIwqqFSTlwMNDw2ScKWSKGCQ5sXBPgjGt0RPvFvkJ5x1MZR6WtfwIFilllBBqSuLwFtgpjvhJi38kdpjsrjFuykDkdbV3BAmmV8nW5D5-jH0sVy-UikhW6XcoQ9MvjVNGJk-RL3oN_2L5pnYcRtZVjsyOuGRee6-K6n1_BK0dSwMbJSNCvXPOyGBu04F2_eBRVgHM11euERYrOP76swjundvfxOn7RC3Iz6YT-3ERb-6sR0TJoUu2vfoBhgJgb4894hxiagqMPZ2SWv91pZg2it6aC3wFVC7gubzQBu8AQABwXkj-bI3X-sjTnMe8OJNibFPTxNNN3ehjXlciAQrXKaPY5FqgKSUIHkeqomBBTVeYeMcjV4p0zArNW_ieFJFrdjDgvUOMC12dcflzwVfeJwnhOKhOlsxR3psf69WfKXEDUtDn2sk9TrYibYyYO7qY71bdv2zGkky23wSdjwWDitFBkNJURgRofnmyHYmDXAwuDvVnG5ZerTnGOVCGbNr9wTD0vkZwYaWISzwEnuGimleq9Ap7O-i0jm_a_78wkaM1-T6xn33nuaGDhDYgMwuHkRY08e2DqFcRSFu4r1O6MZ9p8keHV0bI8sRVEJ0xqnbyy17la09euaKo01rUjuwRmrPOJr4ROQAOye_uEWnIpj7LunMkkADiLgCdjhslPj-VeYBpnBfQE5cQmWfmAbFrG0HqxVtKbQM-U4T4bRtLlzgmInpCSyskfEnjiiYTUq2FzAIHzzcb4n9Zf5DGdf7yNIUh69KDDalahiACawJXzYtt10ahZ_DioOgboO5-CQCDN99GkK80ajNqQNOU-KTZeEV7VApKShSRZ8rsfWWW8JvCFjMaIOFM1jGy5fTIjduMi6X4PDRnDOcoaBkfwtY3PCJwy85-A8XTWkeeJlxjz9Ova5mVH4a0FRuTJUiFAbXLABM7bJU4ItGU3Q2cCv7wyF_0nx5k2-wRtzxDr4BdMRgG1FVdzSFZg1reZZfbE8rtIkTJcBe_k0f3UGUUXtverz2YUht4HQ4_M-DEYSgUbjqpAqFkEAC6W4hxY-Aq4EnE0vmd2670rKyQlVniD7NwBwL6KQYgHQMYtF850p4Utj-OkkWk1_kJLB3bUwZhdOh-6ETHt_ujnTIezV3cx44DwZQlHSkpQ4gKgSMseLzoaGB30AU1v74Eo2IJbII-OggfSrpUHNkHabLKd9-Qu3NSibc8qUCL_JigZyPBqLv7FlFOOZk3hTXxsNDGadR195EedbKNjYuvumtzWqL3U-5tjYKcFqwwqXiWI5VzETxOBaZrcR7DtLi4QxyyO2bpzb4WUQbMGCTJi9WKNM1jcqLaP6K8PYMOL3QHXk0BkfV_5tJagfijh5sXKTkwWAKrY6UoJfYrp6hQgR0m4PD6Hq6LXlLPesS1Hwuw-70vS7TR8QcOdcSolTi4f8tp_y-8sdVkBvw83lGN4UFUdj1-eMQU26RYhHqRopN4r_LRrAEVRPnYI0lUuIj1LpbRndcAgVC-QFNmTonfG7hDvnSlU5GWeBrkc0AyMaM6yLYywzlFd7zJkAvQaDXigjJ6udfQoi5NfGbuzyGeGtboumSvwI_KBm-vibFFeGTi8CJ-BsiOEsN2mooMmXATsGjpriS-UJ6p68BnTDq2JVAH_ForxlZzemShi-Z6CHSdU1FUWhgrOUAXMTo23oIvKvWuqnhyc4vcOsIu7r4QtaKf-eIypn3efetkI9Rpp80CHph5oUMtAtqj4BsHz-yhPAhr149QuBwTw04vXz9AigYQKYAuSj66bboZ1PkH99Qb2bFr0ZfVr0hI7y0iVrRXPR_-nI2OKdP4JKNzU-flGhdI5c7GGVSOgpuW4dGPP5TNsOshnB6f5KMdVsfTWJ9lQTqvvb9gATlq4rI2nFgdeqML_5A2D9wZZ_gSA0u4_C1J-oZnXgCsOPNV0dX9PgtidB0bp7_I7zMGMsEw7E4cKt2rO55l88i5ptcuqRd9MZe6iUrTCnhnUhZp6CAhkJHosG_65Ik8njJSZ-e78XOkBLm3jp7TR-5WO9fZQHXOcpwfnT___cRArJtkjlteIb2Tc017mzSsAq7mBD5g-p46WmGTSj31FQ7boI79CRIi7mQcIC_Wey_vxv9aKQv6fpgfQBjB-ZGhgpbJlaybcQ4MoUviz-m2-IHWXp7-IhiPN8w6SkvC4DN0BPn7oBLcMBmESe_Ahonazun9SgohIreY_Q2OcOB0MDoEzDU499-0ddWBlZjAyi2M_MzmlIoD9G78Iu_ApNrY4qa58kUcxZ7IE6jcBDZvQbF7x7Alltue8se7vtMjrlKl7_BVdzkol_elJ7AycxfjBkpwiTVm9Uxfau7kzwFD87TSGGzhO-P3oS3qXhnSrg4aBeE2PssOaoAr3rgMzJ9MKJ2HvyLC5QQ3m3sJ31I2kx43RgIcL1goqBZETz-Elyx53Ujd_6pJf7Ked86_oJ37GdF2ajvre1V7oA1G72hDhgC3HQnF1cDC9VXNcwTwpNEB0NhZQQ93lUxrt2Z3CFbApQURMY97Zr79zDx73e2TBh6hnB2FOYlu_-wR057w4ugBW1Sx6bL-j6eB7NI_mJhBAnOj9EsgKMccVf41ZJ1-BM5t0dvpfWGJi3TN6eI4uvth0YQu6XJrM78MwC0BL1FVf5LnKriL2J1lbMThFmm6LrS4CX_MlHZwG4pRrjT0JCufFcRLRt6V6iyY1VV4GBsY1h2jd272ujLFqQuSMRovZfjrtV_6M47h1yeDV8LNXhLty_Zc8rHjFX06TWRYbw00mjTibnGG5qd5Y0pXtVRvTpJVsdZorkC9YZiNR8o1R68aJ-xQ2P7B2mqRL8H48dOE6tUr0EbLhz0FfLdMLRWnDzHfrOPzzEV67uHPvkUkF6QohCaLWUUBhdTRXAD1shTHw_Yix7xvcFM28ISZrL_P1Miox1Qpd-NxELpdT0AC1Hy-IyZ2K0PRHwFykI4klxtLSHFxdH0NzsXJQC311ynkwm9hm7sMWQzUvJIKjD327MNhz2e42o3mTpIQIOjDe_Bre5DOXplLx8A51QSJoJ6avadtFKUnh8hNRLaQF6IvKwbkuwTEIuaZDO5HEMrTf793JSrKwGxm_jS3UB03o8Pe13j8YPtxiuPlR60NgPkQkyiirFGjH2ViPOfw3rQM1WV5wqVDdfLtj5evsM3IOGyFlScQu-aF6E6-sjhbsnVWCGwX2ffJ9ZMk4RwYFv3KxLkAtFXC-LKxb5KjsjRHujiVN2PnV4GgVB8YBQ_XGD0U04JWb2ORUM-iR6LA1Jt-lhyvmTpMLvwWPpF600wXWcvKDZvJ9yddpLTbYGpMiiOrsHqqwRAuYv_eW9OEoMWuXg_f-0isHGSiQmNQHnsuH0ct_XoOXfwnUVpuaOK8ucCqNhR1zBZzQesNLuynUzPprSPaWShIoQQGucSuZLm9pqenIQxzSA9thQaMvgy6bnXlL6h89xCH63x2IrgC_xoSWHX6rq-fWhmDdc3sGu5pCHweO_Qg9-3kjmSMg46lJT47HAwYMLkz_t9OzWcpxSjFBH89iq9cQ4FiIA-F7XNHTM01T0f9lOdGJ7ZWngS4_n7r95XukBwroBupmgGH3tuT7VEsqUCnI4s-mWNTrdMF3uEcNv4ZFr0U7kBP262ZDhjLndkfCIsc7HgDVLjZFBxpeo59H55GBMB0Fo4z9_4PfxDDO5eeGZl8DgGs-YHo8uMloS0K0TXKgMIKRgB_LkBR2cplDthrMMzJFATWnXhc8phCM27rI04s6i-c0Ei--UOc-Bm1qbvPIZdWMpWE5ZdJxm003e3RipcULfnG93eF1IME1pasVf8gKpHzSC_dH1oY14Fvyu1ygsVLRsqoWxVrEvcM2pDGbr6fWzSpes3l6VfaGevYXR-LvdLcQBQ2oD54c8uYe4Jn_i3ZGscO5Azp7d4eASaSQGl2EP98E_Fjgxx73OuZWgJcVQ7GjDgKB6T8cOC7U9pjbnzA4iAqg81pHh_lIQ3MJVnWfIZofANaGYkfgEm0NdjD7EjbrO7DqvpePRhQYr0lZhS32qqxY-lLUEyTKsH7nOy4WvE0HJ6QjC6o5s6jj9t4KGDVuH9vJnse3XIq9iKXPnpFeJAWLB2Zn3zNjDx2G_EzH22udWRPeRgqugvOWOR-v6yq7dVTllW9iJQfD5albW8QVVq0QiEcD3zb33i65mhE0VIMW4oFyyrfYXR_2wNOn6KGdK-RaN-0bnlQbd2MU7u2Q4_pRdUiFc_wNbk63MBGeIkkSmqe8NF7yamReU1cjjxZ4dJLsRzsIw36wPSrEG6m-44yvRzytTkQlM4i-wnVj8jR0ZCSnhlpBFvwMf__xEJyomwgWA5cblZVcUwg2524oS6XAukqD4klRAV4oCUm4r7CtQ72BqPJO_m7jYgrusneQa7Ph7rsf_Imo_IvRxvLlOjrE5cir-vRZZcT6qJG3_I6S_kwbS85gaIi7FlZegCb17JtHo0ljdAv45mJJUkWS6eoee2vTLPiH-97FsgR7cv5UoSOS-XNW9ccs8yXcnHnV9hQf3JemRDvrBSlBHaTZWsikwmALzSnIlIp25Q0ymDqzU6gNOEf3vKxASnRZDul6nTV57CXD96scDZALVFq6WsLQw7E2Az7CuySDuAEx2VOf865wJJ9GPLt5z72Sks_Er5ZSLeOmC-tKDswar7ynncjmXapzcP95qb6LkopgOZTvO2WmsQWwPffHSB9CSFI_SRfHsMPvDMyG_LR9HSiAk4LqJUXYFIg1Qll-BWaFushzTSVpYiigPMsNjfcJfi2vfMhUna19xhk_-UG9evfVD9FJ27UsUTgT_78W8bOzlyP0waOZApBDLw-RX3tJCWfg6YDPwTs72vxeopZrzJG2EdG17FRyfPkOMpi-0thSxmvYuwA1x4Lcl8R1VhwGuT1ghnvoQW-mT0J1bzXZ_uyfmJTT_-D8FrXigowO3dIawMz_yw9taZHk6dkZlVo4jc0pdVwxKJrC_9m_g9zPp-QriwYUn2v_A_Pua9L9qw7koAfyIa8trIxIOQw0xr_U6J4m5MGO0W-1J2oJVZz9mrMKeZJ5qNw-WuqXdSPR1VTVMsIZWVT78RsoZF9bwhjLjwOzehklaGb3BgqQ_ChiuSNn6h-CMS-tghPL0tRIu7-rh8e_D1rY2KL6RFnUUowX2UtqKLwLMxd1fyrIAoKMavGmyZPinUNf8KiOCHDi92Ao8E9A2ZwgUtlGxwo9t322TwigkDoYb24FznyY44TpkA-xSuvZvUv4EN7Aha2K-emKGbdfVb9Z-9lHbJEa1ksmPvThRlAbyEk3KMQ4ntl7cUqkdYp580xLkaQ33_ODU-mJkYKdoDHmZyjEkHH2EmT23khXU4blPR3j19mait1IfBGE23BEjUFKaDqnSe9hJMJc0ZsL8FAas_cpDqYeggVVEhnPs2rg_klYREiVGOselo672kRUUtzqenKBMYwm2eUe4HpJbvweufWLgpIMsaF3cFjWMqh7NRpLv1__Vc49PD_5cCjdv_twfl4iBpSbD_9yw==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_08994aa439882490016ac118241e3c87d1a000e5885faa82f5",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 192,
+      "completion_tokens": 2398,
+      "total_tokens": 2590,
+      "cost": 0.004844,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.004844,
+        "upstream_inference_prompt_cost": 4.8e-05,
+        "upstream_inference_completions_cost": 0.004796
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1088,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 192,
+    "completion_tokens": 2398,
+    "total_tokens": 2590,
+    "cost": 0.004844,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.004844,
+      "upstream_inference_prompt_cost": 4.8e-05,
+      "upstream_inference_completions_cost": 0.004796
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1088,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

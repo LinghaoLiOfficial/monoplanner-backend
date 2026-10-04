@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-05",
+  "step_id": "c05-s2",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：仅更新请求中，description 空字符串改为与 null 一样清空为 NULL；响应为 null。空格字符串保持原样。",
+  "preserved_constraints": "缺省仍不修改；创建时空字符串仍为空字符串；前端必须区分创建与编辑的归一化。"
+}

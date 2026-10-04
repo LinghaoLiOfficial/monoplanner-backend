@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-09",
+  "step_id": "c09-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：PATCH `/api/v1/users/me` 的 full_name 非 null 时剥除首尾 U+0020，处理后长度必须为 1—80；缺省不修改，null 清空。显式提交不合规值 422。",
+  "preserved_constraints": "email 更新、占用冲突 409 不变；其他用户管理端点不调整写入规则。已有长姓名可读取，更新省略 full_name 不重校验旧值。"
+}

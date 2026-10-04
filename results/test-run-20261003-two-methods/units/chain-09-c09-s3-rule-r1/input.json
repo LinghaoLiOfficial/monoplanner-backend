@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-09",
+  "step_id": "c09-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：本人 PATCH 禁止出现 email 键，出现即 422（包括 null 或与原值相同）；前端本人资料页邮箱改为只读。",
+  "preserved_constraints": "返回资料仍含 email，管理员更新邮箱接口不变；本人更新姓名和时区规则保留。删除本人 PATCH 的“邮箱重复 409”有效分支，不能误删管理员端点的 409。"
+}

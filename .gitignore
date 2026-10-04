@@ -12,3 +12,5 @@ htmlcov/
 .DS_Store
 .config/
 config/llm-task-mapping.local.json
+output/
+tmp/

@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-10-03T22:46:04.993683+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791038723-FbVR957dmILMi9xFKHOj",
+    "object": "chat.completion",
+    "created": 1791038723,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\"needed\": true, \"prompt\": \"范围与前提（仅前端实现指令）：\\n- 仅实现前端如何一致处理后端对普通用户访问他人已存在条目的响应。后端已按要求在 GET/PUT/DELETE 对他人条目或不存在条目时返回 404 且 message 为 \\\"Item not found\\\"。前端不要尝试重构后端授权逻辑或推断原因。\\n\\n核心目标（前端必须保证）：\\n1) 对单条资源的 GET/PUT/DELETE 统一按 404 处理，显示或记录为“Item not found”。\\n2) 不在 UI 中泄露或保留他人资源信息（不显示旧的或部分内容）。\\n3) 列表视图继续只展示当前用户可见数据（不需要改变列表接口），并在发现 404 时从本地状态/缓存移除对应条目。\\n4) 所有者和超级用户的行为由后端决定，前端仅按后端返回结果展示。\\n\\n具体实现指令：\\n1) 通用错误处理策略\\n- 任何对单条资源的请求（GET/PUT/DELETE）遇到 HTTP 404：\\n  - 在用户可见位置显示简洁中性文本：\\\"Item not found\\\"（或后端返回的 detail，确保与后端一致），不要显示 \\\"unauthorized\\\"、\\\"forbidden\\\" 等区别性文字。\\n  - 从本地状态/缓存中彻底移除该条目（见缓存策略）。\\n  - 导航行为：在详情页/编辑页，404 后应跳回列表页或显示不可操作的“未找到”占位页，避免继续显示旧内容。\\n  - 前端日志（仅供开发者、不可见给普通用户）可以记录响应细节与请求 id 以便排查。\\n- 对 4xx/5xx 的其它状态（例如 401/500）：按既有通用错误处理流走，但不要将这些情况映射为“Item not found”。\\n\\n2) GET（查看单条）\\n- 请求流程：发起 GET -> 如果成功(200) 显示完整条目。\\n- 如果响应 404：\\n  - 不显示任何条目详情或旧缓存数据。\\n  - 清除本地缓存/状态中该条目（确保不会再用陈旧数据填充 UI）。\\n  - 在界面显示\\\"Item not found\\\"并提供操作项（返回列表、搜索或新建）。\\n  - 不在界面或提示中推断“该条目存在但不可见”等信息。所有普通用户遇到的情形统一为 404 处理。\\n\\n3) PUT（更新）\\n- 请求流程：发送 PUT -> 成功(200/204) 更新 UI/缓存并提示成功。\\n- 如果响应 404：\\n  - 认为条目不存在或不可访问，取消编辑流程。\\n  - 从本地缓存/状态中移除该条目并撤销任何乐观更新。\\n  - 向用户显示\\\"Item not found\\\"并导航回列表或显示不可编辑占位。\\n  - 不要保留表单中任何条目信息供再次编辑。\\n\\n4) DELETE（删除）\\n- 请求流程：发送 DELETE -> 成功(200/204) 从 UI/缓存移除并提示删除成功。\\n- 如果响应 404：\\n  - 将其视为已不存在（后端返回 404 表示普通用户无法见到或条目不存在），仍从 UI/缓存移除对应条目并显示\\\"Item not found\\\"或“已删除/未找到”的通知。\\n  - 不要显示原条目详情或保留陈旧条目。\\n\\n5) 列表视图和本地缓存一致性\\n- 列表接口保持不变（后端确保列表只返回可见条目）。\\n- 缓存策略：任何单条请求返回 404 时，必须同时移除该条目在列表缓存中的条目（如果存在）。\\n- 预取/预加载：若实现了预取单条数据（例如在鼠标悬停或路由预取时），预取返回 404 应按上文统一处理并不得在 UI 暴露额外信息。\\n\\n6) 乐观更新和并发操作\\n- 乐观更新场景（例如删除或修改前端立即更新 UI）：\\n  - 若最终服务器响应为 404，撤销乐观更新（或直接将条目从 UI 移除），并显示\\\"Item not found\\\"通知。\\n  - 若响应成功则确认乐观更新。\\n\\n7) 缓存失效与持久化存储\\n- 若使用客户端缓存库（React Query、SWR、redux 等）：\\n  - 在捕获到 404 时执行 cache.remove / queryClient.removeQueries / mutate(null) 等，确保后续页面渲染不再使用该条目数据。\\n  - 不要将 404 缓存为可访问条目；可以选择短时缓存以防重复请求，但在用户执行任何交互（例如重试）前应再次发起请求。\\n\\n8) 不泄露信息的 UI 文案\\n- 向普通用户展示的错误文案应统一、简短且不可推断原因。例如：\\n  - 主提示：\\\"Item not found\\\"\\n  - 辅助动作：返回列表 / 搜索 / 新建\\n- 不显示内部 HTTP 状态码解释或身份/权限细节给普通用户。\\n\\n9) 前端测试（必写）\\n- 单元/集成测试要覆盖以下场景：\\n  - GET 单条返回 200 -> 显示详情。\\n  - GET 单条返回 404 -> 界面显示 \\\"Item not found\\\"，并清除缓存/不显示详情。\\n  - PUT 返回 200 -> 更新成功并更新缓存。\\n  - PUT 返回 404 -> 撤销编辑、清除缓存并显示 \\\"Item not found\\\"。\\n  - DELETE 返回 200/204 -> 删除并从列表移除。\\n  - DELETE 返回 404 -> 从列表移除并显示 \\\"Item not found\\\"。\\n- 模拟缓存存在旧数据时的行为，确保 404 会清除旧数据并防止页面显示。\\n\\n10) 常见实现片段（示例，按项目实际栈改写）\\n- 原生 fetch 示例（伪代码）：\\n  async function fetchItem(id) {\\n    const res = await fetch(`/items/${id}`);\\n    if (res.status === 404) {\\n      clearLocalItemCache(id);\\n      showUserMessage('Item not found');\\n      navigateToList(); // 或渲染未找到占位\\n      return null;\\n    }\\n    if (!res.ok) handleOtherErrors(res);\\n    const data = await res.json();\\n    cacheItem(id, data);\\n    return data;\\n  }\\n\\n- axios 示例（伪代码）：\\n  try {\\n    const {data} = await axios.get(`/items/${id}`);\\n    cacheItem(id, data);\\n  } catch (err) {\\n    if (err.response && err.response.status === 404) {\\n      clearLocalItemCache(id);\\n      showUserMessage('Item not found');\\n      navigateToList();\\n    } else {\\n      handleOtherErrors(err);\\n    }\\n  }\\n\\n- React Query（伪代码）\\n  const queryClient = useQueryClient();\\n  useQuery(['item', id], fetchItemFromServer, {\\n    onError: (err) => {\\n      if (is404(err)) {\\n        queryClient.removeQueries(['item', id]);\\n        showUserMessage('Item not found');\\n        navigateToList();\\n      }\\n    }\\n  });\\n\\n11) 可访问性与用户体验\\n- 在显示“Item not found”时使用语义化元素（如 role=\\\"alert\\\"）以便屏幕阅读器通知用户。\\n- 为用户提供明确下一步（返回列表、创建新条目或搜索）。\\n\\n验收要点（前端 QA 应验证）：\\n- 普通用户访问他人存在的条目（GET/PUT/DELETE）时，前端显示统一的 \\\"Item not found\\\"，并不展示该条目的任何信息。\\n- 若前端此前缓存过该条目，404 后缓存被清除且 UI 不再显示陈旧数据。\\n- 列表仍只显示当前用户能看到的条目（由后端保证），并在单条操作遇 404 时同步移除本地列表项。\\n- 无论 404 是因为不存在或因为访问受限，前端表现一致，不泄露差别信息。\\n\\n不要的实现或行为（明令禁止）：\\n- 在前端用不同文案区分“权限不足”与“不存在”。\\n- 在 UI 中保留或显示任何来源不明确的陈旧条目数据。\\n- 在用户可见日志或错误提示中显示 HTTP 细节或内部异常堆栈。\\n\\n结束语：\\n- 按上述指令实现所有单条资源请求的错误处理与缓存清理逻辑，并完善对应自动化测试。前端不尝试实现或推断后端的权限判定，只按后端返回的 404 统一处理并保证不会泄露他人资源信息。\"}",
+          "refusal": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRUYZfmjOXHVyxsAMQO2liJ4V73_ST3hWc036e8rG5KwjP_4YArroxzJZJR0vBVBvAxRfbpblCt3hDX6A6DeAmv0CcwO0wCxmi3QOvPmG3JyF6ztTZBSBs65TvaqbcwThRxjkYSjmcPgw2Pb5L6fA6OjLXBkXvxhpqMOl8Np7JEISaT3lfjZHJscedKBmh1d-QgCpGwv5MeItkFvI3OEZQZXGgbYZ3SInQ72ifdBa61xoSydkpT__fH8MlFCrUuO6dQ7TuBj7ZOBEMq5FT5Ayz4p-a_R4qLTyBNeJmiNWOyWEfI8M2GBnw4OdIP2yOe4OrmLKUHptGMrHc9Nyf28WoDcg3VGMC5s_-Q4qdNxZYZ9oiMx-wNxpgBKpnUBAV2x08AygE-MVnavHWhuVXotPDxpYiauJkjfilNMnRStubu-Kx_tF1hKDS6bSGJWckx4Kn4-ikxqdemD-kQZryHXpaXCNH5LObKMb0J2S3R1P6GR_RfEOEJmYVxa7I__jWsHK4R1rwx8idaIF3iYR8SrhkpgTjcnsqx12dzIPsA77nb8XnauKYT_LsBrAYHu-mHNerb2OWwlgwZUgzL_-dN_jlPuEifocxGFnRhz1p7RFxSN-QByiWC1zH3b3d1HoC884U3d57FD2VoVCxZNHm6Uh0qVC54xUVDNRoVc1fA0ktyGTiXKFIFp2ZUrS-HiFDN_ZDr96eRLOQITxZvIpnFuDDllAi-XqSoCStkVjGbLR24WwSMwrgb4Y4zFWDIY-BdWBuSFu16rJlT0wDt_F7CoKJvP5_kZk2qLFN5ll61L5Lf5oRQ0FeGGQXFicYPiLy9Gh3ME4He-cTzll5UQaa_2Edb0wYf_PeVJ8YMGj7kmVIEeBsLIhJMyGsQz42tvYItbLliyhb_BsfN9TMIIp7YgnvjAiqjz9xu2BBiRozmvQ-xJdQ8VWOxpBOI8uAqiuW3cWRQ4YGpyzQ8z0VEnGSSzmi5KIBsau9q53RCe8erWuhECKSWrMm26xDWsvaJ482R-xvfcqL_d0d4l4Mlp5Kf6zIhP7XjQKFTl_sJQpLq6ylCAZV8ARi_CZU5aTjkssgHIati95F4njmgVGY2pFGvtKrFaZmlFOjropNDWFXnnYxln1UZYARgCHDe6a3py8sOg5Nywecj5Qh9AOjkyZJ7oieeFeARbAtpsHJggjWn3watF2cFz6Fnf331ds1dc0c6r5mXgEN5KlwL5ObHUJ7l8I-2xV9faTTCCA7_JsUPBTn8ZUBcBTKIvaPd-rCUp2aocxhF5Sn3v4Z6OTEvvDBm1djlCl6aY-QsgmrwWYwGyUZ-m1STYjkpHBL5n1q3dF6H0ihGKfSsF0q_27oVHR--csi0w9FW45T6t_2cEWN8O74Osng3celUSQ_jlXyKIYPa1hyGAEIWW7-fAa3nCrvY8tYvkYBzKaXfwVQrv7ZpknXI3_H3poHXGYIGk6Dlf7uChPhDcIkSw7H400T__cP9Guzbcbqs43Ds2q6NOeKf9vz4nk2W8OXjrEnBTGg_QE7im_sh8KbNRuhaV4ZLX0LZWv-62hUUTrqQi18rgg8Ply72OiI6kCsmRTC9CxtjgB2Qx7HRZH3G35dKWdDmwp6M534YnRLztAQXFTuHm1P_mNEAqBijHbN3zTXyun66MXfCtacaaqoAT6Oea158ootIpNAdUIfNVsBrohLm3ANLHBvooO6WORATxd7Dm5lqbJzjYRxZNueViVJhglaE8rk2Y3Uf9aRhSxwF5Thr_6g3abJ5xS7B7MS4nizSdnOQ1fhToJ7NkCMdp87HO9paPyxPBlWf5zq9w18aMMw2OUG-Ss53gAwUm6DHpDsfY_WBSZKnlrBZ7fGB-B7beu0f0tM8eEg12471rV7grzlDxT56yhtHBghA9E-H7yI-HDdAxrnJaX9ilAKEJwIGhicqm9p7yH4gCoTniydZb4pN1cwMtawGFMyBpdhCNmmCXpeUARoP0b_tBSIS7x0v5KfgGWTktHAjMu8mja7Q-BO7gZ4QF2J8WHQOMAO8I1MWOfGnDq7E1SVq5ygsbnzslRKrlMcpZcS3qFDqVj1znApvgGviV9onp3PGxw6ewdA2Yc0fSmasqTe9L-tGxhAPFLMW-govIKT5H2OcV3QbpRYkeqkWljGRj0AhlzdwMG1FKqD7oR_vYDubCUiuE5BsV3g6j53RR3lAPf63sAI2im8Dd8ODuKb1bTkoC6ppagQF_dRlWug1BAym8iff9KpwPAZyHH9uy_MAGb4MLcJFZfUH4roituqd-d-9tE9RoQOHtTIAvLOc0qsZwL_kya0IkxzVRBA7y4Yx3kR25ZRbGI0TMGtjAHjL8j59qwvcSsdVoDBT8tlqtYSeGpaa17jGNDdby4JSyZMEhDgPRZ87Xh0F6Igooy9KQ4TBcF-sGgbnp-XteMJZOqlQongSK2prTuk8OXfb299UbxBIRjyzmEqBt_6cmHSWxJhLZU2q5gu6LS5t85TDMt24HjrnQqqumSSgtbl0QCS46ZFGSUcFlxt3KgYKO-GQyXW2Ch0F5Wuzm6TyNd-TIUG4lkt9_ADhajlkqY3UgonGYTz2qVL7g9Z0ABikwStCcvBQYTEuuoqqAcyll90py9Se2TxXC73U7xeGh6d9V-ps0wDoUNLMjL6WYBFndm5X1Sb7aMtK6Mdf_N_D1zlxKreRE-DPC_EVku4EIVrgeIMn_Cee7aYeClNzEHMsZaJAfftCrR8cgW_WrxkCZBJOsJ64mw3-fzfuOvDbjPKTdfoLoyMh0VVz2O6EW0fZRGR7l-Ml78uvSNIt2efrYqKcdRvHBh8kxvSihenVmrvUsEsq2A2ai4XFoymXFLWNHq5YyH3Se4VGZmtMWo9jLdcnbzF4LffCIqPBod9qDlbakkYB4JYGpv6RpTK8R9UKfBpib--gpXSw69gtgtWzxpCTCxtexf_FKFZ8md3ifpEoFvnq73JPoF2tjGrDArHIVXnShZ8bshD1ExYNUD8q2dCUztHNIxryJa5E-BRm_UZmw0dwf-aIR9qPiA37NBJ1sa4udL0NbRP7eU3rvGjWJTT-iZI94qJlVE0cOiZSonW9epFOL09rATjfsGzL4ze5gmBMCa-xslzq7twd1qplQrwKtihZ9YKb4cf-5M6AdPX1LvypzV8mDb0g_AlNtegAYd1TTrWp4GA5t30I5h2WcIeRPJZVN3BRoO1ro-pXrxqSBs-8Wr4aujWYLoDBxTSHzZGmAVCGmIn4AyCMGxvOJFGGZP5V_b3TN2_ZLG2NJEsaZekfHan-s4HldcIokM8qzuW3QFeoflZcW3F0IdjJzlXGdY_54y4IMJOjAXehN_23ooMTbFbur5oslPhIfsXvBk8e2ek3t72kUolFQgAduDfqfnwpFCXmcD9o7pQmC6IGqe7T2g2nBvHO2WV-_2XcthzQIB-DAzrBETKP5iVS_LGrvAJgNh8SNnIygW_IDyzB7aLWpH4KvRNN1aBW5Uo79sCS9qNrm9qD6JLa9-nfLoSWtzZEFDXk5yyigSmfocw-uE1EQD-rsnIXdrhcb1mTcZiosZfJjHivFhUGvRnir8KSq7XjgThOSmdCosbv9aHGV6Pgv9m6IlT5xhM1uMMHd36QcyY5Gy3ycjj37VIH_zwvwypZHSi126WMtiWypCMzuDbXbYHNksMbQ2FWDM7B9Wivyc8fuL6vO2UBsP6r7khGsOWwLlybyjAEtOH_0RpKRpmMTY5kDQnlUi6o4Pwhvm7odvcIyZvuY6ST9-RXMynmgGhI3I3HOCq9QbdD9cG2u_m-nLJgnLDZGAaa41WkNlp9R7dnQPk_zsDFm74jiZ295IFYP-bmd_vVrQNPtlW8jJn6HcL1mGxiIrDmBMdwwFGIpE-jax0Mh8tf0JxjRd6D_xEGnMcaweijEwRQs_1zlxzfRgqn5FrlDRMOEymuIZgzKOAsH32PVcGVylJ_DYxt-MAIweQN0KYcZ72yvlXC_9Myk-kyfrw9es171dbx9wHy5AkvNkAdr_QqrmGR1s2fhLXnEIxW7q24p8wLZcFhknTBs_yfvN5Y9kaXLUa_mz8LlXsIC__v9EihEbAciqNskg33pgZtlAwyRhk4SsdGn7PVgr3l72AKaKsIvl3mw8twUAXqqSybvjS7dgZPc6_isfkD1O0bc6OQQJGvNqVYLjwhv-ApiPaEKmAkPZvkhMdMH1MDgNkXHfkrssuRqiEOPBMXo9i9xzRVsOXh1TiL119NqGCUTxsEk2MjmpRaDTd_xqJmMMBjJr_vN5jy4W-7JEjIq8tGy1UpJUom9ryMK5M_UQSlESgwpAhYlXpqrk6LQ44_KELjtyAtbykDIOWgdXpNrl3ZNIzqHqj8zxVN8j-B7LpPzIdFzg80P_ItNTjcXGCA9XYk39_nzUeq24wNagss7RFaTcCjA_XP4n4GAf_b8aGjlppF9VROSXi515T0gBIfH4DEnbOGYdEH1pr3yQL_VcFxhImsP6HaY7PecBEQUTc8OpCtzRxIm8D7-oSnbViVh6VOQeqiPaRfRJ062c6uIdUEEr1ZGsC6wjZqYWTNWGL2NWg_2XGS1RMU_8_dAmlWogH1OTDpRluBAUj0LtoRV0SGPBbWl3uuT_mR7d2Y16N4kY3l9oNsJ06aP8yGuTxLq3CSwLR2uk1fmVWiIDyqazcrGPRMtH-9NA9DoIuSnFd5Ir53RWnI-S2mbbKBfG79GO4t5h_joZX4-He7P7YkdaYqxzk4QGlCpFfgY8POOjgFQeeNuk3oJ2z-hez-B8NdqMzm_36AFZhKmvs_yQa-v12mGyaxUusKhluTAeCBoXqlQ93JbMbQ0VDf2PAfrxjm8lzLHVNr85ArrDsjvOtshF-S-EKOb7UXICKWjOEa3eln9oodRRb_3ZxrlTDwA9E-mXUdF4-raMnLkeofro7uPzYe_7HBdMFjKNvVznrqBxQO4Px4_CovIVNLO7QmZPPi43X4AxdjCSdpV0iOjRt7yb5I8CAgxA2GEDIi892dD8D56_H9ONPghnJi1N7obyrW3X0st5zsGmG-AayKVXz6zCiS-tqx8QLzGkcWB2NUESg_XF2K0HsuJ5KhQLBQR0uWCc7ELSw3D-sfaCUPdkFxoUeJ2ApZBS5x14VlX3FyuIFk_S0D5Pwrku5C7cyjwtaJTWrf0BRKkNvvD284AtduomGx-sLRi0N_Uas7qvy6XfWJHwtZ8QhvgrwKmpW6fv5VH4Y8G8Zhx9QdRDh9c_YKO1TYgdZvg7KU2xw4FCJG7p_hz0bpXoUowSHrttvyy63N5EHJTdgX3Tcg3uvEQQwiVd0Gb4NaW2ovuF-2lZkKn8o4C_BFHewj-ZOs_ukPjVHgBviccbBvhf4LB-UdAsIZJZeFHArJh3WS9v4eNFZd0jMvsHL8r_41EzgenU-t8edyV6tEGfxU4GXMixb-OwzUygCzqC_Repn1W7TkVh8HTUYHBTMG-tCkc4j65XMWM-K21dVHpUVgTVgWPF-nkiLudfe-r4Eqvz4xlmgrB5QYIObZxZwSKkk76yQcJKDEF-C7jVC4UmRljAx3B0APiwM7QVrMqy54GOUNB1d1hKIBYX90mT1jrFiheqfavtVeVJm5FOIwkIdKpTB9RCmTaPXhLf0anH2ot91z3PqmcW8OEkW40H27LtTC_mxNuimJ2YutNnDqgyFiLTZ7ukSrKgG-oT70Tg1CWNAkyjjnev-5oIIMROhHAsvxg5MGHYBFKZvXC8W98n9gGMgB4kqy2pbuc3ck5poLuCTUBKa4oyaFCpK56LGrY2zYOyjkEIthpko3D6vjUBAfcN6ZUzjBQWbAZSF5TwCZsYiCWfFb7c3pfQ01yvArJpVr9aD557gODFmN5_3b2Fpp79-iotKk5rU3OrRgQZ473_Sn12o3prjWdb6JmpK0Lp0caHjA8r7O-ZWxzFAlGo9IHSmXSnKsB9y8MdD0pD1lyH41NGdI5YgJ6PH449i0AKIxCpbL7pOiUJiOQEf5V23lyv50oA4lqUnJPe6UsNqRpKVFgp51j8bUP_vxky333bodwIoNwRAL7eN0TxdIvL4ALCRtK8blOm5hN9nHFI8xfgdbx22rqy6cBTUmoXz27aypIOWxFlEJsqzSbD8PtIyX9-qlnZqmbk3eBW0eL3d_grO2OSX73wCmn0L_lqLuVCTyBEcd5_WdjiLocX_NwVHjgTjuxa24KlDsyoHFku2GN3yk4bJlnzUjL_j7DtfnGMYW1jOhZZl6v8rqcJde9GLXfEkvTFz8VZc3iy6HDINszZEHkR5yTNTG8P446FuAvuzcqJx3KNUHo_LP4dzhk4zqlxcVapBlZsZzzwZ9LnV6QGwdZLkgkxt7A03HjaKgWsiQl9z2rxlCenf7h0rJmhL079pbJgpEOV6_gYEKjXTrlXyhEbug1e_bNbFQKnxuYqxYGGqU5BY8Vr_fIVnW_cI8vxDA2q7C5OZX7hUkmD4X__ztScv-lmBrua_ZSjG-QUG62Qa43KSGGv8GhZVvXHTXSUmaXvf-hYRCZgQYa-BxN7OTrMOfea_T5ID6ko4czJLFTOEMf2CvrMAndy0OP8CX8wd-_1CeMrgEn3JhLjUVj7cPHfFvdG3akFtHkYqs1M_KfaBUgmrnTz9JAIThq14HYheSQk0XtYkhNx3-3I54mf45hVe12uB4hfEZIO-9vZjTxA_krJzs3EhyQCaSjr_e5iqjBVOrEL61lM0hbGxOfqFvMmrgHGhLRel2un5Y5HzRWlZd4XCLAOT5F_j2MSJN2_BGO2g55fM40h7HZwNUW5v065nnHXqTLTj7mmW5QxMFtfUe96GbAGxpPEcINO_-p1d8GEKNAn23qnd14QIt1R7YkByfzZdrltxftBu7ln9GCYb41_fljdp1KtUTMgeL7EzFxuPGgPV2zARTwMX2leMq0K_BhsSzv85uQCtS6eC_UGRqNGs7DIcHolTvCCgE-bRPDXdnXzvD7yO-0hJ6hYlbFc6AW25w33DAXr8qsu52pcwerwSx0KQ9spB0M9lN3GOtsIEamdGtjZftpQPwDLELstjuONukMVVNyfWcHWqNqMxqj_3ty2vvQZ-MtA8jWrGc1ab_rsojYf7Mul1ScbgXFViV1BxZBDKMFW7_D0iKS12RnyUoruljVRr0SEunFUOes77ETyvl-174BSQBSrHEU7zzHzg-6spVvFH9KKmhsXnuJdfkUbAWxlO1XMXOIJxEbVyN9Vg8S30HtMBhcBaY0BnQi5QNbvyOUrfJxO7WnkUyXEQTKdWbMvGV2GiWlrhWZeTcB-khHQEbP1jg1j96VWpEKKyZcGPtpWZHDZQC1sIBd0eZR8CgUqFbsm08YLVtbTriUKJROP7jbkaMnFhobU3ZW8Gv3GPmUFIuK7ObAHRztePzxN3FmVO-ftyn-9LD1JLV-0y_-zNQA5mJDSzfVL_gkEeeAupckQQmoak7wJK-LmS89tFesSrdrBU2jbbFO7FllhawsF-tZF1ixMwiyCWGeAB1TYOHipCuaOlrTFyZnezSWF8qtoj22FjFOBgbmCNJSWaII8C37UUhExplma16_BL_ht0phrFCrXjqzFleyghd3KZ5-gIpeYuHY4JynjR4dwuD7X1rdfriMpBW4PfNFDZ-PPwnsI_3ogvd_g_el-h51KeYhOk3tSihA72NosLm9WwBlPi0lQJ7GmJnAtpBcQECQHt2a7KEJk5M3m2gpfodSR1jZxVHRzO757kFfsbeI8OgubTu0jYDj98CaDLMBMM11HMrJi87FE8ZTHlywj-IBPfDgi0ABVLQO5c1fyh_J-yC2TJ1F3w_KwYrjF80OYtyF3zGhGDHj2Uz3YCTZaxtCqF7YEBAacupd4NsRcRZfYPobT0UkS0ZNhEaUwpuNzt4GwKTw7PKUgWZtYxWxPJc_cWfbiOTcQSBBRaNqRM7SsZVhs0rSNHWr4KjJT01G2tvNQqrOFhZMtGLDOjZJj8CrJdExej_RI3wjALoVvnq8obru4LgDTuBykHm9INDN2wkxBLdc3DXZeuRsKNqx1P0lMO_XwdtXsk-Gc68aCDTfqW8X3p8nx4GKj_PjHO6CaXq7Yayz0g_7HGdVuCEOxPXxeut9JHiCe_6xhzLjd1npUjyaWEoz1PKpMEUef8an93rP893CVDubQOLUN5DXrQ2NyTHKFXOFOpR_ehgivedoi_FXARQGhl6wBiVCx3G3FDu9Q6gJQZOouXEcqfwBk60oZAeRstLcuaqAfN7hE0DLBQAi0szX5N_-BGgAhWi-uNbtjyuxaAJEsq5EQk7LXkPFiAjsv-2jPEv6XPb5oD3hWtk3qER7X12mduZ0d4UVYkQFunrX3WBsnbVBquXbMmcA7vdpW8XUOWXJUWcQSif7eH--dINxZyOZ5d5E0nCs7GVso4HCP5-HxZJ-2l54TCm3mdfBeskbLOe89sQ_4M1_P2HvIqAFNqUBmWlj2D9GRAHxHGfYG44USOPXOExEaFHXccaKh3YQn7H_Vr2BLxlgTxL-3tEY3589HNJUe6YxElWg25WYYiVNaBLoPgzu1ZmOQ20xmLj9d-7nDLVYwh1xGRVHTD6MIOzuQb2H8Eaw_9pnITalFT3rFJVl2IU1Mnu8SibqZOcKD4fqgL4TyD9vN7GhBf-PkPx70e99JliFsOOs4a50Xvl83gfYYoigzVxITejcEZPTHBIA_--YHzXFYyKZagsUh-ga_8QgQUS4mrqGSR-n5LgEGzlRY7wSqbQpev_Qo460yK4At4Lwv5z2a6Te27ODUwCoqK2UVn3FTn2U1l8q8iI8jYrhmkDavHBdcwb_jLa7h8PorQlpmzVjz4hWxfekEHYaBeZH4pJRuJCNtEsvx3zO7I-Ebnjz4N0Dfjeivc2g72wmh_nx-yNlj9vq5aicYJ7Q9wjNp6oEWqlhCBgxUzfoK37iMuTrgo1z-_plf9KhYnbzs--tZIJUbh7Icd4h8s46l_z3GafB39dHSBLyuwSvzBqc9IMMZTybJi0VY_Jdx4uxU2KQ_rLNPHXqoNSgHzFBvSuHgYjQyv34nRN0dlXwxlclC4AkM2Swiq3vmZKZs1ujRIStl625-9ru6IeOclnRh71QJk5q8ElQyy4liJMRo4MwFHN6Zmo5-Og1nzpgX2Bos7jXZyfU7RvfISWH8EF0R1YOGfQstc3-Ql-r_xGVjPcjHchMCtSopvCt9_wq3v0VGjXMXuBYjnaaAAVc_Ua3ZfAej1sEh-TbNQ71KNDT0wv59aJvkqUA6LLOItEJ0uaXNtIfQKSW_uclFxsV4l9vcSpvNcT8GD1Vm7q_Ilt7xnggK32ssATiTby_ln1q10Qq54_vho8DhL-J_xxGdUnbpmLtJEMii339eKkzpzyoxZMMTfO0ohX-pBbQoQVDWYuVF70qzkQkJic73GZET9WwShY5GQYp56-0_QY3dTD4mVMgnCS1LyxhqKEvQ4W9pQJ5cIKxk1Bdd8DHwpFr0ebTJ2yRWBUesRW4EC6SQlY8ilyA2InMX9QK5vg=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0a40ad60eff8c960016ac1150438c887d1a888993480d279d9",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 208,
+      "completion_tokens": 3381,
+      "total_tokens": 3589,
+      "cost": 0.006814,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.006814,
+        "upstream_inference_prompt_cost": 5.2e-05,
+        "upstream_inference_completions_cost": 0.006762
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1216,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 208,
+    "completion_tokens": 3381,
+    "total_tokens": 3589,
+    "cost": 0.006814,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.006814,
+      "upstream_inference_prompt_cost": 5.2e-05,
+      "upstream_inference_completions_cost": 0.006762
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1216,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

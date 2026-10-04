@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:50:31.769416+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791038995-j64y0eNVjXx8yGssuNxd",
+    "object": "chat.completion",
+    "created": 1791038995,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围（前端）\\n\\n- 目标：确保前端界面和行为与后端约束一致：\\n  - 超级用户可以读取他人条目，但对他人条目的 PUT/DELETE 操作在后端会返回 403 且 detail=\\\"Read-only access\\\"；前端应将他人条目视为只读，避免发起不可通过的写请求并展示清晰提示。\\n  - 超级用户可以对自己的条目进行写操作（编辑/删除）。\\n  - 普通用户访问他人资源时后端返回 404，前端应把 404 视作“未找到/无权限展示”，不泄露资源信息。\\n  - 对不存在资源的请求返回 404，前端展示“未找到”。\\n  - 创建资源时 owner_id 保持为当前登录用户，前端不得暴露/允许修改 owner_id 字段（由后端设定或使用当前用户 ID）。\\n\\n具体实施指令\\n\\n1) 鉴权与当前用户信息\\n- 确保前端有一个全局的认证/用户上下文（AuthContext / store）能提供当前登录用户的：id、is_superuser（或等价权限标志）。\\n- 在所有条目详情/编辑页面加载前，先读取该上下文用于本地权限判断（read vs write）。\\n\\n2) 详情页（Item Detail）UI 与行为\\n- 在详情页加载资源（GET /items/:id）成功后，根据响应数据的 owner_id 与本地当前用户 id 以及 is_superuser 做本地 UI 授权判断：\\n  - 如果 currentUser.id === resource.owner_id => 允许写（展示编辑按钮、删除按钮、启用表单）。\\n  - 否则：\\n    - 若 currentUser.is_superuser === true => 视为“他人条目但可读取”：把所有字段以只读方式展示（禁用表单控件或使用只读文本），隐藏或禁用编辑/删除操作按钮；在 UI 明显处（例如条目头）加一条提示：\\\"只读：该条目属于其他用户\\\"。不要展示可编辑的输入控件。\\n    - 若 currentUser.is_superuser === false => 前端不能展示条目详细内容（后端会返回 404）。如果前端在 GET 时得到 404，则显示“未找到”或“没有权限查看该资源”。\\n- 不要在详情页提供任何表单允许更改 owner_id；不在客户端构建或提交 owner_id 的修改字段。\\n\\n3) 编辑页 / 内联编辑（PUT）\\n- 仅在 currentUser.id === resource.owner_id 时向用户展示编辑入口与保存按钮。\\n- 对于超级用户查看他人条目时，不应展示编辑入口或启用表单，如果实现了“尝试编辑但后端拒绝”的 UX（不推荐），必须在提交失败时专门处理 403 并向用户显示后端返回的 detail（\\\"Read-only access\\\"）。更好的做法是：\\n  - 在界面层面提前禁止编辑以避免发出 PUT/DELETE 调用（减少错用和无意义网络请求）。\\n\\n4) 删除（DELETE）\\n- 仅在 currentUser.id === resource.owner_id 时显示“删除”操作与确认弹窗。\\n- 当用户点击删除并确认时发起 DELETE 请求；如果收到 403，并且响应 body.detail === \\\"Read-only access\\\"，则显示对应友好错误（例如提示：\\\"该资源为只读，无法删除\\\"），并取消本地删除逻辑。\\n\\n5) 创建（POST）\\n- 创建新资源的表单不应暴露 owner_id 输入项。\\n- 在提交创建请求时：\\n  - 首选方式：不在请求体包含 owner_id，让后端根据当前认证逻辑（session / token）将 owner_id 设置为当前用户。\\n  - 如果后端要求必须显式提供 owner_id（请在后端契约明确时再执行），前端应以 currentUser.id 填充该字段并不可编辑。但在未确认后端要求前不要假设必须发送 owner_id。\\n- 创建完成后，跳转或刷新至新条目的详情并按上面的规则处理权限（如果创建者是 currentUser，则应允许编辑）。\\n\\n6) Error handling（统一）\\n- GET 返回 404 -> 跳转或显示“未找到 / 无权访问该资源”的界面；不要展示空白或部分内容。\\n- PUT / DELETE 返回 403 且 body.detail === \\\"Read-only access\\\" -> 显示具体消息（例如：\\\"只读访问：你不能修改或删除该条目\\\"），撤销任何乐观更新并将表单回退到之前状态。\\n- PUT / DELETE 返回其它 403 或 401 / 404/500 等 -> 使用统一错误处理机制展示相应信息并记录日志（或提示用户稍后重试）。\\n- 对于 404（普通用户访问他人资源或资源不存在）不要泄露资源存在与否的额外信息；统一显示“未找到”。\\n\\n7) 表单/按钮状态与可访问性\\n- 对于只读场景：\\n  - 将输入控件设为 readonly/disabled 或者用非编辑的文本替代输入控件。\\n  - 隐藏或禁用“保存/提交/删除”按钮；若禁用按钮需同时提供解释性的工具提示（例如：\\\"只读访问\\\"）。\\n- 对可写场景：按钮正常启用并遵循表单校验与提交流程。\\n\\n8) 前端路由/入口保护\\n- 不应仅依靠前端路由拦截来阻止不当请求（后端是最终权威），但应在路由或页面加载时使用当前用户信息做最小化的 UI 约束（例如不渲染编辑表单）。\\n\\n9) 乐观更新与回滚策略\\n- 若实现乐观更新，必须处理后端返回 403（Read-only access）时的回滚。回滚应恢复 UI 到操作前的状态并展示错误提示。\\n\\n10) 测试用例（建议）\\n- 单元/集成测试：\\n  - 场景 A（超级用户访问自己条目）：详情页展示可编辑表单，能够提交 PUT/DELETE 并且 UI 正常更新或跳转。\\n  - 场景 B（超级用户访问他人条目）：详情页内容可阅读但表单为只读，编辑/删除按钮不可见或禁用；尝试强制发起 PUT/DELETE（模拟）返回 403 -> 前端正确展示\\\"Read-only access\\\"并回滚任何修改。\\n  - 场景 C（普通用户访问他人条目）：GET 返回 404 -> 前端展示“未找到”页面/提示。\\n  - 场景 D（访问不存在资源）：GET 返回 404 -> 前端展示“未找到”。\\n  - 场景 E（创建资源）：提交创建请求时不包含可编辑的 owner_id 字段；后端返回资源且 owner_id 为当前用户。\\n\\n11) 日志与监控\\n- 在客户端捕获关键权限相关错误（403 with detail=\\\"Read-only access\\\" 与 404）并发送到前端错误监控（Sentry/Log）以便追踪权责边界问题或误配。\\n\\n12) 文案建议\\n- 只读提示文本示例：\\n  - 在条目头部：\\\"只读访问 — 该条目由其他用户所有，无法编辑或删除。\\\"\\n  - 403 处理消息直接显示后端返回的 detail（若为 \\\"Read-only access\\\" 则显示友好化版本如上）。\\n  - 404 显示：\\\"未找到或无权访问此资源。\\\"\\n\\n13) 不要做的事\\n- 不应在前端私自绕过或覆盖后端权限限制（例如自动重写 owner_id 为当前用户来“规避”写保护），也不要在 UI 上假装允许写入并以乐观方式提交易导致 403 的请求。\\n- 不要在创建表单中允许用户修改 owner_id 字段。\\n\\n验收准则（前端能验证的）\\n- 超级用户查看他人条目：页面可见但全部为只读，编辑/删除操作不可用。\\n- 超级用户对自己条目：可以编辑与删除，操作正常。\\n- 普通用户访问他人条目或不存在的条目：页面显示 404/未找到消息。\\n- 尝试对只读条目发起写请求时（如模拟强制请求）：前端能识别 403 + detail==\\\"Read-only access\\\"，撤销更改并展示该错误。\\n- 创建时前端不暴露 owner_id，或仅由 currentUser.id 自动填充且不可编辑；创建后资源的 owner_id 为当前用户（后端保证，前端只需不干预）。\\n\\n交付项（前端开发任务）\\n- 更新用户上下文以确保可获当前用户 id 与 is_superuser 标志。\\n- 修改详情页与编辑页组件：实现基于 owner_id 与 is_superuser 的只读/可编辑逻辑。\\n- 修改创建页面：移除/禁用 owner_id 字段。\\n- 全面实现错误处理逻辑（403 Read-only access 与 404 的显式处理）。\\n- 添加单元与端到端测试覆盖上述场景。\\n\\n注意：以上实现基于以下后端约束（请与后端契约核对）：\\n- GET 他人条目：超级用户可读；普通用户访问他人条目为 404。\\n- PUT/DELETE 他人条目：超级用户尝试会得到 403，body.detail == \\\"Read-only access\\\"。\\n- 创建后端将 owner_id 与当前认证用户关联（前端应避免试图替换该字段）。\\n\\n请按照以上步骤实现前端变更，并在实现完毕后运行测试用例验证所有验收准则。\"\n}",
+          "refusal": null,
+          "reasoning": "**Clarifying frontend instructions**\n\nI plan to mention the necessary tests, including unit and integration tests for UI states, role toggling, and API mocks. Following the JSON schema is important, especially regarding the \"Needed\" field to indicate if more info is necessary. The developer's request for “frontend implementation instructions only” makes me think it’s true, but there seems to be some confusion. I'll draft concise instructions in Chinese, covering step-by-step tasks, UI behavior, API handling, data models, examples, tests, and security considerations. I'll avoid referencing the backend beyond what's given.**Defining frontend API interactions**\n\nI think it's fine to refer to API response codes like 403 and 404 as I craft these instructions. I want to avoid inventing endpoints but can mention generic ones like /items/{id}. I need to stick to the frontend scope, addressing components, state, routes, and permissions, including how to handle 403/404 responses. Ensuring acceptance criteria, such as allowing superusers to edit their entries and preventing normal users from accessing others, is key. \n\nI'll craft a JSON structure, including properly escaped newline strings, and provide clear instructions in Chinese, setting \"needed\" to true and forming a detailed \"prompt.\"",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Clarifying frontend instructions**\n\nI plan to mention the necessary tests, including unit and integration tests for UI states, role toggling, and API mocks. Following the JSON schema is important, especially regarding the \"Needed\" field to indicate if more info is necessary. The developer's request for “frontend implementation instructions only” makes me think it’s true, but there seems to be some confusion. I'll draft concise instructions in Chinese, covering step-by-step tasks, UI behavior, API handling, data models, examples, tests, and security considerations. I'll avoid referencing the backend beyond what's given.**Defining frontend API interactions**\n\nI think it's fine to refer to API response codes like 403 and 404 as I craft these instructions. I want to avoid inventing endpoints but can mention generic ones like /items/{id}. I need to stick to the frontend scope, addressing components, state, routes, and permissions, including how to handle 403/404 responses. Ensuring acceptance criteria, such as allowing superusers to edit their entries and preventing normal users from accessing others, is key. \n\nI'll craft a JSON structure, including properly escaped newline strings, and provide clear instructions in Chinese, setting \"needed\" to true and forming a detailed \"prompt.\"",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRYiBJRnadOHR4MrIfyomGa1lfLC8EG0n-VVdcCT1e8ganZLlf1d7WEq676FEZQqRh3mn6Tx5IzdthBhzxRGC7lBVjZYIbLrtOSBL4L2SF2ga2mQ6JWvZp8FzOudcFGWqz99mZcvwae3BdJN5K7i-cyEOQXrFRhNAEArvEs2ju9bxFC7X1vgGGDCc227NMEkjgFTqNog8ONfXj1OC1gdmqU8CDbmrPwLe4d7jCucWXZyRGJz9sV0m466XMkubq0FRBwiXQMwFMdH-3NSIo0B9z25KlQMw4ebZ7d-zPOR_g0DvmcjUOjKe--baE7_5Gae7I6TjOdJBrqK3VDrmB6mX-w8DUu2-Lu858UOMp8WdCqsmtcObC7ShdJaeKePIjFefO5pDBFrCENaN2U619qhYFBC-HO-BuQs-tHDGUrx82AQqz71C3dr3bFw526_qVdEIYmohFw4n-uc38xSB4m1gR3dncG6qblsjZJI7nSVProzRJeIOZ-Cb2Wh2Gmr1hrDkd8rLl4FafPVp8xyqJSlN1bDQR_lhVhAf2QS_kSV3sHVRVanHghSXXItbM1S9p7lCxn7OpaPc3O9aoDF53JLw1oODi5bqtoGJlaM_D4U5kRz7GhZmPi0m6chK5MWhzw9nPXFh6FaUZqtxusj8MB2U1vJ9jb1uagEVutGMU5r7IcIls8ldrP6qLPfTFrpnB7OCm4ob4UgoOUIOMYGPsjDOVox_REDy5zkXXR0bqRIVgP9iFmiAzPo-fbVuc8SdNjfSRBgB8xjMFcIGr3Cr3z4QBPuFTBpFq1PSGaF11Wf_D2FnGb7YJ6R1auEC76h9m4aZsiZvdzYAuMQxrtKCEkvt4EoiGjzNG4vByB6HDiaDRSy7jY72fm7qTwkicJLsjXVAVqdh5NnXw532qYEp3nXGpserEm6nXFS7oWYfEnqxDmAXy4A2hD1YR-o9NbLWnuOEj4zuVYHYDy22pHESJNDw3B7ycIT5K2mzlut7YOLZyZ5sGf_2PLLsawJ69S7DfytTXAgm3hGwN7ysOvpWVW5HiaqUPRFUBGso3u-HfJ4KonPbXk36i3e3RTZhjxgQBRkpavT6w1z2aDOpZgGRKmpys_-QLGz3aXWARFyveUKuaBKaX0_3VVqq_qJkCleGef_bEgCDdeAUwdql3oDgJ5Ga-yD_DKSy_PXO4YNmkxGSfhaXT_nLixYo2Z6u45ztIwdx4gVr1ooz5x4B-luD7RaZ7I4CPn0crcNUetNkvwnnjiq80TM6c_Uyn-fz1sjaXWk6aOew410N9ZnMuV4KBYQLC0QHli0n3CugyWSeIirq4sFhNGzcqWd7viJ3lbtsgshlstmnNykliHMHFSvSwXi6HnFHrrvekUQm51tNx9zICXiFn0g8b3wz9zPoUjfjJxb3O8Kqe-l8BYo8whPmRYiTXMJM5YTTRahqAywNhS5KXk3sRI3_5iz377lCi98fsWSWIs1O-zALOh5AB7JdBObYmtCupDslsmUQCs_o5dae8qt_AdExaFnbXnwdp-G7xqe2eC6s8cFcXCOu4O4R-2pDewilXcOL5dzs1AEAvfMSW2IwXnNB5mtpS3jMuY4u8N_aunxJQh_r48KwjL6diAKNmIjKEds-TGVf_Ibz3staqVgB5CClUSA1dYQqFdgn9Qb0sUk7eK32ayIhOmVflgaf1SiwQoiyhLIGytcTa8QOxKXG5zQTejKYlSXBwltzpQWIDaXw8dqJYut3lH7GTnZLdoNyqkf8t7JpUi8vjf6vThzdQQMbdPlEo5XHQniU_1AR4gEMnMurCFGCVGaDgE7ivedCP28fHYbppASsGkQXfM4gft4fdN-81GXq6hzUHWsmSqljGI9y_nhO8Xtk9yIsT7fdLIBgsFeL4TGRQ151zvwC28pjqBCluwlUewotWWTT_j7ZC8UJkpK3Zzsx1wHtW_3BwQ2f8B_IjAJ9vxhmIkuR8dq1zGxZ_LOFYs8k82jCXQ7U5h5yjwqqJUvT17pOj2oNhLaFKnGH4jEg1iKLdL5bSHPLOagDpgUEiaAdDnsL96GhLOIMhwnOVbOuudeV5qTAzZIYSmEG3vc-TGqrK1Ku0qBtKXHDHNQWjHbKo0QEywjoBqkOg1mH7EZPEnYHUCrnw-bDSvtJiKWwD6Tr-gbZrQcYPSiqM_x1R1zZVTgCtqxhEeGRrao0E2hMnH0JXO68KTYyFKdhdj1jbQyl1f9wqSEq3asiRHD391gxMciDkfj71vaBgq2nNeyN9uf4vjkHL08yaiPRQz3k_XP69cMsArwNo3GvbZt6xm6QcW0xGnWMPtSXgHnYMmojl_QJy-v5hCQMd_YOcwZhTLmNGNUCUkYr1VYumJF-ctA3CoTEf59rurzVQQrAF8F_W6zFK7a-4_fukW9W0OoQ89jdcS2-Kyw_lne6yM8NZJ8AFyxH-nuzWrWkrbuqX0pTgwB0Anj8Jqx97seVHq46RKPSyha4xt2r8oRJRCsaVKOkXeUHutNK_mnwxLX6gjvGGjuPZfsyhna404nFk9hY0o3MlHMFyUgCsWXi-MRF1uY-1qqlhMTF2IRLeyqJQtpP6ETHtVomLg-DR14AubjUIqG00k6PFPKePVL1oHfeylwXALza1rXrmQ6pv3Wf6RaYBue6TztSy1Dre0NF0fMbbYMzeBhwNeWmRXt2vphvh2LbzFv7Rg7kvwGAk2GHgZkMNjMmFKAfe1Ou3YCLyQBGhd2L_XwQKSlE0yLTecYDsT1B3dLlzYZKBCeNdYJrzAyAqqAqpv1yO5279_jQGQwkAJeuokSXk2thbG9-xCcXUgcwkY_XlP0iBwGHIRxdmn8vkyc6Dlqcc-lapfx_g-MDc2ldOq8YeDadST9y5tqI3xSoFbrXbr3KoiLQqFPISV5_fnWwYbI_bzw9F5eT5UMF5EwcdWiZ_ZEOANw-XNoBW4y_f6Khe5x658aU7k4cY9K8BSWuGiMuT9PcDu5XKbBr09FEf7QkvAoSozxJV-ArtVbIdpxmGsI7xxQfw9ZcHcoQBE-MKtsr05tRNEyOX_UsahWT5290wvYquwq7pJfFzAq7dMY8nTOfD5rpDyzKURe63pO-NTxEMZHhBAkMey-wHh-HMMyZTMLtrhjs3DiEL1PnpLcQq6PVGpTeuk6k-m8FNPfPcJMAksfPtX8Awa8DF2yM5UNUCauT0VVpDt_Y5bJASyqZrwdclE6ttiSqBUm_NxnJhuvDQH-zOJKB393EUSpZopFEJwIW1LO4VUbU7AmtSrD0FOcfYUvDsf9janQcOGws3WDZoAtPXu7hBB7iSUaKfKXgp3ofew0tP9YqByulnsQ0_ymKbRD-aL79EKuJFft_mnRppc3OeabuV0fu4uH-FGfCV8DPNj0ql_JmDosNeF8eY3stDcq-Ll-jy9aoKPwptnIUCI0RrYxMGO702fo19OpR6szji76JgMa-4XUy8qIZ92zrD0BDl1PUfyA-2aiMGwOqleK4Go_GNxRNtewMbExhnLz__xeSgf_3j2jOS9Nsy4CbyVmzE_2JVPSG4XwRBEjXVb-i82NrEI2q7VXN_rYOQwApI9AnxpGV_BnbbOF3A2HTszA4sk-ZjX8oeAFNjJjEE3UY8ujNrpFOmgjZep66aNVqDS4yRdAqIYazoH0IYldCEbiDx1TffpnRxclHN3ppODZmyALE8n8CKWnVAXs9xAGvjP7uPxARcUslK131pDeT_aPv6ttA953WOzrEYYvii7P_RTsMIJ3UX2-bfd0nOnGHuuQAyYZXU9GcFVk9c2oyFGr9_bV2m4wgj4t9X2-DJvoagt1rrZ6H4yb0gPPqDamy9_pAcClEHN0YnwXQOKlsL9Z7qKW399yM08-w45vpM3yASxyW24engCGGHN4ZxXVWmRAVe0MMc5DjItnoIylNCx0b96ia8fZ6B8-bf-HAHQxUM8wH1PDyDNdJMIOeje4idnF7YiuNfVqXRUD4jio7aZdZj2QwWIWdtsDPtKRpXZdB7TIAYAf-xbkKK7XyZn-eF9fnD3htZJwHS3XSDEhJrUMe6y47-K2EiCnk4YY_-TBpF2dylUviGE4eOzrBiknkIK-aX8iOlFGjXmrCqlkOGEarCOT6f-RMd4XDmPWaDsKfufQQhDppMEGKRMIVk7CND9jRoZTx0GHIoNNoBd4MOHGmB5-qpffmxZzXrPabnmbg5jn5d0yB_1jFSurXRVD8UuUWeXVNdau3blOF_FkNJx74tb20Poyv3iVIvCOs8QRYx0cROgu7wU9N5KxtMUFn9kiznyRmAqHizc0BUO62o7P3xR0UWBRALx3BrxjRiKTljW6jdO7Qidc2lZaYdHACGg9CCW_iHLYUmu5dQ3m_DiPGl_KPsVTnXnpfyPjF-DR6srK42H08WidQo2cWf-hhvleBy6p9S7J9riNwHKGvzf7nZlhlRFX5w5g_FB5ArVqvKl2P2ShuJpiTAYv_wsnQ9d-H-O6J43nb0TNO36WUxkdE3PKT_gYRXmJyQqL-pO4-0bIVaMHbAgQ0sGS9sUjHlysPQCVSuFVjzUTdCeMb6e76yWCkG0IPlD5wK8hoO_Lt03omfTYD93xsU8JM1UlvW7YZiNJZ4NZ09PRwpUU028BlDEcxufaeaDtGz0MQdqSU3TNNyrej25TcmBSuKmPBOvbihh6lUUya-wCAsfqhzqvbKkDVGKGSHrkS26Es5hFJNSZ9YtdrCj5RLCZS_A0M5wvEX4BKcy9PkregUusV1qS58dmYLPyX7MEUU9Pd68TbjgegXJ5TXZd1eHi-Nlar8OiLd4UBwlHogOnXG09gadugE63KOHEn-BgEs1xo9Pj5L69y3JGZ1RSxzmsqeJ7c9dn6_NSmTcWSPfDUr3dzkxLf3DiYXnUbhpg-MVM-R9TKT_tcOO3OY6nGOVoQE3yXw6LEHkQws6pF3vmRtIiel7bWcGQgHOEg7fmYTm_Zdk-ganfmVRSpFE5lxysCVJUmtbR3DJdui3cJ0xOk6ZIkYr0OgDFKIvSYoTuHI_HRsfayvMMh0XBSuHur4Tz90I8FQyv2PFNt4q5YN2oxxU7UP9iI9uC5BcjD7c0gtmGmmAjVVujNP4U0LesHcARlsq8k8SvviVRKreoTABx1i5oqccoUaO5fwHR4RsG72v3bBU7OezpLWJ-xBv4xa6uilrmJ7v5L8ZnDJaYIa9rGOTf37DI7o21wWnrTmFZR3hLoHbultygRBPJZEdD-1x2hjug4u_nn-KvYdDb5l3ItTPrJNyzM5SyWBw6dym_KNmILDs-q3SNNyP6WH3nkmUlE4MmqflIubW65ocTDBmCfKRo21hVcDuM9yHUQAZVFgR7BskN3KrUP9fADbHAI_4HIjGEj6S-L0zNwbkMff9O-6oe2qVxTjcTTLzWfKz04rG_LsyfbKd8Ga4MdN7mlHXbumEgyUHVfQRs9BrNqzXZmbOAlf4Jg4wvCsp7rqdrE0ly167RQm6WOV91kgf3nBwgEXDNKllitrXrerF3rh8bQaH-nTRQBoU01NvvTz0PzjMDkNL22wXCCWbrVaczLPPQGe7qRJ7erUkq52jdd7M_MX354lj6cgROdmcOJ248YGNMfJX9uF9ikzN6EPTL0WIriZFCZF1MRj0Sap9plOHj7cmmmMNBNqtHhpVlYjyt1YgRaCrzIVRjpuQoZtAlvGCWlU8c4_XouShNYoJZm2QY6CUkwPsj9lOE9DiQbnezTjXpix02VsLEhyG9p_kHPboD2E6EA9vivfzPf3zyAXgoPQPDwOwD2VavoIx0FKZa3whK2CdlhjZF8CkVgl94Iiv-80n6Ba2mXb6d6K8fz29VDPMlaADgIGAzgax3vGzvGNp_nokciPdXUZQdUyk0K9JBpmNOjkw7WzZprnshpJvB8i_Q7SOR3pypLKVgGNvsZK8Lr5DNGAbEmMMZDegPktK__ZBsrmSY2w9GhGMOSMVK77n7sF5S2XL7v4QcCiOVAWcaliHTv23nHyIz1Bi3a71c02MmatnhDTXDWNkIIeRsrc1-VjZXPrdHqHm56rPM5wNZITEYGVLYuGkZK3MxgLop1QHKvoKj0baiKXo8hx5--YJot7BvLjaQ_6Caz2IDyG_2t3Iz3OIMxDlpH9ocUHha0U2QL1qVqcmbnp1wuAfgF04_PY4QvgVgeWR6Bh_gXOUUgdCjX3RLXJ7pM1-GgRL4_W7TLOt3gHLIE6bqbNZbGR-ZcjQDrd7p-9hwGCbKP8DuPejahfUvmDEeL-3BdVmLVC15fDhCAJhSY9lnt_eMS-nv1UeF4kOvmg7LoGLV3osZ1Nwud_E8Z6a8f0TUUWEapg8HjELFCvm1QmID4eMTZUFMquKfUNeguswDEQgX9E6GCp7pN27O1cy8GMWSr0_nocKje2WGJDx1w92Bntab6KB5shAuwUdeNT7lWmYreA4Q-PUyJa2p8X6fNsz_U0P0IkrjdZDrmBg9lAduqJlXD3O2kRATxXFynmG6j6hscOACtWoWN_WmRxgpWiHBGXTya84ZMgk_f7PqGUszDyTS5opndryoF_e-ubkAHlUAPffXeOpTHuhGfMUCFfPJmNP5HWvX9r5z3yzgMyGYOau_KiqKvpEe1zgkQc9ryrRpll6c8ArTP7m5r1WGlYvbrIcRXP62vENGgm1DCRd2DzxRr7NaRsGid2uBoJSzqyGjNSidE-D0ty2AlFQv9A2rzbieH-JT5uAN2mBHKkB-epon0N-ennhiuvr01wPSOWecAaDYPRbB8NOkXpVQrIQUvZKI5IGD_GcjL61aQEddiOqUjDnNlKSSSWiCLEZddSTitfnBcggV-JIZFxH2JN28K7y5EfeRgDXxQsg0kV7riLq5lM1DNDuM4pWFYOeDD6TauGJY2HXeTZYUdntripICityrric3J9LFxmK1IsB0EdUj6HdlQ9UoHsK2FsU4zqj2wPlPjmaUBuTVzX--Ied7L8byHp-o9GUfQ1_VnFWyjn1lKvXw1k5GDSkg02WdNOG-adeQSzsmgXKUC2c7mmoeD0tFluB3mf0YrzJiuKVIJiiSZUB0pCld5kVkG7S8uEYijcLqc5Aa_dtIdlhmR64xlx4T1Sm48UZlpFO4jCC9fQD-_06rwdevtrrxIwEFt3b15HjgD0lxKUhz5oVBXSIQtU2VDgXYcNHpO66KNIh9biMpGfBLQj0sH55HXGCNIKIW8IfifX5-xDI-EGPaad6pAYkbC9zQwQ7q_usCXyW7v70R9t8PWQfuxRKZDspe2BABRo1paMAYjOaQC6JvCahn7ml9q1b4BUqoa0cZbW0yRJw2E0r_WAt4ULD5KELPuy0qi_WL9YFuDwPKBdi_Du0etmAghtMP_ZpatB8-0Mg4N2XDQYSspe-W4ppX_ZgZONghwu7k9Xo2eFroklQrwzwVVMnJplD5BX5Ml7MFreDA5XjVs3HdEnuBlbzPU8SvB7tjbwFpE4eGmxLKItNMxn3Ij97ZXA2_1KMduIZWatISgEAcu3k0iyrHHuGJgkrYhJRkMSkRRG0u5T-wVHoCSSs3wxhpIDO2pcTlC5l1yPhQDjEcmTVXWdVyIQYfybez9gIS6HmtMA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_09c3df4f2702360d016ac11614533087d19ad35dca2b5d44a1",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 208,
+      "completion_tokens": 3201,
+      "total_tokens": 3409,
+      "cost": 0.006454,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.006454,
+        "upstream_inference_prompt_cost": 5.2e-05,
+        "upstream_inference_completions_cost": 0.006402
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 896,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 208,
+    "completion_tokens": 3201,
+    "total_tokens": 3409,
+    "cost": 0.006454,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.006454,
+      "upstream_inference_prompt_cost": 5.2e-05,
+      "upstream_inference_completions_cost": 0.006402
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 896,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-type] request.skip.type = \"integer\"\n[FACT:request-skip-minimum] request.skip.minimum = 0\n[FACT:request-skip-default] request.skip.default = 0\n[FACT:request-limit-type] request.limit.type = \"integer\"\n[FACT:request-limit-minimum] request.limit.minimum = 1\n[FACT:request-limit-maximum] request.limit.maximum = 50\n[FACT:request-limit-default] request.limit.default = 20\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\nDerivable inherited context:"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-type] request.skip.type = \"integer\"\n[FACT:request-skip-minimum] request.skip.minimum = 0\n[FACT:request-skip-default] request.skip.default = 0\n[FACT:request-limit-type] request.limit.type = \"integer\"\n[FACT:request-limit-minimum] request.limit.minimum = 1\n[FACT:request-limit-maximum] request.limit.maximum = 50\n[FACT:request-limit-default] request.limit.default = 20\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\nDerivable inherited context:"
+  }
+}

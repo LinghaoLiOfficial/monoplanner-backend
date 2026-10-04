@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:52:35.415876+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039135-ZyInCbzbNNwwX5PSCk6J",
+    "object": "chat.completion",
+    "created": 1791039135,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\"needed\": true, \"prompt\": \"范围说明\\n- 仅前端实施说明：不修改后端。前端必须停止在任何请求（创建/更新/批量/其他）中携带键名为 \\\"title\\\" 的字段；若发现要发送此键，应在客户端阻止并报错。响应仍可包含 title/name，前端继续解析与展示它们。\\n\\n具体变更要点（按优先级）\\n1) 表单与 UI\\n  - 创建（Create）表单：确保提交前存在 name 字段，且按现有的 name 类型/长度/非空约束做校验。不要在请求体中包含 title。若当前 UI 提供 title 编辑项，做二选一：\\n    a) 从创建路径移除 title 输入项（推荐）；或\\n    b) 将 title 变为只读展示（来自后端响应），并在发起请求时确保不把它放入请求体。\\n  - 更新（Update）表单：允许用户不填写 name（即 name 可选）；如果用户填写了 name，校验其满足现有约束；请求体中仅包含明确要更新的字段，且绝不能包含 title。\\n\\n2) API 客户端/请求构建\\n  - 在所有构建请求体的 central API 层（fetch/axios wrapper、serializers、mapToApiPayload 等）加入一条强制检查：在发送请求前检测 payload 是否包含键 \\\"title\\\"。\\n    - 如果发现 title，应立即抛出错误（或返回 rejected Promise）并将错误向上抛到 UI 层，禁止发送请求。\\n    - 严禁静默删除/忽略该键（禁止在 client 侧自动剥离 title 而继续请求）。必须显式失败并提示开发者或用户处理。\\n  - 在创建路径中，强制要求 name 存在；在更新路径中，name 可选（仅在提供时做校验）。这些校验应位于 API 层与表单层两处（防御式编程）。\\n  - 不要在任何自动映射/序列化器中引入新的后端契约或修改 name 的类型/长度/可空性。\\n\\n3) 校验细节（不要更改现有约束）\\n  - 使用现有的 name 校验规则（类型、长度、是否可为 null 等）——不要在实施中猜测具体数值和规则。若规则分散在代码中，统一引用现有校验函数/类型定义。\\n  - 创建操作：name 必填且通过现有校验；更新操作：name 非必填，仅在提供时通过校验。\\n\\n4) 错误处理与用户提示\\n  - 如果后端返回 422（例如因请求包含 title），在 UI 中显示明确错误：说明请求中包含不允许的键（title），并提示用户或开发者移除该字段。优先展示后端返回的错误信息（若有）。\\n  - 如果客户端在发送前因检测到 title 而预先阻止请求，展示一致的提示（例如：\\\"请求包含已弃用/不被接受的字段：title，请删除\\\"），或将错误以调试/日志形式反馈给开发者。\\n\\n5) 兼容性处理与审计\\n  - 在代码库中搜索并修正所有将 title 写入请求的点：表单提交处理器、API wrapper、自动填充逻辑、旧版集成点、batch/queue 任务、单元测试与 e2e 测试脚本。\\n  - 对第三方或跨团队的集成点：在前端侧加入检测（见第2点）；并通知相关方不要再发送 title（文档/提交注释）。但不要在前端自动兼容或转换旧字段。\\n\\n6) 响应解析\\n  - 接收后端响应时继续兼容并展示 response.title 与 response.name（只读显示均可），但不要将 response.title 回写到任何后续请求的 payload 中。\\n\\n7) 测试要求\\n  - 单元测试：验证 API 层在 payload 含 title 时抛出错误；验证创建时必须有 name；验证更新时 name 可选且仅在提供时校验。\\n  - 集成/E2E：覆盖创建/更新流程，确保请求体中不含 title，确保响应中可以读取并展示 title/name。\\n  - 回归测试：覆盖所有被修改的表单与 API 路径，确保未引入新的对 name 的约束变更。\\n\\n8) 部署与监控\\n  - 部署前在 staging 环境强制开启客户端检测，运行完整测试套件。上线后在前端监控（错误聚合/日志）中关注因 title 导致的 422 与客户端抛出的阻止错误，快速回溯触发点。\\n\\n实施注意事项（不可违背的规则）\\n- 不要在客户端静默剔除 title 并继续请求；必须显式失败并提示。\\n- 不要更改或猜测 name 的现有类型/长度/null 约束；引用现有校验实现。\\n- 响应可以继续包含 title/name，前端可展示，但绝不将 title 发送回后端。\\n\\n交付清单（验收条件）\\n- 所有出站请求 payload 经自动检查，不含 title（通过单元/集成测试验证）。\\n- 创建流程要求并校验 name；更新流程允许省略 name（并在提供时校验）。\\n- 客户端在检测到 title 将阻止发送并给出可理解的错误提示；不再出现静默忽略旧键的行为。\\n- 前端能够继续读取/展示后端响应中的 title 与 name。\\n\\n实现优先级建议\\n1. 在 API 层添加 title 检测与阻断（最关键）。\\n2. 修正创建/更新表单校验逻辑（name 必填/可选）。\\n3. 审计并修复所有调用点与测试用例。\\n4. 部署前走完整的回归测试与监控配置。\"}",
+          "refusal": null,
+          "reasoning": "**Validating client input**\n\nI want to make sure that if legacy clients try to send a 'title', the API client throws an error before proceeding. The client should validate the payload and reject it if the 'title' key is present, rather than just stripping it out. For creation, I need to require a name that matches existing rules, but for updates, I won't require the name—I'll only validate it if provided. I'll also ensure that response parsing correctly handles both 'title' and 'name'.**Defining constraints and requirements**\n\nI need to use the phrases \"preserve existing constraints\" and \"obtain constraints from existing validation functions.\" It's important to forbid silent ignoring of the old key, so the code must raise an error if 'title' is detected in the outgoing payload instead of just removing it. I'm thinking the 'needed' attribute in the schema might indicate whether a prompt is required. The developer suggests using 'needed' as true since the prompt is included. I'll ensure the JSON contains only two keys and craft concise instructions in Chinese, covering sections like summary, action items, and validations.**Handling title error response**\n\nI need to note that if the 'title' key appears, a 422 status should be returned. So, I’m instructing that the code must handle this 422 error and display an appropriate message to the user. Now, I’ll focus on producing the necessary JSON related to this instruction. It's important that the JSON accurately reflects the error handling for the 'title' key while ensuring that the response is clear and informative for users.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Validating client input**\n\nI want to make sure that if legacy clients try to send a 'title', the API client throws an error before proceeding. The client should validate the payload and reject it if the 'title' key is present, rather than just stripping it out. For creation, I need to require a name that matches existing rules, but for updates, I won't require the name—I'll only validate it if provided. I'll also ensure that response parsing correctly handles both 'title' and 'name'.**Defining constraints and requirements**\n\nI need to use the phrases \"preserve existing constraints\" and \"obtain constraints from existing validation functions.\" It's important to forbid silent ignoring of the old key, so the code must raise an error if 'title' is detected in the outgoing payload instead of just removing it. I'm thinking the 'needed' attribute in the schema might indicate whether a prompt is required. The developer suggests using 'needed' as true since the prompt is included. I'll ensure the JSON contains only two keys and craft concise instructions in Chinese, covering sections like summary, action items, and validations.**Handling title error response**\n\nI need to note that if the 'title' key appears, a 422 status should be returned. So, I’m instructing that the code must handle this 422 error and display an appropriate message to the user. Now, I’ll focus on producing the necessary JSON related to this instruction. It's important that the JSON accurately reflects the error handling for the 'title' key while ensuring that the response is clear and informative for users.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRarfRgthHG0gkfWwfN9BDp6QsO2FVaF6z1NpfK0V4J2bN3rFVZQEC1xHkw-5qSyiLkY5ZcLurBwu7Nu_2uYghZOkKYSned04j3OETqV93BJQnb02_dtf4kCboYeliJpv32xpEGvnbF5uLoybdPhymijAaclPuOEBc582Fxhus-Qi7szkaRNqLr4K5nGaLF56konzFiu4c_kkafLehApKoZDA33G552sSZh4XsTWHI1HotdIa8q2MSMhsRImaA6qK9MxNN-5rXAcFiDLsrjMlnquKjcVpAAqqOWQLDwxigY4FfJ9rOn0WNql0kxjxV2ndtVO7mSNy9HQvZ8PDOJlmue5qjsf7YwRUx5N08AtR_GXkaZopuXVlxFEylcPJQgbzPK18l5t4bu4LXJfhyidv0YYwfcn9UlzYaLREamo0mCREkbx92ULMKqC22yFWp28030kOHYUw6rtT5N88rxMReVhXDFCRKL7Cxv-YXYMuusXAWvjejmn240EYWwWjrrPBvwY3fi5STmhAMImlUqvZTtvKqx_GiL4RDTSubs0IZLx4K5I7InNRhyWNG4FNiQHSDXR0SQWe_4fkLplCuhI_YUB6Ci6-Tmpgoapn4gbbE_LmalTApGe3k6-_p1gtC09t6nW0GrZrx1g7tq4as6Quqoi4LeLwjgXAeGJn0uAvlO3bhg-0BCQFyJ5FSrG5dw0pHXaWiornwSvYmZY2LMRsHtl7MaiNyeLLbn89Cf8aGY9HL91HkmC-7z9NpoiDqZ4_EdN559LQxU61-5uwiVLToJ9incpcOaqTtqzLpxfeIE9WD3WLC91El5IbrpBSLd-X7pYUmbyLVlSRGQygmGhoe48WNtBwGOcznHpsv7ZuypH1Ovg6CFviqHuWwTn4-WCimrM8d95jLYnwOjRtAU2GjMx40qSnPMqNwI0dA5ZuUFjBT7L-xzOZ6uoPi2SLd7WotfmBpzXzkrvmmFXPrJ4oRWslDfGLIjcvbrr26eiiJp4D1L1wb_K67SpkY6q3VZ3-9uXewjFxjQuZTIrGejQpjqVp52HzfLyqOb-cW7N4IjJZGdwmOa7-4_AQTqn4dcFs2zLDTImLtyNK34IfCfs6fAthMcoTPlSVOjk84G-uPGPHAMaQd6sMjQHPzXhRKKhhRx_wnAdV4pwJUlPZV4SvAOGxINJEEZ42GETB5qaN8qM1aCz9CDQNArOwIiurw-94OAEPCaRqHzWfkURRM3hBFeGr8VCpDw-Ua5oc83lvarGZZXDwEyPcFT2ihCZuiPKuHpj16V-JH_e84sVAuRtZ9v6OhYh5SkbwucTo78AcQvOLLwX58KThmhpEsRZC1CveeHApxXfztVPbHXUW0lI1J1jc5bjMVPk3JerJyZA83Nw825VXvCUE-q_3X6DGqgf0HjB6XCuRqKnxYY0JTLzZ5zq2gazg7VS9nOkqjy3dTaVa4d85CTvSg63ZdfKLXVIFLzH5_T3eXXvD2uYEiRA4cVdYYM_dBIoowcVbv01GK4ZnmKLfP-WTDeRBFW_ijUbK5w8d9HgbL2BM4DPpaA0xf7S2DQmYTgATMKlUVmv6tG84KDyBnfHkGkkqwu6C2-UiA76B_wEz2Nz2EOOlVjwFcuIh6fZY8rU9A-us4XIXj99u_nlUK-cmcCiQGwt54RlpwXf16WrBQ9IldCXmfrAToZ4vMNO4r1AAMehR7mb6qO1-LIMeSYzdKp-Ilck0znBGTsgXEo7SVHqCHuYvy_3BFTxg12ip2uFVOBTr0TIij2ftlxnXTEHBFI7-FFF7wXofHrdMeYi3hcXsXcIqmCHmZ3-2lr9ftWFu89vlOFP25uj2eGdejCEXXdSo1Wkgw1BJeJYVNPU8WcG4GMbP2zLOSA17atWE5YC9YvN2h2ox-Kr_renDUiM8EiQQLmuWRoH84dHEc1EYb3I343kJDdx2uM3isFlUBKp1EOgKGRDJTK-cvjNXJxnoEc7VbwEfYPhGkzAxFWEUUNS5XVkZ8zGr8YagyV8vB7EzuoZku8m8BmK7m4zHtGNgwDfdn4N-Gij4jskz8ms2ZwR2bys9gVGFMvOtFpQZkdaJBj4cClIdllLYwMoOduryAJn-87dwvS3JIItTCBipnNjKUce8kl2IyL3dY-LfnkKBTzLoHBIaoqNbiWeWNsOkUwmIdBbmXRUftwC_YaLkONmHnGYUOrS60mZpixyJVAw0MWPHpgM2leRTG9K3fg229YrdH0n1ITIwUhto1bn_xUUKKxO_HDGIgMEzgnUVDX9Zopz7KzGjU6e47M-AhIHZ5MrNnr22Tk417hOHauyfJz15wOM70CD4Y0yjxVY33wdObcEe9vJiN5GZKrm_LZXKZV4TkwoRaSDIA7zW6XraRhl6u_MXIheI7OCVbJTB0DCNar5MlRtN1CXzaolhJPZg4p6GfSIpAS3mZgrydA4Zs36pU_W1-mS7ArglgXlyGltmqKf9_rxa9lr40LOj7Xj0yBVxDgNgGP32IvsI6Rud2czPjazjEtkpPXfguHDe9ZXQP8bcSKshGmnpMYdV1qzXMDoRYsm0DZzi3rUkFWdWmtzohB1xGwc5PnheKEzTS-5wCzDS5JF6_PHEAhNyLW6j5X1TsSOy9Vr_Q4CF4_Tk28x2f5S9qIgl-PHsUXPOH9L-NDaoYY2l7_qRQDD77u4kJJLA4gVZswKzfzgTypgZmeuyATuI-ONxs7ZBeIllZe4fmXUjOQ6nC593na4_cLh8RViuEqRPm04eWIr524WsPHrqdwnIVlCBxAgGEngWrXZCTvCCjM9BInVGPU-TFs_ucV2YWjjAsH3afk3-xRb1YcqfhW-OVQEjuqIMlhejijYQyjmo8HgYhZiRiDDcK6VwC-kXkgLD77A2Aazj90-DXb1zK8p3TLKmz5vmd-GfM8FlxciqdSso0Pq5d64LH2JN_DN20WwX5Y4FwgU1yY8JqOo9ylYt7I-FCq5EreN5Nx7ChfsDFE4Y2UjZraN3IpBU3kt4tL7kSITG0pGMgO74sE_HBqbqqldSdP3I79TF-WSjYbP6n7Hs8pz0DQ6imJDC6pQJCPA-sx8HtjZ3OEEk-6fDClTshVR1vfSwnmqj3i6bAv52KG-Zb3jST1ymFopPm5MQTASX2OyKcpHaRsUQmNh18jLIkCPwUEu14lYI_BKUFUveA0BDIUDzuECRvM2YoIn_2IDJ2TXksn_nCcr5hM3UYrVJoxsZzAz6EA8PHikWpwvEuHXKVUFXPBjOpu7OHH_dkAn_MLWKbXDZW-vsgQpZghUnsbfl5EIrC-ICmOYc2hNEi9DmQP2hPCXYU63ASyeQddU3PMrgwqZ7haI0fLpzzoG7iWIl8U8Wjk0brJQ6kL1QheCbsiNg0OIIOA7m6vqE09xxlkorXcKDMtO27lJTaeWSKwAqlrb0TBEZceXNPQDD2246saJPs_ZKVZXNNI1CmKuGW42Gh8xfZ8Fc_izck1WZIcLxImQenQD5E9aXWLpHKkmxdN8-QB1R2FYUzrJIIb8q5V-Vgw56yJOgpzVwufRYxGx24EwR209J73WZuXPe8AYY2fDcY8VMjOkmD_-xME2L6qboDossSngDK_RcQEddUcyVlJ1tY2OPHuMo5oIoZtNCgjYLsvoabY5Fg7x-pkNK-4-Da4MKdD34oPRr4meSuVYbEaRNybY8Xt7uTECuUGciB7c3T_Yssvp-bkYrSqb5aIOy-uj4ApbQDG8jFby7gqdjCK6jqy153g4MPUdpRIQOu4VmsbHG_gbhjqY0Q2xRRFDPTEIqm8aE0YdzdhJerPJU1__faQGFXNOHnpnZCxh4C_ByhwyYK_kSbkSFh5wIi6gvV4oa28Etrw6YVS0r65uKh4Mfx0AtmibXbko7dUHh-Rrccc8OVmG_peptnA3p5UabXn1Qa-AJCwcnixLR6gf22vJ7LN3WvXy0X1zgYFDX5RWep-TmKTN3ZZijNdNBK4_Pcgk58ljAiIbKTF9RSmmTSEv5F87oQonaAmJiWUp_FtDig2H-GFZFv2cXa0No7s6X-ZjBhgbF2FT21rCCFXqCOJVOcB5b7qHqzXiK-g6hUqUfQeHK7H8Y3_CqRQJ3cfzPqQKD_M2R35jZq623UzrcF5dP7rhjD4uOljKdfzSV2LGcG7Rn4yG2v65N0cbVUQJudANo-vfXqb6AP8sHivGEI9ijJuzXaQB-x1_lJWKcnoWgq4iZn3i-cBMuMnv08-4LPEZZqHVtPvw7z7FaSbdlPTcWMZ8VFcUDvuQvesBGPbHc3Yh-dTCcoURhehqGnAnC5B0DqacJgusJtotq7I5QAEj7xSngk13QBRFQozVSn2McXn48OrMf1hB0wlkn_T_BlMWf2cG_BPrqAb87Z9XVPqBA4znmY56JgzHXD4CCplseKam7m4BPYRHc6QHaYX09vkjm76chpgV11dPjMSvR2E-6mFseZl0Qhie5JPtQTV42X0MQMXZ_XpkbPph3cCXX-y34VKgs4J5qwclBQTwEU9ytPbhdMXGwtcRYUsrwE8Zxd8cGDlfTm6bdPLVXmHDniR6k9B965LMvnd94w-coAm3vYcu8JOT-fDECthnEGulZE-CXsc70gU9dYCdLjJ0tZNE05p6J55drfjNrSLfL3Y8NWsoun6DIObvGLWX7E6MtCKKP7sbfOBDUW1s0gfRjbrarejIDlhFrkKzT6A0eMR_7VhK17MWZeD-Fxz35lHK-jKcelYjE9ERpby4IvDqyUM__7AKhZjTSZswXjfPSBd1s56R-Ayi_qok0EhkAHuVTs7xbzv97S3RnSVWeGsqknep8GjfJ6Hn_d342MimKV5GdshLZbpvvNwUwwybZR0cXrGtZRSzVNo2MUWMXwx4knE8HIzdjwzQYDXfPtVPXrozbielb_XnV8R5sOajI9rePLYDbePD2LrQtjQgCWNoUgWlw2qm6KTgv1HtI-eFXxz4ld60EFJ26keDwJrU3R1Xzdim9gkdWhj59KCvmlpBfAR6ukQUQ2HQB-JmjYQqe-kJXHPBlHL8XOkXB-u-JbwQvvTLjYlQ7_Ka9CX_yazgqWuvbNIAfmWdXfsJLNxp9d0lhfiTkHeuBedLzl8cnWVrqPzq8CokjrCEp670_EJsORSQ3zx2XBUuuGt0WqlYQrnYlpsE2B-CVZOl9_XOOyWfF3CLS262b7TsEbvqM1K8mSKhqNX2Ra-RWR5xuarexJYmvpSNO0tDRb_PHgy1CSlmRnOFVNlobT1bluMZPPGBxY4xyvQJWIrAgD0iIk-Kop3Ww-mQWr0Z3h3RmtY62T4sot8JMLJLqQL7T7tX_l6kSPvdz_2gLDWDt41xHrNPK94lWyqACZpJhNjEYyaGRsq_LTP19_5kNfSZbJlBUTTSCO1zV4fP0dbyE3ejOERlLN1m43_uvx4kzm9TeBrY8Vw_FhHDBOQjbMPUQmY_9ufPTFtRwAtaIdhZSm_yaFp_DdBxbWYyzQSAQdm2U8oPyVaCE78VB5pcfWCUa5sEtILnpO204rEAm6MKfiSpNTUu46hNz50AzMFdvZ7ro_38OPrUaDfjVOEhdkL1UlusVHu--obGGgTExKHyyxl88OcJHLqDLK1ey8CpgTKrLamwe1s2VL44JlwGqBayh_uJJ0o7S6vCxSACXQ3JUwc-jjLNhk4X9ldB_fkMFHBz0cGiXOqbKRPrH9UpLlard2gs_YgB2dfiagXNpS2vb41yQKwNE0lZgvOIjZoLCv3HyT-lMe005kclXK0DmqJlZBsYBdsvgVMgfat6MyiLkOxifrqYGdnhOGsptqg6kbN-tdolh_5nL2NEOHh-L8a1L8IGb4GfyIj1GGK3t2MHWzj_scsg5VkSgAL3MKPOC6UZyOgTD8jLRUP7DpZmXX5U0wzhzcvOsSudUK9DOevpu8WLa8Pxotm_1IfAFB6SEtTP0OVARM0oZ60heJT7iY4FACeSarUXaOj5s3B6HMkxOz6m5CPbKF13YXQ0f4PysQp3cRzQ3HfemWVNueycWQOCkthKAoavQh2PJIFNUhn7saeR2PyIQPtxpHOvPv6Baur2m0Np6rGMyDAocvnU7ExCbFs_p09juM1eccyz2lXDAGC2KykCBbAOFC4QrhezOq4sei6Kf5j8KoorMBgG3-SEa7WAMevqdT9xssyStJ8H8FnOqpsB7_MrFrItQVo5iNPyK-kJywkEOW0XG69YnQZPTqu8boR6u6m7lYLmoA46dQfNgqhP-iFWn0aFBde2YXy_nBM2nl9FAdFfTiimydi6GgWpwc3hqMSiZ4zCYiDojWfiokJ9GMycQ0PvcqOGFqwYNUmBKVwPXztKKpsZOuEq6KEMYiDJxu4sJWaebawDmgX9yNHW6ueu44dBGw-y6JVj1B0s3W64x23-9oszZYh51coSdyPYnYOZOsW9ZzF8GS45QeW1Cj3FsW-C0z50ZTMBEo9sHxYb4MIE7DufEPxmPrAveeVFsuvfOOJ9djhoSsqCqzLw6Fs3g7jBn7BJVs6gHnmy5mTiLGPzFnhOJPfUYu1YaYa0gh_bYTOYY78NQCOhr0jY5fTAbseW4_mNdZlBZxBjAUC_dPioyP3Dz-3oh7Q5Ck8f1wOkHfezhKUoUs4jvCcb-5BgV76Iti86I1fa-Te3tnFHX-TAKJhwZl6riX9rVhHU2qUVi3LI3o6x-M-texhsC8bZn1jUAQfUM6bkvRe8MB8qAoejdFRdFaSkTzJrmjLCre0OP4xcjRRpQ3Usbu3Gkm-jmQKqg1qMNHT_-UxVSYVVu7LEAcYV-0zyhwi-s78QblWL0Z4CpGxexq8H-h03_w30cW-EJLIqUOfFmSmbNVnD_H9hOfjH2W89Q-7YpkykmzWAH4CL0JDSnSKMjzyhtg79hEawWqApk3GHzdjqTcxQjqr3LlqSbr2UDSqmJycWvzKC8p_IzMYZ9PAArbld5CzuMmHF5D4GFkq3FWWsee5GjAovVSUg6FQFZ-gJw7MkNV9VWFn1P6kGu-kmkonJS2cfZSSxxWN2CSLrqxuvBYiAWQ5ct_fSjEp23YUoUZZM87VvjsXHProcfUifZiSealc8Gs-_iDFcKrhBwlf7SBHrcRft4-7FGnU0ARyiPwRv3coiPEbw5BvEP0duIk2EM0e0U8_RSfeYCuaR_PtBSAxMG-sFB3h32an4zXmKElRTmCWa4CFR0TjwgYaNCRU1tXT42-aEDTxlQD1Lkr8zySMz02NGdDk0iL4nxjToHsVGmB3DhDPnMRRBVCZLbsPcgi_-d7APiHJXlVOWjJ8pI-pBZeYTpfwpz_AwAOvUnhZtyxzTfk5wocrHYJ35exowccwTVbvcnGfNMbPkfDKyMxEh0SZTBcz7vb7PyV4QrG8425Z76nPd8lWs8Q4wFzHSyautPox3uEe-axJQtSQcDGz35G9OchlTuRD6AtBP_aQCUjXlwnHcnZtxNPcEYvnRbCpoCFVTy5P7GgcV4Pvy660A5wMZ7dSMqvVBbEBwoMpPn9AFv9E2rRTTA4EZeX4xXT6rHgm8MaSxqePnW3psbJSU0jwpXhjSORQL67oEQHq9WVnXkpHZLLbhT8h_nBxvQRdYNVbJHd-m8PwxP1tkJLZ-8OmaKBHWzveLD-t6P7uyZ0UlqsJvQdwf5Jg3Nj55rAbceV308rN5W8D1XzEZP0Adc1VgrEyLFdkgE5TIU6V3Djbn8rgKk5DcQESOqEhIeb1G5A1CT_kt7Xsx5DSszlPZk04mmi4allzBX7vK3jzG56NvHHsDpXYcibfG_4ZQazaJx036aFu4IKPQXOcBj0x5WCzWZo0jOO5lCLEKManaUr5LwjTHQYRAFm_o_EXE1lknsCl4d3HcNRrH8KWZsILAqN3_lWr63W92CXEesDps--I65Kh1ae-B8kz4eUj5RIqERWrmHd0euAdrMDc32ftkzCY=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_07e22cea0e75b13b016ac116a0695487d1b8f3e081b0f19101",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 195,
+      "completion_tokens": 2327,
+      "total_tokens": 2522,
+      "cost": 0.00470275,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00470275,
+        "upstream_inference_prompt_cost": 4.875e-05,
+        "upstream_inference_completions_cost": 0.004654
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 896,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 195,
+    "completion_tokens": 2327,
+    "total_tokens": 2522,
+    "cost": 0.00470275,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00470275,
+      "upstream_inference_prompt_cost": 4.875e-05,
+      "upstream_inference_completions_cost": 0.004654
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 896,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

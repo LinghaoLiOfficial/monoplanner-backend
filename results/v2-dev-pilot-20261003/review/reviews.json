@@ -1,0 +1,1559 @@
+{
+  "schema_version": "requirement-review-v1",
+  "reviewer": "Li Linghao",
+  "human_attestation": true,
+  "reviews": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "6ea2e08803ba86121c49944a2dabe81f7d2869c0f2fdec9ca9cd022467f4bbe3",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.accepted = false，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 879,
+              "end": 909,
+              "quote": "服务器不接受 skip/limit；若包含则会返回 422。"
+            },
+            {
+              "side": "backend",
+              "start": 766,
+              "end": 879,
+              "quote": "拒绝双协议：若请求包含 skip 或 limit 任何一个（query/body/header 等来源），必须返回 HTTP 422（request.invalid_status = 422）。不得接受 skip/limit。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.accepted = false，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 879,
+              "end": 909,
+              "quote": "服务器不接受 skip/limit；若包含则会返回 422。"
+            },
+            {
+              "side": "backend",
+              "start": 766,
+              "end": 879,
+              "quote": "拒绝双协议：若请求包含 skip 或 limit 任何一个（query/body/header 等来源），必须返回 HTTP 422（request.invalid_status = 422）。不得接受 skip/limit。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.type = \"integer\"，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 571,
+              "end": 589,
+              "quote": "page：整数，最小 1，缺省 1。"
+            },
+            {
+              "side": "backend",
+              "start": 456,
+              "end": 494,
+              "quote": "仅接受 page（integer）和 page_size（integer）。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.minimum = 1，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 571,
+              "end": 589,
+              "quote": "page：整数，最小 1，缺省 1。"
+            },
+            {
+              "side": "backend",
+              "start": 555,
+              "end": 574,
+              "quote": "page 的最小值为 1，缺省为 1。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.default = 1，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 571,
+              "end": 589,
+              "quote": "page：整数，最小 1，缺省 1。"
+            },
+            {
+              "side": "backend",
+              "start": 555,
+              "end": 574,
+              "quote": "page 的最小值为 1，缺省为 1。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.type = \"integer\"，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 676,
+              "end": 703,
+              "quote": "page_size：整数，范围 1—50，缺省 20。"
+            },
+            {
+              "side": "backend",
+              "start": 456,
+              "end": 494,
+              "quote": "仅接受 page（integer）和 page_size（integer）。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.minimum = 1，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 676,
+              "end": 703,
+              "quote": "page_size：整数，范围 1—50，缺省 20。"
+            },
+            {
+              "side": "backend",
+              "start": 636,
+              "end": 663,
+              "quote": "page_size 的范围为 1—50，缺省为 20。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.maximum = 50，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 676,
+              "end": 703,
+              "quote": "page_size：整数，范围 1—50，缺省 20。"
+            },
+            {
+              "side": "backend",
+              "start": 636,
+              "end": 663,
+              "quote": "page_size 的范围为 1—50，缺省为 20。"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.default = 20，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 676,
+              "end": 703,
+              "quote": "page_size：整数，范围 1—50，缺省 20。"
+            },
+            {
+              "side": "backend",
+              "start": 636,
+              "end": 663,
+              "quote": "page_size 的范围为 1—50，缺省为 20。"
+            }
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 pagination.offset = \"(page-1)*page_size\"，与目标事实一致，两端要求可同时成立。 本项仅评估列出的必须显式事实；其他继承事实不新增 assessment。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1689,
+              "end": 1763,
+              "quote": "后端负责把 page/page_size 转为内部 offset = (page-1)*page_size，用于查询（前端无需计算 offset）。"
+            },
+            {
+              "side": "backend",
+              "start": 979,
+              "end": 1037,
+              "quote": "根据 page 与 page_size 计算 offset = (page-1)*page_size，用于数据库查询"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "9ca94b83fe49bff1716cdae9e2b2c8ce31d36c73655dfc0e44fdd6fa1022e147",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.trim = \"U+0020\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 128,
+              "end": 157,
+              "quote": "request.title.trim = \"U+0020\""
+            },
+            {
+              "side": "backend",
+              "start": 127,
+              "end": 156,
+              "quote": "request.title.trim = \"U+0020\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.length_unit = \"unicode_code_point\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 191,
+              "end": 239,
+              "quote": "request.title.length_unit = \"unicode_code_point\""
+            },
+            {
+              "side": "backend",
+              "start": 190,
+              "end": 238,
+              "quote": "request.title.length_unit = \"unicode_code_point\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.min_length = 3，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 272,
+              "end": 300,
+              "quote": "request.title.min_length = 3"
+            },
+            {
+              "side": "backend",
+              "start": 271,
+              "end": 299,
+              "quote": "request.title.min_length = 3"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 80，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 333,
+              "end": 362,
+              "quote": "request.title.max_length = 80"
+            },
+            {
+              "side": "backend",
+              "start": 332,
+              "end": 361,
+              "quote": "request.title.max_length = 80"
+            }
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 create.title.required = true，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 392,
+              "end": 420,
+              "quote": "create.title.required = true"
+            },
+            {
+              "side": "backend",
+              "start": 391,
+              "end": 419,
+              "quote": "create.title.required = true"
+            }
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 update.title.required = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 450,
+              "end": 479,
+              "quote": "update.title.required = false"
+            },
+            {
+              "side": "backend",
+              "start": 449,
+              "end": 478,
+              "quote": "update.title.required = false"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.nullable = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 510,
+              "end": 540,
+              "quote": "request.title.nullable = false"
+            },
+            {
+              "side": "backend",
+              "start": 509,
+              "end": 539,
+              "quote": "request.title.nullable = false"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.invalid_status = 422，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 577,
+              "end": 611,
+              "quote": "request.title.invalid_status = 422"
+            },
+            {
+              "side": "backend",
+              "start": 576,
+              "end": 610,
+              "quote": "request.title.invalid_status = 422"
+            }
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 update.title.omission = \"unchanged\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 641,
+              "end": 676,
+              "quote": "update.title.omission = \"unchanged\""
+            },
+            {
+              "side": "backend",
+              "start": 640,
+              "end": 675,
+              "quote": "update.title.omission = \"unchanged\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "2ea0460656d94a383e264f0846271451b6640f413f5712648deceabb0b59d33b",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 80，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 208,
+              "end": 267,
+              "quote": "Enforce max length = 80 code points on user-entered titles."
+            },
+            {
+              "side": "backend",
+              "start": 728,
+              "end": 810,
+              "quote": "Maximum: reject titles longer than 80 code points (request.title.max_length = 80)."
+            }
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 read.existing_overlength_title.allowed = true，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1078,
+              "end": 1178,
+              "quote": "Allow reading and displaying existing titles that are longer than 80 code points without truncation."
+            },
+            {
+              "side": "backend",
+              "start": 1028,
+              "end": 1216,
+              "quote": "Allow existing stored titles that exceed 80 code points to be read and returned by the API (read.existing_overlength_title.allowed = true). Do not reject or rewrite existing data on reads."
+            }
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "consistent",
+          "explanation": "两端正文均明确规定更新省略 title 时不重校验已存 title。提示中的 FACT 标记使用下划线，与 fact_id 拼写不完全一致，但语义事实已在两端明确表达，因此不判漏项。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1457,
+              "end": 1558,
+              "quote": "Do not revalidate the existing stored title when the user omits the title field in an update request."
+            },
+            {
+              "side": "backend",
+              "start": 1420,
+              "end": 1609,
+              "quote": "If the request omits the title field entirely, do NOT revalidate the stored title. Omission means \"unchanged\"; accept the update regardless of the stored title's current length or validity."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "6d89f717b86692ee0f712868e5034e3f9f9d9642fc36ea1d5ed7b9e00788ebc4",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.maximum = 100，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 411,
+              "end": 488,
+              "quote": "Set the page_size control default to 25 and its maximum allowed input to 100."
+            },
+            {
+              "side": "backend",
+              "start": 514,
+              "end": 590,
+              "quote": "Enforce request.page_size as an integer, minimum 1, default 25, maximum 100."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.default = 25，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 411,
+              "end": 488,
+              "quote": "Set the page_size control default to 25 and its maximum allowed input to 100."
+            },
+            {
+              "side": "backend",
+              "start": 514,
+              "end": 590,
+              "quote": "Enforce request.page_size as an integer, minimum 1, default 25, maximum 100."
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1405,
+              "end": 1494,
+              "quote": "Read the server-provided fields response.page and response.page_size, which are integers."
+            },
+            {
+              "side": "backend",
+              "start": 1103,
+              "end": 1200,
+              "quote": "Add response fields page and page_size to the normal list response. Both fields must be integers."
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page.value = \"effective_page\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1625,
+              "end": 1843,
+              "quote": "After every request, override the UI controls to reflect the server-echoed effective values: set the page control to effective_page (response.page) and the page_size control to effective_page_size (response.page_size)."
+            },
+            {
+              "side": "backend",
+              "start": 1273,
+              "end": 1387,
+              "quote": "Set response.page to the effective page used for the query and response.page_size to the effective page_size used;"
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page_size.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1405,
+              "end": 1494,
+              "quote": "Read the server-provided fields response.page and response.page_size, which are integers."
+            },
+            {
+              "side": "backend",
+              "start": 1103,
+              "end": 1200,
+              "quote": "Add response fields page and page_size to the normal list response. Both fields must be integers."
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page_size.value = \"effective_page_size\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1625,
+              "end": 1843,
+              "quote": "After every request, override the UI controls to reflect the server-echoed effective values: set the page control to effective_page (response.page) and the page_size control to effective_page_size (response.page_size)."
+            },
+            {
+              "side": "backend",
+              "start": 1273,
+              "end": 1387,
+              "quote": "Set response.page to the effective page used for the query and response.page_size to the effective page_size used;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "50e13135a57a1e380a55a9008a927b2826e91d51a0bbe06b7e4c71784241b188",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 127,
+              "end": 156,
+              "quote": "request.skip.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 126,
+              "end": 155,
+              "quote": "request.skip.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.minimum = 0，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 185,
+              "end": 209,
+              "quote": "request.skip.minimum = 0"
+            },
+            {
+              "side": "backend",
+              "start": 184,
+              "end": 208,
+              "quote": "request.skip.minimum = 0"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.default = 0，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 238,
+              "end": 262,
+              "quote": "request.skip.default = 0"
+            },
+            {
+              "side": "backend",
+              "start": 237,
+              "end": 261,
+              "quote": "request.skip.default = 0"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 289,
+              "end": 319,
+              "quote": "request.limit.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 288,
+              "end": 318,
+              "quote": "request.limit.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.minimum = 1，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 349,
+              "end": 374,
+              "quote": "request.limit.minimum = 1"
+            },
+            {
+              "side": "backend",
+              "start": 348,
+              "end": 373,
+              "quote": "request.limit.minimum = 1"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.maximum = 50，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 404,
+              "end": 430,
+              "quote": "request.limit.maximum = 50"
+            },
+            {
+              "side": "backend",
+              "start": 403,
+              "end": 429,
+              "quote": "request.limit.maximum = 50"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.default = 20，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 460,
+              "end": 486,
+              "quote": "request.limit.default = 20"
+            },
+            {
+              "side": "backend",
+              "start": 459,
+              "end": 485,
+              "quote": "request.limit.default = 20"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.invalid_status = 422，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 517,
+              "end": 545,
+              "quote": "request.invalid_status = 422"
+            },
+            {
+              "side": "backend",
+              "start": 516,
+              "end": 544,
+              "quote": "request.invalid_status = 422"
+            }
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.count.scope = \"authorized_filtered_before_pagination\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 574,
+              "end": 636,
+              "quote": "response.count.scope = \"authorized_filtered_before_pagination\""
+            },
+            {
+              "side": "backend",
+              "start": 573,
+              "end": 635,
+              "quote": "response.count.scope = \"authorized_filtered_before_pagination\""
+            }
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.empty_page.data = []，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 669,
+              "end": 698,
+              "quote": "response.empty_page.data = []"
+            },
+            {
+              "side": "backend",
+              "start": 668,
+              "end": 697,
+              "quote": "response.empty_page.data = []"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "e1d39fcf1ed75333954e59c303180cf38f9c37bd492e29d74615d73e42671893",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 120，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 134,
+              "end": 164,
+              "quote": "request.title.max_length = 120"
+            },
+            {
+              "side": "backend",
+              "start": 133,
+              "end": 163,
+              "quote": "request.title.max_length = 120"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.description.max_length = 500，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 203,
+              "end": 239,
+              "quote": "request.description.max_length = 500"
+            },
+            {
+              "side": "backend",
+              "start": 202,
+              "end": 238,
+              "quote": "request.description.max_length = 500"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.description.trim = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 272,
+              "end": 304,
+              "quote": "request.description.trim = false"
+            },
+            {
+              "side": "backend",
+              "start": 271,
+              "end": 303,
+              "quote": "request.description.trim = false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "2c984efd26c12d4f9d11935d617537b495b28cea9736a074176cc0ffb343b40d",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 492,
+              "end": 570,
+              "quote": "always send skip and limit as integers in the query string when fetching pages"
+            },
+            {
+              "side": "backend",
+              "start": 505,
+              "end": 574,
+              "quote": "parse skip and limit from the query string and treat them as integers"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "omission",
+          "explanation": "两端的下限比较均使用 [FACT:request-skip-minimum] 占位符，没有给出数值 0。前端请求示例 skip=0 只能说明一个示例取值，不能明确表达下限。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "omission",
+          "explanation": "两端的默认值规则均使用 [FACT:request-skip-default] 占位符，没有写明缺省时取 0。前端 ?skip=0&limit=20 是请求示例，并未声明为缺省值；后端也无具体默认值。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 492,
+              "end": 570,
+              "quote": "always send skip and limit as integers in the query string when fetching pages"
+            },
+            {
+              "side": "backend",
+              "start": 505,
+              "end": 574,
+              "quote": "parse skip and limit from the query string and treat them as integers"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "omission",
+          "explanation": "两端均以 [FACT:request-limit-minimum] 代替实际下限，未明确写出 1。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "omission",
+          "explanation": "两端均以 [FACT:request-limit-maximum] 代替实际上限，未明确写出 50。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "omission",
+          "explanation": "两端均以 [FACT:request-limit-default] 代替默认值。前端请求示例 limit=20 未声明缺省语义，后端也没有写出缺省时取 20。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "omission",
+          "explanation": "前端错误处理与后端错误返回只引用 [FACT:request-invalid-status]，均未出现具体状态码 422。 FACT 标记未展开为具体契约值，不能替代必须显式表达的事实；不存在可据以判定两端取值冲突或共同错误的具体值。",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.count.scope = \"authorized_filtered_before_pagination\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1531,
+              "end": 1709,
+              "quote": "The count represents items within the user's authorization and after server-side filtering (i.e., [FACT:response-count-scope]) and does not change based on the current page size."
+            },
+            {
+              "side": "backend",
+              "start": 1080,
+              "end": 1271,
+              "quote": "apply authorization and filtering first to determine the full matching set of items for the caller. Compute count over that set before applying pagination and return it as the response count;"
+            }
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.empty_page.data = []，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1710,
+              "end": 1840,
+              "quote": "If the response contains an empty data array, treat it as empty page (i.e., display no items) per [FACT:response-empty-page-data]."
+            },
+            {
+              "side": "backend",
+              "start": 1479,
+              "end": 1584,
+              "quote": "If the selected page is empty, return data exactly as an empty array per [FACT:response-empty-page-data]."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "bf9108bcddad673f3ac47d527069499d8f388bd8514ce497eed33ef0f4945ee0",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 120，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 254,
+              "end": 284,
+              "quote": "request.title.max_length = 120"
+            },
+            {
+              "side": "backend",
+              "start": 269,
+              "end": 299,
+              "quote": "request.title.max_length = 120"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.description.max_length = 500，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 692,
+              "end": 728,
+              "quote": "request.description.max_length = 500"
+            },
+            {
+              "side": "backend",
+              "start": 700,
+              "end": 736,
+              "quote": "request.description.max_length = 500"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.description.trim = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 771,
+              "end": 803,
+              "quote": "request.description.trim = false"
+            },
+            {
+              "side": "backend",
+              "start": 779,
+              "end": 811,
+              "quote": "request.description.trim = false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "1308cc3cde9f68b168a2b8d8577aa3a029e8954f412c28bb0976835eb2616d05",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 80，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 134,
+              "end": 163,
+              "quote": "request.title.max_length = 80"
+            },
+            {
+              "side": "backend",
+              "start": 133,
+              "end": 162,
+              "quote": "request.title.max_length = 80"
+            }
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 read.existing_overlength_title.allowed = true，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 210,
+              "end": 255,
+              "quote": "read.existing_overlength_title.allowed = true"
+            },
+            {
+              "side": "backend",
+              "start": 209,
+              "end": 254,
+              "quote": "read.existing_overlength_title.allowed = true"
+            }
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 update.omitted_title.revalidate = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 295,
+              "end": 334,
+              "quote": "update.omitted_title.revalidate = false"
+            },
+            {
+              "side": "backend",
+              "start": 294,
+              "end": 333,
+              "quote": "update.omitted_title.revalidate = false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "e558aa6aac98b732eef554d2e6af2063fc47d187642790140dcdefa9895db240",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.maximum = 100，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 135,
+              "end": 166,
+              "quote": "request.page_size.maximum = 100"
+            },
+            {
+              "side": "backend",
+              "start": 134,
+              "end": 165,
+              "quote": "request.page_size.maximum = 100"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.default = 25，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 200,
+              "end": 230,
+              "quote": "request.page_size.default = 25"
+            },
+            {
+              "side": "backend",
+              "start": 199,
+              "end": 229,
+              "quote": "request.page_size.default = 25"
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 257,
+              "end": 287,
+              "quote": "response.page.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 256,
+              "end": 286,
+              "quote": "response.page.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page.value = \"effective_page\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 315,
+              "end": 353,
+              "quote": "response.page.value = \"effective_page\""
+            },
+            {
+              "side": "backend",
+              "start": 314,
+              "end": 352,
+              "quote": "response.page.value = \"effective_page\""
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page_size.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 385,
+              "end": 420,
+              "quote": "response.page_size.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 384,
+              "end": 419,
+              "quote": "response.page_size.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 response.page_size.value = \"effective_page_size\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 453,
+              "end": 501,
+              "quote": "response.page_size.value = \"effective_page_size\""
+            },
+            {
+              "side": "backend",
+              "start": 452,
+              "end": 500,
+              "quote": "response.page_size.value = \"effective_page_size\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "a504a0702e8b1d156cca4650723c7e27826994cd45f7058c9e0dac629dfa46e1",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.skip.accepted = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 131,
+              "end": 160,
+              "quote": "request.skip.accepted = false"
+            },
+            {
+              "side": "backend",
+              "start": 130,
+              "end": 159,
+              "quote": "request.skip.accepted = false"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.limit.accepted = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 191,
+              "end": 221,
+              "quote": "request.limit.accepted = false"
+            },
+            {
+              "side": "backend",
+              "start": 190,
+              "end": 220,
+              "quote": "request.limit.accepted = false"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 247,
+              "end": 276,
+              "quote": "request.page.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 246,
+              "end": 275,
+              "quote": "request.page.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.minimum = 1，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 305,
+              "end": 329,
+              "quote": "request.page.minimum = 1"
+            },
+            {
+              "side": "backend",
+              "start": 304,
+              "end": 328,
+              "quote": "request.page.minimum = 1"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page.default = 1，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 358,
+              "end": 382,
+              "quote": "request.page.default = 1"
+            },
+            {
+              "side": "backend",
+              "start": 357,
+              "end": 381,
+              "quote": "request.page.default = 1"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.type = \"integer\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 413,
+              "end": 447,
+              "quote": "request.page_size.type = \"integer\""
+            },
+            {
+              "side": "backend",
+              "start": 412,
+              "end": 446,
+              "quote": "request.page_size.type = \"integer\""
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.minimum = 1，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 481,
+              "end": 510,
+              "quote": "request.page_size.minimum = 1"
+            },
+            {
+              "side": "backend",
+              "start": 480,
+              "end": 509,
+              "quote": "request.page_size.minimum = 1"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.maximum = 50，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 544,
+              "end": 574,
+              "quote": "request.page_size.maximum = 50"
+            },
+            {
+              "side": "backend",
+              "start": 543,
+              "end": 573,
+              "quote": "request.page_size.maximum = 50"
+            }
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.page_size.default = 20，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 608,
+              "end": 638,
+              "quote": "request.page_size.default = 20"
+            },
+            {
+              "side": "backend",
+              "start": 607,
+              "end": 637,
+              "quote": "request.page_size.default = 20"
+            }
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 pagination.offset = \"(page-1)*page_size\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 664,
+              "end": 704,
+              "quote": "pagination.offset = \"(page-1)*page_size\""
+            },
+            {
+              "side": "backend",
+              "start": 663,
+              "end": 703,
+              "quote": "pagination.offset = \"(page-1)*page_size\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "a7c4cace98f7d43030235df868d824e42129823c110464c7ec3e08df6708c936",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.trim = \"U+0020\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 477,
+              "end": 652,
+              "quote": "Before any validation or submitting to the server, trim only U+0020 (ASCII space) from both ends of the entered title value. Do not normalize or trim other Unicode whitespace."
+            },
+            {
+              "side": "backend",
+              "start": 438,
+              "end": 588,
+              "quote": "On both POST and PUT, if a title field is present in the JSON request, trim only U+0020 (ASCII space) from both ends before any validation or storage."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.length_unit = \"unicode_code_point\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 655,
+              "end": 749,
+              "quote": "Measure title length in Unicode code points (not bytes, not UTF-16 code units) after trimming."
+            },
+            {
+              "side": "backend",
+              "start": 591,
+              "end": 644,
+              "quote": "Measure length in Unicode code points after trimming."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.min_length = 3，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 752,
+              "end": 803,
+              "quote": "Enforce minimum length = 3 and maximum length = 80."
+            },
+            {
+              "side": "backend",
+              "start": 647,
+              "end": 690,
+              "quote": "Enforce min length = 3 and max length = 80."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.max_length = 80，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 752,
+              "end": 803,
+              "quote": "Enforce minimum length = 3 and maximum length = 80."
+            },
+            {
+              "side": "backend",
+              "start": 647,
+              "end": 690,
+              "quote": "Enforce min length = 3 and max length = 80."
+            }
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 create.title.required = true，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1083,
+              "end": 1164,
+              "quote": "For create (POST): title is required and must be present (do not allow omission)."
+            },
+            {
+              "side": "backend",
+              "start": 867,
+              "end": 989,
+              "quote": "POST (create): the request must include a title field (required). If title is absent, respond with validation error (422)."
+            }
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 update.title.required = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1327,
+              "end": 1500,
+              "quote": "For update (PUT): title is optional. If the user does not edit the title and you omit the title field from the request body, backend must leave the existing value unchanged."
+            },
+            {
+              "side": "backend",
+              "start": 1075,
+              "end": 1218,
+              "quote": "PUT (update): the title field is optional. If the request omits the title key entirely, do not change the stored title value (leave unchanged)."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.nullable = false，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1636,
+              "end": 1787,
+              "quote": "Do NOT convert a user omission into an explicit null. If the UI allows sending null explicitly, that is invalid per the contract and should be blocked."
+            },
+            {
+              "side": "backend",
+              "start": 990,
+              "end": 1044,
+              "quote": "If title is explicitly null, respond 422 per contract."
+            }
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 request.title.invalid_status = 422，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1830,
+              "end": 1982,
+              "quote": "If the server returns a 422 for title validation (including explicit null), display the server error to the user and present the title input as invalid."
+            },
+            {
+              "side": "backend",
+              "start": 1523,
+              "end": 1687,
+              "quote": "For any title validation failure (too short, too long, all-space, explicit null), return HTTP 422 with a clear validation error describing the title rule violation."
+            }
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "consistent",
+          "explanation": "前后端均明确表达 update.title.omission = \"unchanged\"，与目标事实一致，两端要求可同时成立。",
+          "evidence": [
+            {
+              "side": "frontend",
+              "start": 1327,
+              "end": 1500,
+              "quote": "For update (PUT): title is optional. If the user does not edit the title and you omit the title field from the request body, backend must leave the existing value unchanged."
+            },
+            {
+              "side": "backend",
+              "start": 1075,
+              "end": 1218,
+              "quote": "PUT (update): the title field is optional. If the request omits the title key entirely, do not change the stored title value (leave unchanged)."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

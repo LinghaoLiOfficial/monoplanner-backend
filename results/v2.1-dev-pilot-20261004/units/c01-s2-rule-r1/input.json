@@ -1,0 +1,293 @@
+{
+  "step_id": "c01-s2",
+  "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+  "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "change_facts": [
+    {
+      "fact_id": "request-title-max-length",
+      "statement": "request.title.max_length = 120",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 80,
+      "target_value": 120,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    },
+    {
+      "fact_id": "request-description-max-length",
+      "statement": "request.description.max_length = 500",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 500,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    },
+    {
+      "fact_id": "request-description-trim",
+      "statement": "request.description.trim = false",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    }
+  ],
+  "active_contract_facts": [
+    {
+      "fact_id": "request-title-trim",
+      "statement": "request.title.trim = \"U+0020\"",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "U+0020",
+      "target_value": "U+0020",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-length-unit",
+      "statement": "request.title.length_unit = \"unicode_code_point\"",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "unicode_code_point",
+      "target_value": "unicode_code_point",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-min-length",
+      "statement": "request.title.min_length = 3",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 3,
+      "target_value": 3,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-max-length",
+      "statement": "request.title.max_length = 120",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "modified",
+      "source_kind": "current_requirement",
+      "previous_value": 80,
+      "target_value": 120,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    },
+    {
+      "fact_id": "create-title-required",
+      "statement": "create.title.required = true",
+      "operation": "create",
+      "state": "after-c01-s2",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": true,
+      "target_value": true,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-required",
+      "statement": "update.title.required = false",
+      "operation": "update",
+      "state": "after-c01-s2",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": false,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-nullable",
+      "statement": "request.title.nullable = false",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": false,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-invalid-status",
+      "statement": "request.title.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": 422,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-omission",
+      "statement": "update.title.omission = \"unchanged\"",
+      "operation": "update",
+      "state": "after-c01-s2",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "derivable",
+      "change_type": "inherited",
+      "source_kind": "inherited",
+      "previous_value": "unchanged",
+      "target_value": "unchanged",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-description-max-length",
+      "statement": "request.description.max_length = 500",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 500,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    },
+    {
+      "fact_id": "request-description-trim",
+      "statement": "request.description.trim = false",
+      "operation": "request",
+      "state": "after-c01-s2",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s2"
+      ]
+    }
+  ]
+}

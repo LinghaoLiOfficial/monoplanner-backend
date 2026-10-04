@@ -1,0 +1,571 @@
+{
+  "schema_version": "requirement-review-v1",
+  "reviewer": "",
+  "human_attestation": false,
+  "reviews": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "29f3f14e9a418554f86750af239c9944ee542d1d0e5625ce90f7021818549d0f",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "9ca94b83fe49bff1716cdae9e2b2c8ce31d36c73655dfc0e44fdd6fa1022e147",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "f36a77eb87a8c4dbd1087fa8549d8755948e96309df6a267e52f6669d2762f9c",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "afeaa062f42f4511adc6b41bbfe75d2aee58ee8ad38c9d28bc72a76ffb211180",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "50e13135a57a1e380a55a9008a927b2826e91d51a0bbe06b7e4c71784241b188",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "e1d39fcf1ed75333954e59c303180cf38f9c37bd492e29d74615d73e42671893",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "de98bd4af08f45e67ca9a59d1705f8a6edf247f43aa001487cd895082d8fd4fa",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "818d57f36aa91ca369c86fc5e76f019c68dfec4c46d34f4217c674cba182a9b5",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "1308cc3cde9f68b168a2b8d8577aa3a029e8954f412c28bb0976835eb2616d05",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "e558aa6aac98b732eef554d2e6af2063fc47d187642790140dcdefa9895db240",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "a504a0702e8b1d156cca4650723c7e27826994cd45f7058c9e0dac629dfa46e1",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "8eb142221095b7d508a6d2f6a51c31224fd5d172cfe4d7daea9898c5efe81867",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

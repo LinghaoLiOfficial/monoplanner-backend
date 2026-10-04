@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：sort 新增 `title_desc`，title 主键降序、UUID 次键仍升序；默认排序改为 title_asc。\n\n持续有效约束与验收条件：created_at_desc 仍受支持，不能作为废弃值拒绝；q、count 和分页语义保持。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：sort 新增 `title_desc`，title 主键降序、UUID 次键仍升序；默认排序改为 title_asc。\n\n持续有效约束与验收条件：created_at_desc 仍受支持，不能作为废弃值拒绝；q、count 和分页语义保持。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

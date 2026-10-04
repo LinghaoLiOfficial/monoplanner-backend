@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-03",
+  "step_id": "c03-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：仅恢复超级用户修改、删除他人条目的权限；移除针对该角色的只读错误与界面限制。",
+  "preserved_constraints": "普通用户他人资源仍 404，不得回退为源码中的 403；超级用户读全量不变。"
+}

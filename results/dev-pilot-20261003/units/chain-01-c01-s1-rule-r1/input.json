@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-01",
+  "step_id": "c01-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+  "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。"
+}

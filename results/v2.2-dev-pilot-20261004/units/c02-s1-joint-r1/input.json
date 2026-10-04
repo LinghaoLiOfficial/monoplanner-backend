@@ -1,0 +1,413 @@
+{
+  "step_id": "c02-s1",
+  "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+  "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "change_facts": [
+    {
+      "fact_id": "request-skip-type",
+      "statement": "request.skip.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-skip-minimum",
+      "statement": "request.skip.minimum = 0",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 0,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-skip-default",
+      "statement": "request.skip.default = 0",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 0,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-type",
+      "statement": "request.limit.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-minimum",
+      "statement": "request.limit.minimum = 1",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 1,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-maximum",
+      "statement": "request.limit.maximum = 50",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 50,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-default",
+      "statement": "request.limit.default = 20",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 20,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-invalid-status",
+      "statement": "request.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-count-scope",
+      "statement": "response.count.scope = \"authorized_filtered_before_pagination\"",
+      "operation": "response",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "authorized_filtered_before_pagination",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-empty-page-data",
+      "statement": "response.empty_page.data = []",
+      "operation": "response",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": [],
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    }
+  ],
+  "active_contract_facts": [
+    {
+      "fact_id": "request-skip-type",
+      "statement": "request.skip.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-skip-minimum",
+      "statement": "request.skip.minimum = 0",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 0,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-skip-default",
+      "statement": "request.skip.default = 0",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 0,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-type",
+      "statement": "request.limit.type = \"integer\"",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "integer",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-minimum",
+      "statement": "request.limit.minimum = 1",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 1,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-maximum",
+      "statement": "request.limit.maximum = 50",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 50,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-limit-default",
+      "statement": "request.limit.default = 20",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 20,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "request-invalid-status",
+      "statement": "request.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-count-scope",
+      "statement": "response.count.scope = \"authorized_filtered_before_pagination\"",
+      "operation": "response",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "authorized_filtered_before_pagination",
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    },
+    {
+      "fact_id": "response-empty-page-data",
+      "statement": "response.empty_page.data = []",
+      "operation": "response",
+      "state": "after-c02-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": [],
+      "supersedes": [],
+      "sources": [
+        "requirement:c02-s1"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-08",
+  "step_id": "c08-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：恢复增加严格 7×24 小时窗口，由服务器 UTC 时间判定；`now-deleted_at < 604800秒` 可恢复，等于或大于边界时 410 `detail=\"Restore window expired\"`。",
+  "preserved_constraints": "不自动物理清理；未删除 409、不存在 404、无权 403 保留。先存在性和授权，后状态及时间检查；前端以服务端判定为准。"
+}

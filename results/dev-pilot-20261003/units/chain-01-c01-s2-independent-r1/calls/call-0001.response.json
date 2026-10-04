@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-10-03T21:58:21.437236+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791035878-fUw5iUO6ujf3ounIkGBR",
+    "object": "chat.completion",
+    "created": 1791035878,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围（前端仅）：\\n- 只在前端代码中调整输入校验与展示逻辑；不更改后端契约、API 语义或后端校验行为。\\n\\n变更目标摘要：\\n- title 最大长度从 80 调整为 120；最小长度保持 3。title 的修剪（trim）、必填及 null 规则不变——即继续对 title 使用现有的 trim/required/null 处理逻辑。\\n- description 对于非空值的最大长度从 255 调整为 500；不要对 description 执行 trim（即保留用户输入的前后空白）。description 的缺省（默认）与 null 语义不变，不要更改如何将缺省或 null 发送到后端。\\n\\n前端实施步骤（按优先级）：\\n1) 找到所有受影响的表单/组件/验证点：\\n   - 搜索项目中所有与 title 和 description 表单字段相关的组件、输入元素、验证 util、schema、以及前端提交前的校验拦截器（例如 form validators、client-side DTO/serializer、Formik/Yup schema、React/Vue props 校验、HTML maxlength 属性等）。\\n\\n2) 更新校验规则：\\n   - title：将客户端/表单校验中对 title 的最大长度判断从 80 改为 120；保留对 title 的 trim 行为（继续在进行长度判断或空值检查前对 title 执行 trim，保持现有必填/null 规则）。\\n   - description：将对 description 的最大长度判断从 255 改为 500，但在任何对 description 的预处理或验证中不要对其执行 trim。换言之，长度判断应基于原始输入值（不调用 .trim()），并在非空值情况下应用该上限。\\n\\n3) 更新 HTML/控件属性与 UI：\\n   - 如果使用 maxlength 属性：\\n     - title 输入控件（input/textarea）将 maxlength 设置为 120（如果之前为 80）。\\n     - description 控件将 maxlength 设置为 500（如果之前为 255）。\\n   - 字符计数器/进度显示：更新展示的最大值（title: 120, description: 500），并确保计数器基于与校验一致的行为：\\n     - title 的计数应基于 trim 后的长度（如果当前实现如此）。\\n     - description 的计数应基于原始输入长度（不 trim）。\\n   - 验证错误提示：更新提示文本中提到的最大长度值（例如“最多允许 120 个字符”/“最多允许 500 个字符”），并确保消息不会暗示对 description 会进行自动修剪。\\n\\n4) 保持现有必填/默认/null 语义：\\n   - 不要将 description 的空值自动转换为 null 或非空字符串；不要改变默认值处理逻辑。仅在对非空 description 值进行长度校验时采用新的上限。\\n   - 对 title 的必填和 null 规则保持不变（继续按现有实现对 null/空/trim 后的值进行判定）。\\n\\n5) 验证与阻止提交逻辑：\\n   - 在客户端提交前的同步或异步校验中，确保超长的 title/description 会被拒绝并向用户展示错误。\\n   - 对于 description，注意不要在阻止提交前对其值做 trim 操作；长度判断应基于原始值。\\n\\n6) 测试（必须添加或更新）：\\n   - 单元测试（validator/util）：\\n     - title：trim 后长度为 120 -> 校验通过；trim 后长度为 121 -> 校验失败；trim 后长度为 3 -> 通过；trim 后长度为 2 -> 失败（确保最小值 3 保持）。\\n     - description：原始（不 trim）长度为 500 且非空 -> 校验通过；原始长度为 501 -> 校验失败。\\n     - 确认 description 的空值/null/default 路径不被改变（为保守起见，运行现有相关测试并确保通过）。\\n   - 集成 / E2E 测试（表单行为）：\\n     - 在表单中输入 title（包含前后空白），确认校验使用 trim 后的长度并按 120 上限工作（120 成功、121 失败）。\\n     - 在表单中输入 description（包含前后空白、以及仅空格的情况），确认不会对 description 执行 trim；当原始字符数为 500 时可提交，501 时被拒绝。\\n     - 检查提交流程中 description 为 null 或缺省时的行为保持不变（与现有基线一致）。\\n\\n7) 可视与无障碍（A11y）：\\n   - 更新 aria-describedby、aria-invalid 等辅助属性以反映新的限制消息；字符计数器应对屏幕阅读器可感知。\\n\\n8) 回退与兼容性注意事项：\\n   - 不要更改任何发送给后端的字段命名、空/null 表征或数据类型。\\n   - 若后端仍以旧上限校验（未知），请不要在没有后端确认的情况下更改前端为允许更长字符串的最终提交行为；若存在后端冲突，停止并与后端对齐，但本次任务只实现前端所需改动并提交 PR 说明需要后端协调（不要在实现中假设后端已更新）。\\n\\n9) 提交与代码审查说明（PR 内容须包含）：\\n   - 明确列出所改动的文件和变更点（校验 util、表单组件、HTML maxlength、错误消息、测试），并在 PR 描述中列出验收测试要点：\\n     - title: trim 后长度 120 => 成功；121 => 失败；最小 3 保持。\\n     - description: 原始长度 500 => 成功；501 => 失败；不对 description 做 trim；description 的缺省和 null 语义不变。\\n\\n验收标准（前端验证必须通过）：\\n- title: 输入（在执行现有 trim 之后）长度为 120 时允许提交；121 时阻止并显示错误。min=3 保持不变。\\n- description: 原始输入长度为 500 且非空时允许提交；501 时阻止并显示错误；无任何自动 trim 操作影响 description 的最终值；description 的缺省和 null 行为与变更前一致。\\n\\n注意事项（不可猜测的契约或限制）：\\n- 不要对后端行为做假设；若后端有冲突或额外约束，停止并请求后端确认再调整前端策略。\\n- 不要更改除本次明确要求之外的字段规则或默认值。\\n\\n交付：\\n- 更新后的前端代码（包含校验与 UI 变更）和对应单元、集成/E2E 测试，PR 描述包含上述变更说明与验收测试用例。\"\n}",
+          "refusal": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwQnuxaOCNkmLsfeGWaNITlNApo1cO2ny7eKbpImvMPyjHx-p4aQgfuSem7SE1XizsBh8K__mdQZLKpIgN_bYuiWIp4u3Aez4rW6TAdQbjtV9_qJKruhs4UFADv_E2J1IjbFnDYd7xz8bXWTa9-8p8pDRwOVp39Qtg3yP4PMi-r85dfisSdAkYLExwWVaL7tx1Q-VWiy9ej4X7sCjFgEyaMcrlPRqvNcpZLVzgU4xrWTMtweYuYo7w3IkLwdux7Zi6MtbesdM3OzzICl-fhTpCJu8NhgRo4uR9ajcIVWZkZ-jXHiqhMnGMD_rHjBxeLlpVa6z7q5854hFEHPGhQbNIeSGigUe91A4Hf6M4rDNNhmtBEVEWH6P3p7lmctK5nx2-AcI-khS5BOgDXY4tLK0y3tOupDKW6i31Gj81pl8ax2E5hzkrmAygka2f6oJ_eKPNO6oDWJ0TN8EI1hIFq9gJ2g7GyyEThb-qqLy7g8Y0CvF--APQGGoE2VONAP-2cVP5YEXDmBeZiDmorTJlocLBUS7w_7DZ8v13SVNNui7zhFeblQ6JV9sNyCl6DQiDYObq3ZyaXmTV4PxKglB2P8MTw0EWm7-X6A2YDNXW3PIagCrQvUN6RCugoN8gVll7T9cgLqaX0RmRTgsMbXaZaordG4gTOSGGDobhmuQbUh_JzWBfqzqKUgXQrAi0IV3R0m8dDfPfS-CAfRxJhVfRgB3m7K9H0P7X8c-2uQPJg0HEYUQvhFl1bfjfz6UGWkAQIyzEe-8-fwD-vUum07fGiL5-1aXmFfoRBfB9RrI2mxw8h1OFAdKSroRCJZ911W3pdkRmIdH6T7pZTRbtMkRP3_94oBByzITZBaxBPdlqn_6u6Wl-ObYa2MwwLKWxtxMeuGUPcBLCBIf77s0gpPRVMeibWyfnuT_9lFl5qXrjosO56hVPnyJ6OChh_F9edi_bYw95XmjJH3vyMsaNFVXDAEVLH9kMLVleI8ucXfjdUbWcjMEyK5pcbMHxBzNFJThl8zftsehGGMziQMsTpPfrCITmgoG74-0jnsSic0yl-L94u9Jvjh7jtFJinXpQv2JLrXlUSidWd4oSjmia5DRliFuN2w_39jrkCrlkj9DKRySQhtiNFeitt8ialAVY51C0BfYwclrSoZvmN5gxNFbHfWJcNGdpWwNNPR16PigzGncLDe4kB2lWRUUqrrjGFARg_SV97qVd6Gcv4bkOpMwEQj022NX4-YG4WobO4FnBu2A1PAtGOCLUVXUgnb4sVAa_Qd39v6fU8eGnyv9JdrnkiS9WQQdch5og34Nl3AABgJoDLFBNp2dk1v5s77OELh7tmcF5VMpiNLVftDvaNiRuUF29iKVf4TcrJr3vnFzXq_ptmh0gwvGuSDCLMQ_NFfKgeoEmcVm3lNSdBhsnIV6yW_PJmDqJHyd26Gpi4NSpkINWgK0JlgenT-SvqEj_645sT1LVO5KnVERkQ82GWTPRxu-8azf1JndXAZNpKChqnuEaqMs2rnckykkSLVjbLvN-v0AVHKzPK7O8Yq9kAwzG9ZndMpTB5EhsrbNjLO58grFjEY5ajh2pCMeMoBt6TmHofU9jUfkwnbJmWMIJ7ZLkpaM6HcSFot5KU5POgVWoiNPGITKFW568pNzp1noeoUIa3y66r6v0oXOfou_Mk6P9Pdcor_Mr9pPXeppuzGRLySWV2CQDS-2KkesXWPbZ8UuENHxO-uIV2tNN03qKqy3tXEXQaR7nDF7WGupoyZ7scpUfL5RSSzOyqwFockaba9mkLJO-xR5qnjz3ZrcVWlYFSSQre9lYAuuhRc1JHa-7lLqrMMFWk3nJlGkrSZgHcIBxRL47dx6NC-l_PjsE1qzvN96ROyw8xkIvlLsZVUWiYSzPUonR0_ScS2afnx6GFCv5ewe4g1x8T_HeeJqQNhRQP6JGDR_azD9zRcPRoItY7lXGGjtc_gp23V9ESpP3FN0_av3oXZvQR-JzH25CUIJeskVXrRkU8lXEwIax0YoyrYvzyIIhw_pMOIsAr8b7mhxbeAgBXP8t_9-r7zA333qUOGtt4KfhLt_7owIT61BrDAm2Sr_JhDnzcNVbX1GLxzZhhIS6YAYLIYzhKHFK6b3NbQD-RGN8gueHb-nwV6Py9QtfQY3PNWHSOVFgJ4LMNhWmkrsk2tvPo8nZk543VSB0aJqX_mNvmB-qtR9t_MBPLWzqZ3UfpT2XbbJ33LorDJH1DlJTFGWeTXrkLLKWg-doj0n5Z49gnGKQAOO6K_hj1_wNXHKQzyLnox5Hww7Ff-881GJhd_3LMGHRoId6FjAaAYC0SvUqS4Bs8Mq7vFCEHqzFsHs6LkGMELxfqgpKo8QdYh93eKMbwBfi11CltLyqXpuNc6N7seAXFlSeoOmseXNHToLywp9y_knUEQClFB0fkKyPT0M3HtWzOcFxalkJD6zcwQ9DAGZLPc9AdJW6rCFHrmgVMDbQZaDUe2vFwcuN6RceWy55Dix_FaIYekZx9eOLq8wpgRWN3NaFDbxjdY3GkbalCZZPBwhYUdRkeslXRQdI3h7Z4ayt2ooJnB2xFjWTenr3SFVzbLWdb6Jon9SXFUeiXELC5_k2dXYV0Y7jQEO-eSrntX67XuZsJv8RtZsEACuVoBbqPMyD5llKbbxT8qxfP_3R86UKf5968u8uFh9TrLeOZ1LcKPRh0IbJEY2DiMlcNXen9NNjItuJTJzP6nkWfdc02VCOzVgFqQljkloj1ZLoPig7F9X1LQK59yXdCw0IG0_JqPSwMQG2QnCWdXTKAiCNA2uFsYWuI2vTH1_pX_1HF2QNmcbj4fJzqAoncHEtZi702_fWuIlg-RtxuTQqeiNMMw4W3mcaVYqA4DVvPqv33yN3hclMXdWG3kR5xKRin7Q_2FrTDjae2yr2r4Ls6jOL8pctG8aCH49ycczdcIvPgd0wDN4WwStt3QSG25ZlB2awrxPKhIxQjmmj_ON9b0iWqkter38vZrkdeYisel84eKJ1P-xNTPXEMiqYrMkzapXQvAccyXWsVX4Pl9H3yO2BSVAlo5b6z7sIUpKMv8FpcnDcT_T7XrWWsBsnr-CsB-82MQVkTmQ4ZYdUyadGBSFZQGu4FkjQClgehFxoLxkAY1RSBYwZFUCGbCa9A2dZ3bXlcOSvFSNVM_tM7RZJ-xPGS_BFhHglK5hI87X9YH5NFQoHMPeTt5Bwph9iPBiPoB-E3OGYmmUfHKAAOBfI2uHymO5sO2dlh4HftwOZhMtqwHIW-g9b52wsLLeVlCkKXuSQzhg1GNHMUGI181reZvdiwW9_9ZLh4B0P_KOIRCPHUFnGgWDyT9uicnTcywB_Xc4Q-yTfu2QaHfblIOxs9K3nJRXSGQXL6d71DWqeHuWIxjgn_mzD5qIP9tYnXskwtTPUQc4acRpXkyMnEUum8-mevIogLIygzw3CyM3v_QKPSAWuTZd78iRO22N8ZiczKmOERoGdj9Q1T8jN1zADisVCQai8XKdWrEHwA798Iei0u3wcsfVU0LadNlVAzBQVq3m7AmyDT7YsZhliRQTt_UQGXaMMXJhBqyX5HKLNbFHUKozn_qiz9M_bKca0qb4JGHXKJEX2ih8MLsO9sdPeufXiLUmx8JBMooQSdIPkQXOqyxbO00gAGYzpcDLRsJCRYUvboocNxDVnAyVspH4H2HrkrRdaLeARUrDWbRSOvtU89rYGFzqaQphMKdGH6h0NQWeULpJJCjTOr5iCRo2efoVbSKjjtLWIAGgfrPuy1rLEHly-oAdR75x2QjcPXYBR7ODmpVtK5a9IPnQMVldtXUaIAgT81K3ZrVlSsuvgZORiht_vpp7CISOziqlSq_O1SG6GLx2-Z5tiHciwk463ILq2A-ncERPbd5aC40jOkotf4bE2-KZkkEjj8bk95tYQkaB6dRb4zBZj9-KB2Lvx-d_wloKeLRvpJByar-xAj6LwaG5idLTNDOdAJckPL_eFYj7JHvVurcAjo7GulXWDwZ7e1b3-853slKa5QaJpdC91jaHp19QoZ6-U8NwGNps3c6cQE4Orsmp6-MxiNmE5iobjmETV1e_cB8iEBAt99nDQ9JMRs0Lsg0qddfTUYcEqjNyoROSva6r3SoINwlCzJfSryYkQXhxZCCyu7Zcg530p9O_mrCOMrD7XYUuPRW_mhruFTGJgSmfhtqxZPrF-YBU5GET4ATxzofnStqXMJNDw18rFnCuvqMqBk82f_hxYREGMkutJnBTUMGfslSZF0OUz6E3kMgYjmd6jBXZctCI59H_rL_SYRpGiPHUU7vEtsO--wNhI7QI9CNaJCafCOduq7NDM2YFG7ZGK7ogZ5E-JFNrZUNjVhmc80oTkNH5SXY9cdshDOdjSgNBDm0HZ8FdGvFd02pL2L3NQxJTVVOuXo6Z9ZxXIxMh4V0cPkYtJYS5w4OssFEhKIz9rClQTUp9sdKNCBv4HxgvyFkM8WSXNW8XjhEPESmUJZRGWjgZ_dju-KddmZBHrsdCJdM3XI1SwpKfBWOAaETmS1qLm5ZDnDeF7J1LNPjdnogzJ57Z3qf2OF9JXgI7moOO2ZG4HB0xoWOKfLiorIsAZqw0I8yp56LgCofxQ3NNNsYC0b6bzTHUHkRZ4REe8VL4TKjODOvYT9-th75qFTa1EWTQDlXveLfA50u7qvno0CSJNQo6FMImoe7vM4xndoFcjb4EjlhgBoi-zPj64lODOA5qq8fUgPj2NSyKWpc75Lee7eGxdm_c7wMGA5cESOA5Rwa-uiHR_0EbWy1SO_3tBhBneBqLwvq4NszLLhbhvctgcUQAGuVEminpVdwANE8VPQmtdsmk48yYrElifuBquUnnOmx1Nl1TRV_qEIbqhYB52wr6ZIGvRp1eJ1DoHEClMFg8iC0qwdlozC9RxTXyL48kt-1OsTBgRucmZA1xZ25g9iyY1rb_PhYy2Z0Tbn5B3O2UimKjxr5fSzx18vB_E8QeoWaEf-JdfS3hYAnfTvpzdyu_64geOBuhIX_14YhY2cB4nk0JoYXwMy2cN9I_LrgxlP2bsYjEYCMrB0WVHjLdipAqnBhPDySj4Z-2E4YYF7KQOQWOz3SBwfjzphuR52kk-sYMyFDycekt-a4ol1Iwri2oIMiO9Ydfj30YPV3ESjve7vYqQ1ZOdnTe2HQBcQisEWKNQybb-ZiDLf6GcCMxBIO2OVy45r9wSujhKmRdQNC_KSNnGiEfX8Uuer6egL7VsRK-jqLLC1vwh2-nHO7JDfAvXqsHOjLt3ABVq3zvEckmJM8lg4Hnw6bS1eKiEmAP940dztvKFJz4BUswyZ1r5B18fLH6D2NFdv4H1O_JRX8PQC1wF-YX46aojkn9ZNumS7JOPlY7J0WgLrHSMyXzBCMsoeFUPnhJx78mIAE-AUHwYfKa1IXJjfIjWwAuXO4lNDCB0BSAjziddXYYizCpeS7w7Wj1It2vfdqGzZhIurMjVmF-bq6iZzKNZ5DDrAE91jOsQuzkBJNxT-A3C98A571a1_liU80ZBaotsh9kHs5bnbVvEJqdZp7YcN7warajSrDwqAzT4HV5K7hU9VQ130DyBJ9HsM_5eFYPKMWWXdIApHKF0NSfIrkm9xmSx9XcYyqRNPQWCkjHrf_arTP6U_8UvBvHxlrlna5G3PZddSoa0t46sQMJMufHr_HQD6rsZPsdXAvBy_aKgHm3dkOkpIBzNmIHUeMYkuvDC-wERQkC728wJ75NxbbRonsAxjhjxHhQ4MOz4C1Q6pMi2N1i2QyqorjIrxDOydPXM05vxPc8zQmzg5ZTi9_MbJXW2kNW83lSK2VgAby_S84_KCV4MwXEKgHobrIxcNp0YetqKzpaxOphRKGlcAhWk_9ZqJCB1AKGcw7YtUua4YEZYriVuqfuRiHMNu7n3wne8bphGmKpPs8yjJMQylZHzpQaJmbnP-sJFvsxKaktEH3K_gOSY0qqXV-5J6t3lHgQlApVV1otML8SImFV_U_-QqcQL5bw40f9AsV2U_yDH3OijQcgm1dVszux3zS8BnKZu8z2t1t4ik_OUQ2atRiSZfL9BTxFNo6Y-EDN05kuwEKfJcb90JAq9UNtl7PVYyYb4jFOYlonOhdCpvYBIuEDR_StzNNI6tkfyF4jkeUS1LqyFVlOLNvLHAdgaVQS3LFn7e1YFZKXvU8gF4zPv_AsorxHE--5h1_F5vo_mSS-LyWQn2D_t_lPWcCDWZlrXRTDOei0t8umEvh8BRx2Uf8dJD768-pDWWVvGbMD7pwFlplDwZpexqxhl5cvYg1En5hJUPYvtgBkmpXX9MfyMvkjPqqhxDZdWmXQ_7-97G442MxwPn9-LWi9MUsaUNRBUnJ-aZY5rahl0IGe6XLoxrLwa4NkqQBj_QA990iEY9Raw1hahuD38GIZ7LC0CElyCzsBpfXLcEugTiz4h6rXu6O8bmrHdA-j4sTXEjwV2xY0m0gPchxnjQXQoTiu9ba4ltOLcIj27V8aoGYuSnxE5FERwxuO1cFuhw7Rba8ggEEwHOBf6Vb2LU0STGuLt4N8sUCjsBf_MdU-i5VnSJzlBkKqKlxGf4ROeawVWJyKhAgze-m36Q3t4k0boWEInmD-Wgjs-pXBj7X9N6165EQMJ8y8THTyovo2-XqjnUP3rhaLm8A0yiOq5LbTiV7PMShrzFm9dy1B5de1mhmrFZ7XyRr6x8YeemCbbthF-Tg99_VQgxc1KGYqV3DpgU_O6P0Kr7fGuSjYD7PuzazClrU4nLmWchANxdXr0xHjAnOwKtE0fNfdm7AiP6Sgm-z_G_8ElclV_HEpyy77QTpcKC32XN_cTEe8YVbmVjVehoSUrFgWeEuLgvfmxtyhJZ0tceC0G8e4M9-PSGZFYKI2UQrfFr0MR0C9rBr-b3KvCEek7FkifksDR3VFNpdKn_AAQGsKqnJ0-LXtAj03FB4-MIuSFAszAoAcMdCiILt1uyAwO_BD19deXHGXHHSkzt-taZhLdfguI6oQE5OOp9I2JD4_9pF4ho5CWynL4BxQ-37XN4v9OD9LKZksvVTzOgCd53opFCieUYofOXuctMPmvxsU9eMaJeT8Nf2026YtpBc_9tF4GEFn8-Bkm8t71910ylgkL9GJHW5FS6o0pVP3-cyliIXrSA8dNFdIkGCkHCptqVUJRGDte3uc68MWVOCdRFzoyV675y039j8k6UGIWhpvKhFG0wAqTDMBdu-EMuGp2YDm2tauRdF6NeXEBr0eL6jbv7Lcbqn4WmezBLmRZuhA__5guwgTXpvJEdG9ffbbSIv3dnkQ9_xXUJR5Tn02VO4wyHK3h9Iw3nWXdTIBPJF6uncOqoXrlSqvKwQA6rV5J7_Uo3B1CbFQ5dMys7oukie_PX-R0Vc7gYM357fNrAOVMk40_Qkm869Z1yFmbJm1C-y0pOyaspAkAwKtHdgnof6xzZ_JjkZ8VovcW9EirLTw6kaMNlTXEQHBkqFw5TB7r8UW1wwrsQnRL-qveMwiCgIH00vhoCkC5SjG7-ZPHFm1waqxoldm6PYBGME1PIMX-CQV5yTDvdrIeOLTUDnrA_5bYPEW4qxHltUyx2KxMGOxi5QLap_oqGFKkj8zo12KWxkvnt-m34Ic6VWa-hVyw5527EO99oYGPLcQpFyygrWiRz4P6_TXKmpuWpumd9zs4GjYaoxTKCZMUyhqIsYbsjRwFXFKLbL98_pwFUw1x2IYAYgeSTfL1ZSrQOrEx_twxEwHin6M8oYcunINHIlAoV0019aQGbNaJg5l4RAMsvJNvNR7IuEg5mFcnS7stqixpf_bVNdKumfNuVpnXU7EIZAQXnH36blfQY60YpgBDxEYMNXygw742vc0Sl15_E2MTAr4nJkslSAE_xNAMcVGyhPZQjSWjGqx821gSZcKYOxX_ZwGJb8z3JRdEPnPO-Wok7wxB6twHzYvgWZEIE4q5_Huzql8LR0_qxDab-6BLVWeUSHXAy0emQQoCSciHaQ80UNyVhixqtzBxRxO6auEqbYzVrpNSYeIh3L_6xzRRnK6pRelkUNnKg1-9Tn2t88CTdt73SdyXQz7LrHCRWFTcUHKqNzjNsCmW24JtBi4B10n4Q0V55Aug_PZwb_kVmu6gOmG6cZa2d5-JG4wKOR-FUE7sq1lk5AeJFDVX0W1gEGErZ2avJD4tQ5eUlwo9w4wuqaBuvrrboA8_PnAGBSgtektb2a4_MWQTkbJ0CF5Y2k-oIr0DY5W3pLN135w9ZTGiaHDbr31mUbVklwAbevkPuQvHpgBHiNu1fj5i4rTV4u19Ru4jqmRpgfDkaAOsWAVqM3QlzTGrXFe3mjRfkmT4JCStfG5HyoeKH1ZQzhdMD0HIGNU2kCZ8hiVpwATCl0jziwq8HoWimaDqL17nhA4psLsyvh6e0iDMIS3_gKURmHokTh4Yi8LlX5PXlSJCf2Ln6A8Sb-XzNqlXV2VnDXpqQ5MuHWC6z2BNDXpfQwY8uIZYV6MySpxzhWbgfs6YU2dwBqfiRCB1s9Bw8Gn6mJUEYxL84YuuhIy1N91ycMQDPi2hzrlkdt_PnQRJdDvNthYg9rWsn8T4JBmhGeKvDCc_NlPVLXoaYJYeroXHptvXIHB06r5gD1rTPelERujZcJg06lZrQJ8Dsik6uGBbsz1xMrNCO9TVm6bI6_WIFhnDa6CF3BsmZ6ajDAVPynJq0Kd-KSe02yTGuGSi1zD918eOsN2R6LAxCjfJfQZ03fyDYsJVKpzZs-dnykeMUw7FV_tlCWAQ6MjYmvx68CaeDZGdHSMeq2RLfE9B_DqTVD_px1-DnDorrUNQqRPMSqGBwVtnKJm0FNdrHcoyYM_QW2CKnqqSfmReHCKK4pQcgLp8TzCgKyfKHeQW4x5NZBbz-AMOPjM2hTPhDmMOK1avKBXfYMycKv0LEEFKMQhojUngkOkNwyEC-LFCscqvFu6S5fVtgp63HLQKugFi8dDYaWQqp4H2eR-q7AlAXSwqH3mJ6YGwkQAPAS_n200_7hUbnSF_Pn3olhBorb0ERj_h7AE__rwPdy4vlNeYAtDfux7HkuyuX0ePMfUaVlPOYAZGOHyH3emI3UvICCK-2EOdVM9TM34wjC4RwDmIj_9JxBMCXyqJc_VoRd4arYUUv3tU7Md2041yG1K053TO-aWvSkQVuQVCrvNAqlp1AVwnLI=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_00aebfbc887e6b44016ac109e6a18487d198af03c270ddf478",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 227,
+      "completion_tokens": 2796,
+      "total_tokens": 3023,
+      "cost": 0.00564875,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00564875,
+        "upstream_inference_prompt_cost": 5.675e-05,
+        "upstream_inference_completions_cost": 0.005592
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1152,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 227,
+    "completion_tokens": 2796,
+    "total_tokens": 3023,
+    "cost": 0.00564875,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00564875,
+      "upstream_inference_prompt_cost": 5.675e-05,
+      "upstream_inference_completions_cost": 0.005592
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1152,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

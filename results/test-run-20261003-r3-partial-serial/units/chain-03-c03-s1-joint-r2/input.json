@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-03",
+  "step_id": "c03-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：普通用户对他人已存在条目执行 GET、PUT、DELETE 时统一返回 404，`detail=\"Item not found\"`；不存在也返回相同响应。",
+  "preserved_constraints": "所有者和超级用户原权限不变；列表仍只包含当前用户可见数据。前端按 404 处理，不显示他人资源信息。"
+}

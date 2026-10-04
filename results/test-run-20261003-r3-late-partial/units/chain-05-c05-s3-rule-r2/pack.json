@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：更新新增可省略布尔 clear_description，缺省 false。true 且 description 缺省时清空；true 与任何 description 值同时出现均 422。description=null 改为 422；空字符串恢复为保存空字符串。\n\n持续有效约束与验收条件：false 或缺省且 description 缺省时不修改；仅更新请求接受此控制字段，响应不回传；前端清空改为提交 `{\"clear_description\":true}`。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：更新新增可省略布尔 clear_description，缺省 false。true 且 description 缺省时清空；true 与任何 description 值同时出现均 422。description=null 改为 422；空字符串恢复为保存空字符串。\n\n持续有效约束与验收条件：false 或缺省且 description 缺省时不修改；仅更新请求接受此控制字段，响应不回传；前端清空改为提交 `{\"clear_description\":true}`。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

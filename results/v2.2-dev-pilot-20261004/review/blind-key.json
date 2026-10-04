@@ -1,0 +1,53 @@
+{
+  "schema_version": "requirement-blind-key-v2",
+  "mapping": {
+    "packet-001": {
+      "unit_id": "c02-s2-joint-r1",
+      "method": "joint"
+    },
+    "packet-002": {
+      "unit_id": "c01-s1-rule-r1",
+      "method": "rule"
+    },
+    "packet-003": {
+      "unit_id": "c01-s3-joint-r1",
+      "method": "joint"
+    },
+    "packet-004": {
+      "unit_id": "c02-s3-joint-r1",
+      "method": "joint"
+    },
+    "packet-005": {
+      "unit_id": "c02-s1-rule-r1",
+      "method": "rule"
+    },
+    "packet-006": {
+      "unit_id": "c01-s2-rule-r1",
+      "method": "rule"
+    },
+    "packet-007": {
+      "unit_id": "c02-s1-joint-r1",
+      "method": "joint"
+    },
+    "packet-008": {
+      "unit_id": "c01-s2-joint-r1",
+      "method": "joint"
+    },
+    "packet-009": {
+      "unit_id": "c01-s3-rule-r1",
+      "method": "rule"
+    },
+    "packet-010": {
+      "unit_id": "c02-s3-rule-r1",
+      "method": "rule"
+    },
+    "packet-011": {
+      "unit_id": "c02-s2-rule-r1",
+      "method": "rule"
+    },
+    "packet-012": {
+      "unit_id": "c01-s1-joint-r1",
+      "method": "joint"
+    }
+  }
+}

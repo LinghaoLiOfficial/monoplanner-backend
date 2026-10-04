@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-10-03T22:51:11.008064+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039049-5IxvBrT3JWZMsNT1kIt8",
+    "object": "chat.completion",
+    "created": 1791039049,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\"needed\": true, \"prompt\": \"只输出前端实施指令，按步骤执行并包含验收用例与必要的测试更新。不要猜测后端未决契约；如需后端行为确认，先在变更开始前与后端约定并记录。指令如下：\\n\\n1) 范围判定（实现前必须完成）\\n- 与后端确认：后端将恢复“超级用户对他人条目具有修改/删除权限”的服务端授权（即：服务器会对超级用户的修改/删除请求返回允许/成功），并且不会把普通用户访问他人资源的原始 404 改写为 403（若后端会在资源载荷中返回权限字段，请记录字段名和语义）。\\n- 记录后端约定的任何资源级权限元数据字段名（例如 can_edit、can_delete、permissions 等），或确认无此字段（则前端不得基于不存在的字段做判断）。\\n\\n2) 删除/修改前端基于角色的 UI 限制\\n- 全局搜索并删除客户端代码中基于角色（如 currentUser.role === 'superuser' 的反向判断或 role !== 'superuser'）而刻意隐藏或禁用“编辑”、“删除”操作的分支。具体查找位置包括但不限于：\\n  - 详情页（item/detail）组件中针对他人资源禁用按钮的条件分支\\n  - 列表/行操作（table/row actions）中按角色隐藏操作按钮的逻辑\\n  - 操作工具栏/上下文菜单中对超级用户的例外处理\\n  - 路由守卫或页面级权限中阻止超级用户进入编辑路由的代码\\n- 如代码中存在针对该角色的只读提示（banner、弹窗、字段只读属性），删除或将其条件改为基于服务端返回的明确权限元数据，而非仅基于角色。若后端未提供权限元数据，则移除该只读提示（即不要在客户端基于角色显示只读错误）。\\n\\n3) 以服务器授权结果为准（优先级）\\n- 修改前端行为，使其不再以硬编码角色判定替代服务端授权。实现策略：\\n  - 优先使用资源载荷中的权限字段（若后端约定提供）。示例：if (resource.can_edit) showEditButton(); else hideOrDisable();\\n  - 如果后端不提供权限字段，则不要基于客户端角色阻止操作；改为显示编辑/删除控件（或保持按钮可见），并在发起 API 请求后根据响应处理错误（401/403/404/409 等）。\\n  - 任何情况下都不要在客户端将服务器返回的 404 转换为 403；应保留服务器原始状态并相应展现（404 显示“未找到/无权限查看”页面或消息，依现有产品规范）。\\n\\n4) 调整错误映射与用户提示\\n- 审查全局 HTTP 错误处理器（interceptor/middleware）及局部请求错误处理，确保不存在将 404 替换为 403 的逻辑。若有，移除该替换。\\n- 编辑/删除请求失败时的提示：\\n  - 若服务器返回 403，应展示服务器原始错误信息或统一的“无权限”提示。\\n  - 若服务器返回 404（普通用户访问他人资源），保持现有 404 展示逻辑，不要转为“只读”或“权限不足”提示。\\n- 移除专门针对超级用户的只读错误 UI（banner、modal）。如需要更友好的 UX，可在与后端确认存在权限元数据后，基于该数据提供精确提示。\\n\\n5) 前端 UI/状态一致性\\n- 确保编辑表单/字段不再被客户端基于角色设置为 readonly/disabled。当进入编辑页面时，若后端会返回资源详情并允许编辑，表单应为可编辑状态。\\n- 删除操作的确认流程保留或优化（确认对话框、撤销策略等），但不要因为用户是超级用户而隐藏确认或添加额外只读拦截。\\n\\n6) 测试与回归\\n- 单元测试：更新并新增单元测试，覆盖如下场景：\\n  - 超级用户查看他人条目：编辑/删除按钮在 UI 中可见或可触发（若依赖后端权限字段，模拟返回可编辑权限）。\\n  - 普通用户查看他人条目：服务器返回 404，前端展示 404 行为（测试不要将其映射为 403）。\\n  - 当服务器返回 403 时，前端展示“无权限”提示（不应与 404 混淆）。\\n- 集成/E2E 测试：在测试环境中配合后端，运行以下用例：\\n  - 超级用户对他人资源执行修改并成功（前端应能提交并正确处理成功响应）。\\n  - 超级用户对他人资源执行删除并成功（前端应能提交并正确处理删除后的导航/刷新）。\\n  - 普通用户访问他人资源得到 404，前端展示与产品规范一致的 404 页面或消息。\\n\\n7) 回退与监控\\n- 部署到测试环境时启用监控/日志：记录并审查前端因权限导致的 UI 行为异常与后端响应（尤其关注 403/404 的数量变化）。\\n- 如发现与后端约定不符的行为（例如后端未恢复超级用户权限或返回不同的权限元数据），立即回滚客户端对角色判断的删除，并与后端对齐合同。\\n\\n8) 验收标准（必须全部满足）\\n- 验收项 A：作为超级用户，打开任意他人条目的详情页，界面不再显示基于‘超级用户只读’的错误提示，且“编辑”和“删除”操作在 UI 中可触发（并在服务器允许时成功）。\\n- 验收项 B：普通用户请求他人资源时，服务器返回 404，前端展示 404 行为；前端不得将该 404 改写为 403 或以只读错误覆盖。 \\n- 验收项 C：超级用户对资源的读取权限与现有行为一致（未被削弱或改动）。\\n- 验收项 D：相关单元测试与 E2E 测试通过并在持续集成中绿色通过。\\n\\n9) 交付清单（开发完成后提交）\\n- 代码变更点清单（列出改动文件及要点）。\\n- 与后端的确认记录（权限字段名或确认无权限字段的记录）。\\n- 更新后的单元测试与 E2E 测试用例及其执行结果。\\n- 验收测试报告，包含超级用户与普通用户的实际请求/响应示例和截图或录屏证据。\\n\\n实现原则总结：\\n- 不要在客户端基于硬编码角色恢复或封禁权限；以服务端最终授权为准。若后端未提供权限元数据，则前端不得自行制造只读限制给超级用户；应移除客户端针对该角色的只读限制和错误显示。 \\n- 严格保留并展示服务器原始的 404/403 响应语义，不要在客户端做错误类型的替换。\"}",
+          "refusal": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRZQIgWZRozArkBRQTY-_7bHERiKtUpUXf3DaBz8TmVxqOISO2sOh9IF9xyFmBN7ZOBGtcO0KHN6FumhyPF72CFYPhDyfVe9VE-tsRyj4K-iDOyi7Mryp3Hfjcs2cj0FcQWs7tXebQDE-P6zvNFHZjs7AYbQsW67Is5Ll3zMblk9HokTTo04HUBZbUSRlvdvdbDMcrWQH1RHxImHjgyXP9aVpFkq0xUomSgxPNINBPkTMEQkAeumDTuNzHRiI-M19MYOsLGMui1PHK9Z6aeMcG7r4JDpZiCp2gCmNeBXF1bRuBOk33_r17r2Al2F0finV-K4AfRfeRnOPwk5gJtVdi4f1CB5IG61dMz_rZm2xNc8N5_pNJX3RQiG0FQUzzG2vCQfki177DOV15uMBiazNfcvEqjUrjCAm6b-aHtzwyNJBtKOYgprCeTdQ7zr9_aZegt3jzDMsKoyH4qWk-YcLe3knpjB4o7BpgBaRRR75-sA_e3yT05_iqHSrCZIT9zgyUKPw74qo0j4eQFWcI1EHnqv55MYW8uocRgkvIoo_LuejLxZt9nVHyZhy0ipRNa_4XEvcw_ElrlF-nYf2pYIENRKZxFOIO_ct5tJAKhov1MC54GOBixjh6qarSeF9Wu1W3qrdMYa5PV91XemDr673PMwzfVE0vdXhD8LXfU-mc_7uhvZf6C3pkWJPCoAeC1aEx6X6XH4borm17v1cuhLg87Zm6WySj7HhEsJwfucfDw-iIGXxULBXq2C19cbGWw0-2yHyqT-kml_B-L9VC-ujt3bYg8RjiqM57CmR7dcdh6_Ny6KXJ3RUdFRLoamspe1ajVpqYEFkOvsxgaMmJKsAO2aI54HwymC96vcBFO8tBhT7n6ObmyDxTz8HEUkqs9aCarHypzStkPwmcmEw61IcS59CBR_iQZLkTlZL8q6gfqIyQYLPuk18PffxfMMbriL8qm6LwQiQA5-UHhyI7tm4KVDrQFzJRLo39IVizX4J78YF7eQCjHhu-73aAuCvTYEwzZwZ7h9-C5aA6GUJ3Z2Pfr1t0UylMCN07NpwzaCxD2Joub9muB3G2668Duo9Q0u37sNOgQFDeJ_SYgUPuBD1vCNpUHIpMIknv2rj9meI9kMXVHomqkoZ3UOz8KeH38rvG4QOMTGkMfY4ILg9JPhRtYd8AFLLnIzm6lmSdVngB2eiwwQ96Vh5JGrChwiiDDFXD-rrbvl-YZvkBpVU4VQhHkFKfUOemQGDwr4fZnKQyJD-QJrWy2W23089-wu3qXkccWTHCqZg_F3DNNJvCDIDC1p_ehU0FmNzxnU2-gIr2k0iO9PUOS3AjPBWGNGA-R3-SOf_AyKGu1HZpgzmH08ba2DnSeWrsptN039DfKq0WwpyFnID9up4BWMNf6lqeg0QW4j1Qn--F5fjr8-Bo6BfFoRozXbDeah3oFyPiaQodV2MvOD8Bf99vV0fPmjVG18dKekVcCYqrIJDhrURNg_QBzpzrPCdXp2iDCUeIJSKHScrEffPEWLUzC-gDBN2ZL1r_8GdNRr03Jrex0nGp5xcw9Zfw5nuwIuMx_6QdZGx_8ok7DFK59fk0b3PfniBEE5cpqVfZ3RhNjXih2M_2sa1Zbc8g4xWHfbD0RZGAQOh9NyRXeMzMDXi3F8tBjOkZNiYcujUCYEiEDkEF7kImPV3CWowjNpC5h9StXyQourtbWvTX3l0EWCdXV2fJ51khagjVwrtWqCQI2D4I__WjpsNoFNPKQelPM0I0VAsLtKRd1xVECG1nN20AArUKjTZcRtkxbebTAScwkVbPSKgTLu7Fc3bJdq3_n89B1hiApP7RDz_J6MSdYUT3ftuwuDozximu5iHx_sTnWWZIeqknFVwZ21psJsbm677kqLZvVxTdoObguS84I2zAarIJ4xvVUXpU14G7Ioo0AIo2BZSPBbN8jY4WrNP7BfZG_9xsTQtfz-C2owkV0Rp-5cYBhj4-n0E9vcmUNC9c-rrvza3sFiS1GbASe_G3Rr2ZTl-Sn2FrKx_OfbjNXzVprUfhwc8tLy7KOUDjOuDgmIQimlbLCS8ePvdFoILPL29N2MzFyszZRKfAomGnwZcBSTkvTV5geqE9ntHuA7TnsPrLomhmTMIq2ZaEiQFaUnpQJCHnIbdpFFSVkbvVN9QzIHMFqIdbsCQm-R6pcaF8O14xTpafkYI07HZvPTGwJUB3qJ4cQ9IX3KzCb9iQA9pkCtb7hWv3sp912T1E_e7rMYh1ObZK44Id0MXLAoZV1lXOX_tLEBv-DGOhILBuE06bkM8fumgoBlvGeHxPDYPVyxkMKFpnzx7rdy-E-MqY08JUwhNT4C1tIsDxQxJBsAhX3VT4YztTgDq6g2aOm6CKJjnDb9yUkM5VyRxU4jn1F_O63cVSW5suloZtddjDOqoS3isoZtg8vzUCfXU2FstMoCBoUyo-m0f6vyF-nb1_0vfMxByndhhUt7iyNV0scA1_WIAal211yPdqF8yXTj-zhvTNTw-v_tWmpDIVUYIenyrjSKTTH4ai7oBjUSBCGd_YMF82AaUTzyCy-INLOWrFbqN1u4UPN164K8vA9UtyVLaukOaMKs2bcn_LJH9iiLdzrTkJhp5sm9w0lmhVjHJKbntuCiCMHHUOENQKvAbWURtqv7lXsSGWu1qxojec3rk0JOURFKxz4-RvHamwHoWKo7Nr9-hmuG-UpC-iD-InZx5uqk31HIHYgc2c9MX3zQ0gQBfJ2rT9edOqWOC5-6D1QTs9DVpS8-iExcyuRI7ohfSTvS6z9iR0QPQIr9V-xtH4SRN3qeMG3487zTAVlTzw0eqv6tlxy_Ng_GKhW9Hy2qHmwMNAoC8WOArFKUNYaQSh7UxiuFWJjJXKDgfvEocvD4Cb_YHCTOX-q_koD3WvGS30xnXm9T4_5L-Wi3P0A1s7KK8POZVVypoWMDmnb81-w9n1V7OWuIlvZ6s7CXSuC0cKEjiG2tyE3ExjTqy_Fn04SrXzLRQ5EuYDTMZZPoCikoVCONAiiiV_OVMOav8Xykc8ci8PsiFz2IOsevsLtJOucQ-UI11dWndyOGMNVGW1O2SndZDYz966_MgWYLxSYnPhszzTnY1bJZ4pOPzKIYMIc5Gxe9k-MrtUmE9U2PH_sRjEzm1R6HeRo_TW_W1LwzJCpO5u4aOSY5fdJZPp2zPBounAtZMCPA3vDqpl4PBo6OclBeDm_DPAGxLRx2Ce-9IQ7RlmgEqKBumWy7N0Q19LtEHlDl8gfk-_BesjpOlXmHmx5zYTAiRyQ0SCtq7dvpBtMqIEYMpWqAKDXjaG4l5iBWv-q0Qi2oxQ88GndRMTT-ZUsruN4J8mRqyr0ExJu6fIcENAquPh4GmZ0Ulo-iOiKOL0zIubsbnQ4leFgacL-EGKP-LNB_BD026NyHki3ACkG1kODwUfuS37tIhJYdV0lN26c7UJU5K4VRKlmfv82MWJF95RvJwrnhQsSYJbZ8Nqq8xwv6wgeSRM5W5KD4tP4KWHsh80VC4sq4N0gjNskdVveqAxUxie5Tk_ZSGuBbG3lrn_ENa9ya51g8XrAdbhzbO1BSMp_ygooXHHNi6LFTQVE_EBGJ6nKsGKdpJOfHmshsky__ATrm9iEk8YcDOSx8susg2awQ9iX05No5tNluX5PnbCVLd8ffxNbAU8NT5n4mvDej_4nPCbN19vwiEyFHSsjBT64Wbx0Rahuun6B5Wbwr7UI8ii6FMkm718_UJK-wnkn1cC_f4JYIENtvRQI8SKcpRlvVp_ZBY_G-yzDwhVfAvOqkGcWGho3xW6e7A_PuJJshrdsULmzjFN1dR4ifRo6RDZ8Q_z-_ygfK0zzqsNk9XNz54m-cNYcIYgfrl017lJG6TFKS6ix0xI3UYad8stuaV9ipJAZQq3i9-SHibO-YdBRKjnaTdUeq85eyvlj7XphhMuNQzH6PuGjnmAcViGMWsltE8YfHhVPr10kKvoK62PRALNYIPkFJbCLhJJK9Qs3uR77mxPjfpsUWy5TY2Kj2WHwvQVFhO5tUVpp4ogW8DLjkGmzJ_1G_0hwXrjpFNSIVE1evrI2P1SVUHABMNEHvXfNPmiQRdgjTbO0lu-3cWDq-Kz7RCDQghPI8PNaIFijruckk1LOowa6JS9ELIWfD_OjnKZVxms_e42uDq7TxGzZbymZPBKjbZVOmfv2Rj5MFXpbrhIfYnJJw8ZlRiOYmsDrgNSrSrPNqTsxskxS9aOoncWYCVv6oDV-CsSw7cUfHyCZxs50f-7Df9L9lWmQdguR202DJeIvsMCBJNwyk6qw65cQCalw2pxaimvgPDzoD45UjWukaWF1EJJlVzLUTc_DxX-CqYZvyK6__qOYQ3SFGC-pYilTSCVC8swqmwj5T4tZRPHHRnB9XOYLvYOpyGzaRACeyyq2XY_8hX11qfrqQLLq2sK3HHm4IJdATIFONvCsN62ICFlqnxdfvkPr_AkMcIinL-bzw58Qynxn1ASfBnbvoX_u0owkUAd9HtoMilZsen9ZwtC51ntQAH2LVsWSrNB7EkJErCXC4F33SZtFHafb7wwZr305tOoiDGcu-IW8briXzXX8pMOv_voYXjE_spv7F0wdIhe26PNkYUKxUdMAoiCZE8hnD1KrCxfgosEd4fKR5BGNjtC_06_XtfTQzpIYLjqARwrnuD8kZ76PqCiG6WBAb1ebDU2ZqRgIeKiohfDesvukKWEwhPYfhHRT_ut3AkkfzIEM3IQbQc1fFa-URUzmgCvm6y7juDt4KeyNV6bKl62YbKpcmAVShqz8-yrIEOnwU5p4sYN5THXjZz8sHJKnMoWzn9ICcT9_ggWpHK40KTy8rMPbA0k17pLk6NXmzCjdenfYkhw5AmVSJWRv3D-wCLbEopZT2pj_909pWh_KZq8_ByyN5LbijBDqZhEFQPUb4WSXL43wgqlS1ZSnwiltZNgGJZpmIjftYMFwn_IK63i5tQ_0GV23-LvYmZaiI8EjD981lHebxWMoLqnBpVAVAQXx1T5amhj9gP_X4MNDaVyy3Zju5RakvSn-h9RQn7rIhFIaqobt-ST6Nu_gARvWM3ucVdE9BCUKhPM4Fq6FPLCVmTZKg1pF6dYkydmOTpZDco3dxfsICtyz6YbpLim_cE7PnLedvJXSx5ANAlj7HZPNEn3R1w2cjFNaPB6xZ4_5aCFRncw1DXx3YgRNUUA7NLhQH942_ihZ2ncykahbzsxX7CdCWU9GiA8z9PilJRS91V5G2IhxOClxgQzXb7Ew7tkmf5RgcYR-plhIC0qGF0BKLBAuKViFrJzrjRrlELPirKa735kzXp9wWQ15LBn9BZ7NXJlwDP_WOuKaqzP9ARDLApkm_aFx0jwkYFBDL29V0KBr4vYAXfZbKUDjAF6_k3oOtg8WHgpTNOHIZftH7CbmhZ3xrOSHHciBEgw-pNQ_BuaYpfaLpTM3_u7Lqn-J4kTWqeEZX0fBMnU0LVPlZUmVtWJi3n83so_n-hmXobjMZakxMdWyLJf83nEUartsJq-gmPSrwD_qFiGvHZB2aQplzsT86uFwMM7Oh03bbJO0I5pbrCMqkdEvvbM58ixELNvMVjhagV7sKyF12QO50XJGsnsqhp8CDF5lprK2MihUbIL7P0k1nhLtsrv498ZaXIWim4tRsQ0RGU6CX6HDU2fnSTzaz7qfBCyh_KZJ0WJYsASdw7iA3XxGXFqC_fTYDOgrVX6oNr76mpGPdtwsg1yjjtDtVca3JOa0jC87kEFWWjITYp2sMQENKZONcWSU0TqY3fr4Dgh8OnUT4T_f9Nd-gaqKi4CvWrdFfuFu0ZNAH-KrPv-7ZJL4E4KDgYwCBR_W4PPNHoMVC8AP3cnQUxA66rvt4yjVD7i2pAZM59nFGaLJfzhKiciZYf6qzDFHNnAbdoGI7RPBJNECCnXVMYfedLBbWiqruf_wNnry3MKmKOMBWfsm8zRnrMHWKvClk8wBp9A8MTX1D-jRXMS8yXAKkXBBGUN47JaRio4WnBuUMlWqg7m1R6LoGE5QBxeyHPYJH5NsA8ynfEWwleNCcbTG_-UTHOxCXFaJEHsgACFUNNgHNG2ciSXa8wQQOGYMVvP1BImeDXYXYKnoIyKk2q3JdLUSUdkT96vq7ojBZUtlo8BsU0_fBR6a-kwBSVrcYBzy0-ULy3zALqqTDVPu7fMajsZK49LJuK6f-j3y4o8FEVaN8Z6KoTRMA8Y6oH4b4X2mgWECt_WnOi-S1IxVThk1Qp3k37M4csKs2DyBk3MgCPgoCNQ_GtPqISXtBFmIhFv_m0sMhfm3DtCw2u0WDZej5xNq6VwB9eBmt0AzR_wlsgdYYB6Zilwv6T4Fi8Zuv8uGrpR4gS0pnswnAFhuyiZUGV5z1TVV5oeWObt2BwryvQUVFHoPqjpIOICC1jJm1-tMiXBuiCAYsWmYA9YnK5y61zWFmBIGMNBrHkOeAYsuyPE91AXhRjzeTDX9IQN8s7H5c6MZRTtGwNCuL4P-Nf6psXcaX3-k7UK1GzdTDaIQK_aJgjJ9Bfhw2c-MEWsyo2XNim0JH1UElEpD37WAWSsLjJIDPnzOKiqaFH01uSVP42Z0y3MqU-W-AentXgvRb_U9C0-batenCJUbALi0PmovoGyB03B44SNWk7FDOamNJWQo6Cox_1MVhhSoev6oX160g7h6hyAQ9sQXvkRbQwIwgrz15_ujnBBl-hspEZoFt7sVW6Yz2h50L6m3HK22aU9_48s9nPZ_fRMg4zCEGYdTNS5sR4vp0Q4nKegfdGvYxmGKA6CDYHuKW-3TvMb0tAZmnRYY_h3u8ilf4kiO5fDxcwep9OusJ9OENtiKOWJUWhT8jQF8Rt9AHQ4qX43pYZd5O5N4wFH5f5WW0__FfRHGukvdynYLb9V2vDMn3Be6-6UnKtVb4qzG7fZl6MMfurBiWbKHS7Z-VhIS_48rU5xBRa1f7-rmCFF-eG20cbhq0P3SoNrDKigqFvTbaWjYod1HnHVilHoRPZKROTYaocXL2IhqTXeA8-Q6MyOZ66Y1ZOJwQWWDHGgqkcdbMoPx2M_viscYsCaz8fN4Ghi-y1mnIbn28OeahhLNz1eY0kEnJcn6CNTzdQ_mtmsQWlXDbuGBI0ZrRWPmqtljJOkljcBvoNdwz6Ltb3wA6dsNgy2DKBFEFn2083D-6t99-6YUe77Bvry2G9RVG8lqWxjtZSXgLkuVSQQgEb0S40hGnMPfYcpqbUAA9qaYq4rJhPgO-X_W5R6yrq-njGjB1B27wPNmEJBzPFei4dikR9avDZtDA0d4Ijbmz-QY1V7AzY1TfbAfJxP1FhVzUvr5mfRIcrqARhqyemXVNfg8C5XYRCrpAjI3GAZfEPrrwVI1jXg0RjroPCPAERj9kfuBuZl8n3hLRGfMdtB4hlFm9uL_Ew-70DHsfegB27e8TSb4cBqylAfl5yvo9yGHy1OxJYX0ytWIxraUjQZml7rD4MM0tQt6Aa4352CFErfM_T7rYX0htIdOi4N-XDwXw_fA-tg-BbSwUVy1mdtXuZiPBdaaCWd04WF03WNp0fK3XtQohq-71xVglskBlJJldoWN8wOTzUjIJPvGSeY9R_M4V9OKdE6ngCCfLZjPq6DnPkmA21caUUFzEs_-776DIhATNtsy8QFuZaNdEBi_FpZmyx10iulQSHq2ZzRuRLwCPumAyiQ==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0806268bad302927016ac11649e8a487d1b6c6dee1f2f82998",
+              "index": 0
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 191,
+      "completion_tokens": 2589,
+      "total_tokens": 2780,
+      "cost": 0.00522575,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00522575,
+        "upstream_inference_prompt_cost": 4.775e-05,
+        "upstream_inference_completions_cost": 0.005178
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 832,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 191,
+    "completion_tokens": 2589,
+    "total_tokens": 2780,
+    "cost": 0.00522575,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00522575,
+      "upstream_inference_prompt_cost": 4.775e-05,
+      "upstream_inference_completions_cost": 0.005178
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 832,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

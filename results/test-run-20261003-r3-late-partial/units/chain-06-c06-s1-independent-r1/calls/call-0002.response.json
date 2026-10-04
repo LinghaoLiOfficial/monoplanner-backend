@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:55:54.191334+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039331-Q8ZvXBK8ktXoGpYluOVu",
+    "object": "chat.completion",
+    "created": 1791039331,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"needed\": true,\n  \"prompt\": \"实施范围说明\\n- 仅修改后端关于“单条资源（item）”的 GET、PUT、DELETE 接口在“资源不存在（not found）”与“权限不足（forbidden）”两类错误的响应格式。其它接口与其它错误类型（尤其认证错误 401 与校验错误 422）不得修改响应结构。\\n\\n目标响应规范（必须严格按下列项返回）\\n- 资源不存在（适用于单条资源的 GET/PUT/DELETE）：HTTP 状态码 404，响应体为 JSON：\\n  {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}}\\n- 权限不足（适用于单条资源的 GET/PUT/DELETE）：HTTP 状态码 403，响应体为 JSON：\\n  {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}}\\n- 响应头应包含 Content-Type: application/json（带或不带 charset 皆可）。\\n- 响应体顶层不得含有 detail 字段或其他顶层错误字段；仅包含上面指定的 error 对象。\\n\\n不可变更项（持续有效约束）\\n- 所有认证错误（HTTP 401）和校验错误（HTTP 422）必须保持当前的响应结构不变。不要将它们强制转换为本次新增的 error.code 结构。\\n- 其它路径或其它错误码（例如集合级 404、服务端 500 等）不得随意变更为本次结构，除非另行约定并记录。\\n\\n实现步骤（通用，任选以下之一或结合但必须保证约束）\\n1) 中央化错误映射中间件/过滤器（推荐）\\n   - 在全局错误处理中加入一个分支：当捕获到“资源不存在”或“权限不足”类型的内部异常（例如 ResourceNotFoundException、NotFoundError、PermissionDeniedException、ForbiddenError 等）时，进一步判断请求路径与方法是否属于“单条资源的 GET/PUT/DELETE”。\\n   - 如果是单条资源请求，按上文目标响应规范返回对应的 HTTP 状态与 JSON body，并结束处理链。\\n   - 若不是单条资源请求，继续按原有逻辑处理（保持原结构）。\\n   - 关键：不要在全局把所有 404/403 统一替换为新结构——必须限定为单条资源的 GET/PUT/DELETE 情形。\\n\\n2) 控制器/处理函数内显式返回（替代或补充中央化方案）\\n   - 在 item 的 GET/PUT/DELETE 控制器中，捕获服务层抛出的“未找到/无权限”异常，显式构造并返回目标响应格式（状态码 + JSON body）。\\n   - 其余发生在控制器外的同类异常仍可由中央错误处理器处理，但中央处理器必须遵循“仅匹配单条资源请求”的规则。\\n\\n行为边界与判定逻辑\\n- 如何判定“单条资源请求”：使用路由/资源元数据判定，例如 URL pattern 包含 /items/{id} 或路由声明为单资源操作；不要仅依据 HTTP 方法（GET/PUT/DELETE）决定，需同时确认路由是单条资源的语义。\\n- 仅当异常语义为“目标 item 不存在”或“当前主体对该 item 无操作权限”时返回上述两个新错误码；其它原因返回既有处理逻辑。\\n\\n测试与验收标准（必须自动化）\\n- 在变更前记录当前 401 与 422 响应的示例（作为基线）。变更后断言这两类响应与基线完全一致。\\n- 为每个受影响的 endpoint（单条 item 的 GET、PUT、DELETE）编写测试：\\n  - item 不存在场景：断言返回状态 404，响应 JSON 与 {\\\"error\\\":{\\\"code\\\":\\\"ITEM_NOT_FOUND\\\",\\\"message\\\":\\\"Item not found\\\"}} 精确匹配；断言顶层不存在 detail 字段；断言 Content-Type 为 application/json。\\n  - 权限不足场景：断言返回状态 403，响应 JSON 与 {\\\"error\\\":{\\\"code\\\":\\\"ITEM_FORBIDDEN\\\",\\\"message\\\":\\\"Not enough permissions\\\"}} 精确匹配；断言顶层不存在 detail 字段；断言 Content-Type 为 application/json。\\n- 额外测试：确保对同一路由的其它错误（例如服务端错误 500）或集合级 404/403，不会被误替换为上述结构。\\n\\nAPI 文档与契约变更\\n- 仅在受影响的单条 item GET/PUT/DELETE 的错误响应部分更新 API 文档 / OpenAPI：新增 404 与 403 的响应示例与 schema（error.code 固定为指定字符串，message 固定为指定文本）。\\n- 明确在文档中声明：认证错误（401）与校验错误（422）保持原结构，前端不应在所有错误上统一解析新结构；前端必须继续按状态码及 error.code 联合分支处理。\\n\\n回归与部署建议\\n- 在非生产环境完成所有自动化测试后，进行灰度发布或逐机部署以便前端可以验证兼容性。\\n- 在部署之前与前端确认：前端已实现按状态码 + error.code 分支逻辑，并不会把所有非本次结构的错误强制解析为新结构。\\n\\n日志与追踪\\n- 服务端仍然记录原始异常详情（stack trace 等）于内部日志系统，便于问题排查。公开返回给客户端的只包含上面规定的最小信息。\\n\\n变更记录\\n- 在变更说明/发布说明中列明：仅对单条资源 GET/PUT/DELETE 的 404/403 响应做了标准化输出（ITEM_NOT_FOUND / ITEM_FORBIDDEN），并强调 401/422 未变更，供前端团队校对。\\n\\n注意事项（严格遵守）\\n- 切勿把所有 404/403 全局替换为新结构。只作用于单条 item 的 GET/PUT/DELETE。否则会破坏前端按状态码分支与原有错误结构的兼容性。\\n- 不要推断或更改目前未知的错误对象字段名或格式（例如不要新增或移除 401/422 的内部字段），必须保持现状。\\n\\n交付清单（验收所需交付物）\\n- 实现变更的代码提交与变更说明。\\n- 自动化测试用例（覆盖正负场景，含基线校验 401/422）。\\n- 更新后的 API 文档 / OpenAPI 片段，仅修改受影响的单条 item GET/PUT/DELETE 的 404/403 响应示例。\\n- 部署/回滚步骤与灰度部署建议记录。\"\n}",
+          "refusal": null,
+          "reasoning": "**Considering deployment and testing**\n\nI need to recommend a canary deployment and coordinate with the frontend. The frontend should ensure compatibility based on status codes and error codes, and we need to ensure that `error.code` is present where necessary and absent where it's not. For edge cases, endpoints that return 404/403 should remain unchanged. Tests must validate the content type without a \"detail\" field at the top level. Also, should I bump the API minor version and add a changelog entry? The developer mentioned returning JSON with specific keys, so I'll ensure that's done and craft the prompt in Chinese.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Considering deployment and testing**\n\nI need to recommend a canary deployment and coordinate with the frontend. The frontend should ensure compatibility based on status codes and error codes, and we need to ensure that `error.code` is present where necessary and absent where it's not. For edge cases, endpoints that return 404/403 should remain unchanged. Tests must validate the content type without a \"detail\" field at the top level. Also, should I bump the API minor version and add a changelog entry? The developer mentioned returning JSON with specific keys, so I'll ensure that's done and craft the prompt in Chinese.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRdwPSPYZQKv9QNMOcYL5k7DCz8-58L6Bjes00L6hY_ba1MKRz-MnEE0uV8odDdS_PwG3Kn3EFi8ISrSKQq2GC60YWaLBOqsSOE6PSUipUuxXsW6vpdqVysHVD9ejnW2HRef1Ga2sW1PfoNdzwATuUldJfesuJb5b7dv8jT09O7T7LZ2TaAPHB7CkaJcI_vIh_KRhVuLqMc26sbdlX6_Ke4-mzOU9pB4L9IB2IQdxtP70IQAbFdN3wjxoOdcfSx1ywv56ZBDWqBQzagmOi0GHVCyS3pfaPRLZdLv9J9VPsGsc1wBuGpm-ktw8VoS1kX-aIYHxvj1Tzd_iLgD4YaE9fMSLBTlLpwEd0AzwCtE_0O9ANte5Fox1dUvIEnVkIObHxJDJyDlgkpoR2Y4PC9LJLwFhuN2CvD9siAbMbUVt9rnSGNsZC7srXrdzpohkpjazq4s1Qvz_O1vgA-ftjgE_COnJ7UXWBd6PrRCXIsSDf49oeTlts3wcpA-2RhrqaxMWbHY85D0SZFO2u8fJ_TI83ogGKFM16bxzOv-VEmYuyt2WYd32vhHg0Zpi9fBUQgVMoYZvflboAsn9_T_RUCqz6qtEbZ8e2UlV0dW4BTs9OQsYc_FB-sBdSp4dK3n_I0SBsTfXVTfCFq_WQQCsQsFLoAdNe-X7qjfzhPKSLZ7XxMclkXEhcA6GGb_BxrNjoMDQR4Q4XmwGtY6qCOGx7fOQlvRAwZQtLt5q2VPH20CP-dB4rmOwbSXEEyL-YvTqFlWRhKGyL4JW4j1Lp1dTTjkaeVyVeV6bTyru8z_nfYQ5QrO_x1-eGcP1LXYQHdUjhrVJS3ETJ4LR1gvVeISHmczNeNCOHAXuXxxOTaGZ-fqUuMhz0aHwVIcV3YDC75ImWIaINlIrQsVCKlmQW7XlRRW46JaTsDea1WBeJs8kSfUrj9x5wJJ_7as561rdKBfPhV5zy3jJ3Yhj5ukVIRfAeqIR0yfQQxNF_mXtwVfvBa2mXuC61FNwN_ds3lWmOVYzmuksMyW0b0PqaNW3QU0RQStpI2OYf3xW8KeTa5TzLOGNZJBbsGucC4WuWwFVuLhTzMa-Oug8iQeVh_6MM4e0tjkUjkYF-2ehbxFUu8PAAWYGV86so7oZdKL6SsRRoE9RO_dacB3L6Y7kGum-RkwS9GUYE5qlR8St2vLkborw3GknM6mWzEkPe7_1Im8la8nT8seUEcozAOgh-HtO_g6ayFpVm6aOjaMqDJQ4h3SY3Sw1tXS7CCSYMVHWoBldUERBeZr7_zav3b91VOTrJTnfimFp_S7gNPllixGKfhFpjlQgXR8gxviTvqxf5R5_yL4RYRlTMsc0cyUxgbrfLbnlJNMyZ8FiYPHVk69P3h9VMVaRTNZ-h14ByoWofs3-9JFJi-1vNuldPceWWPEGOoC569jwe8tvsCBYn12RjRHresyLqIyEf0YB2gtrbnkGtivR4vxnPr5HwP839AIerlunp9nn_y0aysvbnSZnjv4f_UzpmyLCek70LpIc1U1mT-11T4TpLrJLW_Uzc6_9H4u61KbwzMPQ_wZ0mIE4ZF0puBCrGSDBwdl0eqqxpS9NJ5SsXbQQijw7sFO64ECWzrrwHZwbnILgMUqz3IcmvfKKdhMtrOFp3Qs8mQeLrw7OxXY_81VjVRHY-m8nTRKGhsPrWFKyZ7k6IR1gT4odlCVWFMpp1GVZxrtTaV4cJVNRR2JeoTBwTVGruRjTB0u1EZPK8PfxC2Iit0A2BVMMHpwz6eb7GDAGJHS8XYh3zzY9oLLh-aX6MTnqk_zoHubMVHV8U4TFm2KNu7uBAmQIPYZrwy8VEr9zh550wqQYGVoD7YeRAyKWP4mZRzZkYG1hd6tXMEvJj9XEu-xbuYhia7F-Zj3_pUE2o7cwRnpKdBfou3m4RgSlCw8tg0ucYHbYpoyJ_uPQRsqN_B8GSOks8NE4LDHNlHDe5bgIwdoV7Vcerv-X65wGBFIUzeTAV0QjWeYSqxP08nfTjUcymOTiZO5def53_tYtMf4_KtpeK7GUWX9o7mRKwzRMn5IFLG0JhZK5vzEBldoKDIj9r2RSKQGl2R5nepy5J_eUIESU87CvIiLNnbGY8UWYoO5wQjcm-QheyBY3F2QfkOU7qEJ_oG5HD-S5pQxdFC8eRjpRTs1Fe-uqM4F4ts809IHVSpsHLpKVqRv8JJnS5TN7WQIpfenx1D6MXACYWNru89kG887St31iKwcPMlhcxuX1b4xtmf-dvqKNXgCZoR9Y6flR8Be4AU7pFAWBpEOQhV9nU3LaRwsfg81akFPIxJv8BwzsXGPMepqzGQuErr1xfN9o3U3tk2KLMfzMZRZlfiXdhJs8-sb_lrQu1qoOj4Ia5ogaNzG2TgGMweMq9alD8vHiAD63s-uUKfuaJhiIxzo0p-exqtyoot7wrqIxXajMXepFcjk0xV3DhO79I-f7eNU2687Z58tOrgLdd6xEFV88L4K3MVmM34iPXGyq7rjDT1ZTTYmZ840rewEFHz8C1ANc1ZFwa2cxTOM8uStgGi_4WIVqZmJeFL-RhE07pFSFlNPVLkPXa4AZLVO7uj9jQTblPlyx--HszAXnid4yu8FkZQH3Ml9RCwRPpvr7DVw3ICqlniv0GBjrsE9Rqq3Suddcl6S1hIHS7SpssI7xaCMebc6mJ7zBa9QmbQ3JM1hiFKVwGYA1LjkxOWxWeSv5sG6Wzsy_pIUsxo1ARoUNFDWvsPJ8HA_FO0iChzYbJcV_aWqXE93xL4210kh0Q1RJzbS49NAAigpkSiEHSBXGxqGXKWjnyToMe_t881WMbbEsGOpERQVmvj4-ZaxmPr36-bvuARM-Gmfa4NpYa8f08REJUDTA-DhaoXecSQ40DAVEJLBB8yXKvWFsG1Ovkuj8c58iN6dGngiIMVnzFpFmGH2HX8RmomqrHg1lUngG-qhno7txDyPxW_JNDOZWsG7I0eh30B7lZ5b21LjWRxVPRFYvUB7H2VraOecMGtOI3poCWTsbzeAZhHpMpJ84uE0LDOZMTFcGlCtRXAsitMsgzmbnPH3ktjd05rvkTmnq4Thl-NSXhnZy9ed5cE2rcSCBQDS1s67vRsMGs4S76azsDg4tC1LPeljgSpxLF96G3Kpv99PBL_kyBg7Cff688Kkp9NU2bzKoFSNU4nxx_a04hFjGcLIW2ZM7aAcNCq6JLnIfBsHNTydpiJnmaubRWahmAwVkZ8nBlrm1UGZGOGn3U4BTwhlfI-yfv0upbwDQgqar7Jw-kXYX4D5wk5IFqivDkMn3Ao2EErXxjSbQca-BquTgaU3oVL4rzjZtPvalPC3fs5Nf4jK1d4mg1tOkh4lbeaZNMujA6mjX-jaUC_T5TSKzGHAVE2-Q-EPjTsANTuTZtyWdTsrszLsh5gf3V2P7ceVyjUyHFF67-5FHQpSRQ1acROA3Rt4A-q8qJrYuGa8H2Doj_FEYYHZOham3V5EIQZMaAtDm7BOL8TachqaO6EIqfhSPKwuV5n42QWmNmQ0O8PHC-VD6Bx4ZpYCpgd1GD4Zf8e5egVU-uXOHMAhPR_a-YmK-iQcBtE4FM90cxecSNVJCn8yreyZMU_doZxVkKYFm4vSYtuBkAOKJ83L398wSzZI4Xkx7rexxVYG2HLCnThIR056EprmqgDaplbL5k6HU29GDuadalSQvQHfOieeKK5i8Jj8BfnMboSW_XhsbHMzTI0UE9LdQa6P3SRKQ-9XhoYlxQq6_SHxiKKDeV6KuOXm9ceuQN1pUACmIYAPr7V0ROu7seDqmNRf3Ep3zMR610eUOBwwQbj9aRQEDLM1YrkVmZz3ywgeQmqLe7xfHA4hDjstXP6erEjgOi0w_SV1cTkmY7qRPtxDXZZpFn-SPMFEqY-fI9ei0MKKSK2An0oGfUVDTY4niflxG0ArxECiuywX89PCsW757XkHS-DHr7lyfk6Gh8C9TOuv1qzpR4oOUh1AmYS80vV0kT8BEypRqiRbApCJqPUilLrTa1OPgOZcH5j6fcGUHx_KT62_E3fkWsBNbPDSTc-dhp0ErFMK97Ef_hprzY3r2R9YpPtWASElMHPEVfXBZt7mUofj_fOqXVB_K-qeXN7Fq0CVys6VxEiqF7jdNFO_p6ImpGuTu5Idb6L35VtxnsjsbOA14dJ8ktu1AuIfMtDNCjzTcoy0LF8uWFk_sCakC8YgThGS1A8rIKL6fnP6RSHpaFKHW2CkdR0o83kV0FZmzOz3mFHauvYwu7gw-Zvr0NQERbmEXjNilHMdA6pcB51EHCXe9u0wHHbs734aY7BvbFpiq67BFcsWrS8KsQ_aErRbPI3WqP49Bb_eo3uC7y8S5ddfk3od1T2RQl-MoWirk8qiPlR2rq1lLJBiLk8ilbR9D2nENOy1_18QkLjyWBCaq9z8k4Wt1wJEfRe4S_ViDEUcj1rSFKDtGyxIfyRacUHcuKjLHIHXkfn8W76TR-xfo-Fr7edhXAnamdyjJq8XmMRYSGNACZipmcLyRKaYT4HfY6dttXdEoGzWYRAotb_n7aRwG4cghGdp_n5sQ07wDQVFnx_dnOB1jLJFBr6_J42ldwwt4VElxfVGxlUZyB0gB02PbamCR-n8Lb620WzBxhaEb1aq2H5stLmpEnFAkNM-aC_L_3A66JDpQwEHNaETP4kKle5cb-q1WfXkdnIMYAd9yUcr-Q4-toyov4sIGJmzNjdpfBzvMs3vAnpSymRsym1QLkN4JaEVyV9DXcTvcqnGWvi899_dJzyqXXA_3ja69iRqwUae59sUCCIN1LV_g0UiuT1ORYKzRHtJm12noIKb88kR4W_q1PwBuCH5eFIfNJaeQcVccoYRAwrIYRd-01oqXqU2Ik2C8EUjNqo3wlOdSuhBzli1F0Jkgu_BIKWWS-wqERCIs3-RhalzyXTvtXTf_iIypFcs3HuZGKJNX0N6OdlxjKwhmX0ak6ofmEC5cwwHNzukvrU28cg8GRPsoUjLUozOQEmc0MfIv9cphIrcx2KbFH2JoVe4yV7wvgglStH98qZcMYkF5ReuFr4PXn9-nODHDFkqYMvSemiRhO5Bi-nZ66ZKNdOuh6gqT-o0E9CkpIy3JnxgDb1bv3Sd_X6FKQODW3eTfH6pfQPFTpkieoYhHlRHa70BuYpgSGxyiEhzAcYALWL0vqH3YOIV9VOTYOx23gCGfcIW9nBID5D0jM9wRRV1R1HauJlUvPIJoWlfGWym9aWRgjvwefnMsUjxG6dG7vm6pSjp-DyyLYRkq_QqeC_mPhvqc4eSuKqEvZyTO7oC-X9g0LFrRwrJ1_iZS-ZkTodvdpnwNChu3dxxFaqfFNKyYUndUcZfoyyBOs7ZlR9uBjjitXziC6MiCFNKmJOo3khhc-miXW3UbGpJaECvVMA6ug5URNK4oI6igfYahupSIZm0y765PEBQiaST088kk1DIfnxhC1yDgzv0Nda7qMHJanMQcSVI69snUvQuXOF0vmjYbIgV59I21Sa_5HioEkM7EffaH7Vcj__hEYzU135SFtMUKFGqLnBOfrJB5QHZEVZXpBBsaxCCaP2HGAGif2Iv-aZI2WXc5kd42ERkh6aiXOfpMZn0Q2Wx0RSj--IKjsNsXaFmHLVriKZOX_JukOY50ZOrstXikCJNQX2wCX3j493N4NYLYUDGTix-QVhLBfRoyS655XtQIJx7seW-YOF6RIZiq8ZF90ay8vGbBs_9lL9XsOiEaVTskuvfWZFSgpKl-NLUXqBrW1gJBR_hTKU0AEBTpWZKEhb3BqUh-HHibxv4x8Q4Nvm5HtezW7Ne-1ZbmY_bjcyoq3b0d9BtnwGHzdVtaKMkcTT25P_x91hHZJ7SzAVQ4vImMkSOPMKEwVGGAfhi0yLMXUOyCOoIGldZs9DmkjX5dcXK--J8pXNoqdYtWg4ivR6mcyTU5_kEnLFQ_UZYq1QrNCTEOjXUBiJLWd6hZjwBCyG0JEdE1FAuePxbRStV5MEIhunxmRtc1snxx2B3QqOUWs85BSb0YjZQdoUhOOCZEgMyDZUUNK1t3vrFTN2wGTnQi-ZaPYV3I8JH9tB-kPh8pe6EuTbiNEQu2qwikWmRFVunG_0kTTumyFy6Gosk38yCpEnBGS8HU0qp9201w5mxSIdspym6Fod3KEPrXnMEnHiRwqz-lR3tg3Kdw35YZvCWmi67c5fi64MZ6frHPm6QRPzzsTFF43WbFcorHd-v3m30zOQXX-4hXYmmv9wOAKOA6iMIY28ymMJrgvHaYz6qymf0SnCdmFKEMZGHGevTl08SEWiNzZGnmfacp7YIyTLHDsOf5-AZ4P1gOryM4kkWMLXLaLUAzb0C9w7YmXuVhFzxpxB4wuIpJBe4oqvnzGQ2guLc5cfTUwqLGOL0vY17YwXTGEVdVjpKVqDdEGiph0J3hppwSUzstiW6ZIGt6FNBQcnwUhdf4P3E3DCDOcuah_QKu-Hd2DRLttWClac18pbdbLNxKDdzeK_XerLxJC_FfecoDIw1aek75Ptkt6XS00tBiTzhEXGwmK-l17QfLByQsjoajxOhb3Vb4379gh804Akr5f8-2EfiaJJ5Cgg9szNoprjepQI6599aZGhcVIH5YYmV7JRydtSRXSJoXSk1v6_AOhXuWbZxX5k_kbjvqNATqyhFXLytj50H_frXLX46d2RAt288_ICoF1T_09DKnhQDzUG-MFGdnOYqi6UI2ExowehH_Vax3k4EgmOOwUqJ5aTcugkaeEqex7lEBAq3Yn9pnG4O7T3cfojpNEywGXEFp3-1DyAAbnum-RLQpQqvZJuJwy6T2wYsjCAwl0tEZ1wrFHBpt3-jOORn3SpaVPN7jjzcs72xeYdKZu3s9Ge_bijtFZoZUFIT7s7zUplcDTqUm7eZTu6t5xeQloExeRfLXThXdxo_ZKHgNVAFujzWXxQqwia1AnVVqoKccv-b-YYZMvms5-oRpsu3gpn364S5Dm5XLw68OWVG1s3LCG3BJR4N9KbzsfGAmrI_qj5k7JKIvajoofy0htn4Sb7A6lA0-qVocaApAxYWGc1SUQivTM7_0HBAFZcdtiFW9-qCKI2mD6ghV00KRCHIUzYXJf62pG-PuyT8kDSG2jE2_9e1F1QIGArGTLc5962qRZ_1h-cLQhM5Uciu36ZbSBJBBoOjEMNP8wUuGXZfPrOPoiV3EugiqlzeC_4sOGOIC5bEzR_njv_F5IpMKKD9jLdRoAMUqVlNiXCF1a0lNgffaAizZxd8dOm0zCa_WLYIUtBfGDHVGyGdSNLSpzDntyQgER1K7QioczTm7QRi0vG6rNtZeavFSFvww_t3VkTow3wlJ-ivI1ZsI5j8xBsihm-mxmMkqdfHVzK_Qmg_8_0c4-1qgNrZ4hEgd6qJxNVNymE5oTDFOHnYPYW_JlrmKt4OXLr3Lkpg7k8UKTXcmXAQQywl0zKYLKs8zrrKHbCppT7KquHuFI0kCIbA61u9N5-PQUe9NjMcWHUIohp_GngaCHkL63-CjQLbjzc9fLVXynLKrGe1jE7xP3dOBb9kLhahqHI-JI7jaVHsRi4Rk2N3uhtoQrTAyyWJtTshJVnjkKG8gPdK8Rvadi_0U1hX1kX614zmqCPBmhcP417pCsXauNhlmGGwGxykyLHJHAMTFS1ZwscXPofMYz8qc9hqjjm_dmlBDbvsC4pIsMAwl_YzzZ58EjQvGay3USoOl9OSjICEkFtR5dIKtilQMflOeVaSjBr9U1jdJJUJ1dDRF5UbISpm97IpRfWWuNwUnfTr6nmqC6mVSLZ8u04WknIcQw1Zkq-xXad5m14k2soacNHjFEAkNmtM5Qd5Xqbkk0OtJKcs8Avrx-Zsy0U1IhwLbp1jYiI_8NvhpG3xTgRwZ2LaHFllkzTfSfRM-Z3rEm2qq2aeZbXqmz0R5oKusF8jTMHMqy33AkA8ENiydqTPGTn2QUJnDcaRiTDQMv2a-C0CG0Za--hgATLBN5EtM5KmP57sAk-Re8dtkqYnOgryCfC248WVcGwfuI4WgH6rfObUdml9ewCRPgjmpIRI1xgAKEM9-C3TijCcT2sasAH0G9KtEXJkn068nZCCcwuxj-qFFQQZv512Fg8eKN3B-DPnqSC-9udBtE06S6u37rOOzGBj6RG5Zn026mDe2V-KD5f8R4Pi1-Qc4PdHPHmGZeNRvWHla6X7SNsjJ6NPUzoD6ynCS_mvtK-efqFHQFFO_aQZRt8AI9FVg1Ts7ag6iwgr2akwHcr7p85zSzbeDkIH6o8jA7YS_lws3K3Ihc7qn0_Oaz_Upr3wTjOKn3ICVYkEXpPndRiaMa4iduq3NB4UN84RsysbKibuIV5I-RQvCuvMPw0MarVAxgx7WFYREZYFrE8DsjXhaEShUsXXtpwCa-Ue1TMraF5TBCJClkTUc4p4MZtyv1opyZBLg4gPGS1fEUMzgQBg_XLzkcp1gRaZt2ILGFY28k8AmXF4cTKbphfkQDW2tLZQ1zwLR1aHYUtp4CjaYs2Jsypzhmh-N1VmLp5xIDEnTO_P2vaDfokjYnF08YoziRdczRp8vDLwpClwjS1Ii3_MhcQCLXwIf_v4s_uJunIF7A5qhPhlo70bznviK3NKLFxOUiWK9oCmSYnpe8A758BPawJqeNWU0gBUMnfGs3aH-m3xFCjBcyBkW9XFYLRKusPDHXc4GFT_ctwZp13nx3iv5aPCWqw-YDc-JFfYsusTW91f05r0MYof9CU7j8rwTbhGNdHy7qtVO6dmbb2mBzifLkQdr6q5-aWuWTHKA1DAQN7FWKutSO7EG9po15HdgahyUk64jPaxAFqGZoiduvN9ng4viaRoVqxeqtjYyfoGiUt_Z4rDAxjNw6lid-2LO3wRUmMsI7CxjzA-tqCLTCwxzZJXWyBA4voUAUXcmg8eWM9wdqc5IIZzqOMrOJSiwKAt9zHHuQ1YIhVjkwBrsa0hx8gVQ1sJElbkcyFKcBP3bxin9syUD0pwE3JlZyLTHaNW9g8snyGCz4vhgExFMyxQvoGV4xarOUjK2IKyRj7304Wxbmeqp6Y8CDqjnYkUCn84UVkCd-uBy4DBek2Bq7ItIbI1yFhzs6_Sg3nm14LVv5gOk24EWlgcVYAELHcgA0sa_ZTGmPoD6U1Xdfm_KOmYYF6EHAleSOn-ckfEaTxERbNazP6d-NSP0JELF5TnOooyH-Rpb88clUKBS_7iqA_o6fgD3qOFgZSUcc06TC2aM4Miek1fiqaEo1-nGQjj9YgEOaZUmU3Rq_8_CNVWzecktNlkdX63obaFB_LM5UU4vAD5SZK_ldEs08IcZ2P0d2WqM-QeKNkUObtuhJ8udjLWdscLhOtD4ve9yuvmUWRteYWm_vURuRXVo9HUrFdLvTGWekh8NveWfrxhnsPL6Z38l0-JRl339O65Jgi-wUCUb-98Dw0Q_Di92Wtmvtomkeef3j7xxK5R8QMyQJij1zvw3qaHi5phzuUaDSa_xQilPl-a9gqtkcjRP4M5F6mrlc8qgV3vbfnQQwvNyPRWWL8ZP0P7cfbNm3gmMzi0hQhkxanCn101caqfKs91Vo_2GfMztOpj66ctPo6dH-w3gZKPLvxd615nxfqCpnCkwfTKYBJhY6SUe5jG0ssjIWRUQuAS1BUTdZipdAZisdFH.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0439feae8e0652d9016ac11763d16c87d191639aa11e3b3ba9",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 242,
+      "completion_tokens": 2770,
+      "total_tokens": 3012,
+      "cost": 0.0056005,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0056005,
+        "upstream_inference_prompt_cost": 6.05e-05,
+        "upstream_inference_completions_cost": 0.00554
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1152,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 242,
+    "completion_tokens": 2770,
+    "total_tokens": 3012,
+    "cost": 0.0056005,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0056005,
+      "upstream_inference_prompt_cost": 6.05e-05,
+      "upstream_inference_completions_cost": 0.00554
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1152,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

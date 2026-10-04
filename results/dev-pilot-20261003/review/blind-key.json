@@ -1,0 +1,59 @@
+{
+  "schema_version": "requirement-blind-key-v1",
+  "mapping": {
+    "packet-001": {
+      "unit_id": "chain-01-c01-s1-independent-r1"
+    },
+    "packet-002": {
+      "unit_id": "chain-01-c01-s1-rule-r1"
+    },
+    "packet-003": {
+      "unit_id": "chain-02-c02-s3-independent-r1"
+    },
+    "packet-004": {
+      "unit_id": "chain-02-c02-s1-rule-r1"
+    },
+    "packet-005": {
+      "unit_id": "chain-02-c02-s2-rule-r1"
+    },
+    "packet-006": {
+      "unit_id": "chain-01-c01-s2-joint-r1"
+    },
+    "packet-007": {
+      "unit_id": "chain-02-c02-s1-joint-r1"
+    },
+    "packet-008": {
+      "unit_id": "chain-01-c01-s3-joint-r1"
+    },
+    "packet-009": {
+      "unit_id": "chain-01-c01-s2-independent-r1"
+    },
+    "packet-010": {
+      "unit_id": "chain-01-c01-s3-rule-r1"
+    },
+    "packet-011": {
+      "unit_id": "chain-01-c01-s1-joint-r1"
+    },
+    "packet-012": {
+      "unit_id": "chain-01-c01-s2-rule-r1"
+    },
+    "packet-013": {
+      "unit_id": "chain-02-c02-s1-independent-r1"
+    },
+    "packet-014": {
+      "unit_id": "chain-01-c01-s3-independent-r1"
+    },
+    "packet-015": {
+      "unit_id": "chain-02-c02-s3-joint-r1"
+    },
+    "packet-016": {
+      "unit_id": "chain-02-c02-s2-joint-r1"
+    },
+    "packet-017": {
+      "unit_id": "chain-02-c02-s2-independent-r1"
+    },
+    "packet-018": {
+      "unit_id": "chain-02-c02-s3-rule-r1"
+    }
+  }
+}

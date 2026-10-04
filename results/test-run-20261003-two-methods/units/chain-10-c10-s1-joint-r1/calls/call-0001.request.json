@@ -1,0 +1,34 @@
+{
+  "created_at": "2026-10-03T23:03:36.377038+08:00",
+  "attempt": 1,
+  "config": {
+    "task_key": "prompt_pack",
+    "model": "openai/gpt-5-mini",
+    "temperature": 0.2,
+    "structured_max_retries": 2,
+    "provider": "openai_compatible",
+    "endpoint_host": "openrouter.ai",
+    "timeout": 90.0,
+    "stream_read_timeout": 300.0,
+    "use_response_format": true,
+    "extra_params_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "body": {
+    "model": "openai/gpt-5-mini",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Generate synchronized frontend and backend implementation instructions. Decide required scope from the requirement. Do not invent unresolved contract decisions. First enumerate every explicit contract fact from the requirement and preserved constraints; repeat each shared fact clearly in both applicable side prompts, and state any side-specific omission explicitly.\nReturn JSON matching this schema:\n{\"$defs\": {\"PromptSection\": {\"additionalProperties\": false, \"properties\": {\"needed\": {\"title\": \"Needed\", \"type\": \"boolean\"}, \"prompt\": {\"title\": \"Prompt\", \"type\": \"string\"}}, \"required\": [\"needed\", \"prompt\"], \"title\": \"PromptSection\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"frontend\": {\"$ref\": \"#/$defs/PromptSection\"}, \"backend\": {\"$ref\": \"#/$defs/PromptSection\"}}, \"required\": [\"frontend\", \"backend\"], \"title\": \"RequirementPack\", \"type\": \"object\"}"
+      },
+      {
+        "role": "user",
+        "content": "需求：仅前端：新增条目标题展示规范，列表视觉展示超过 30 个 Unicode 码点时显示前 30 个加 `…`；完整标题可通过可访问名称或展开控件读取，编辑框始终使用完整值。受影响层为 frontend_pages、ui_design。\n\n持续有效约束与验收条件：这不是输入长度限制；请求、响应、存储、校验和后端不变。30 码点不截断，31 码点截断；不能把省略号提交到 API。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+      }
+    ],
+    "temperature": 0.2,
+    "response_format": {
+      "type": "json_object"
+    }
+  },
+  "body_sha256": "1ef68614d506e141708cf7c1dd294bb65d75389e48a4f941b904483779645073"
+}

@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：条目创建与更新响应新增 display_title，按第一步规则计算（完整标题≤30码点原样返回，否则前30加省略号）；前端创建/更新后立即反馈使用该字段，title 继续保存完整值。受影响层为 api_contract、frontend_pages、backend_services。\n\n持续有效约束与验收条件：列表与详情响应不新增字段，仍按第一步在前端展示；请求禁止包含 display_title，出现即 422；第二步服务端日志保留。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：条目创建与更新响应新增 display_title，按第一步规则计算（完整标题≤30码点原样返回，否则前30加省略号）；前端创建/更新后立即反馈使用该字段，title 继续保存完整值。受影响层为 api_contract、frontend_pages、backend_services。\n\n持续有效约束与验收条件：列表与详情响应不新增字段，仍按第一步在前端展示；请求禁止包含 display_title，出现即 422；第二步服务端日志保留。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

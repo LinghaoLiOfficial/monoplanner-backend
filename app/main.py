@@ -1,3 +1,5 @@
+"""FastAPI application assembly, middleware configuration, and API registration."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

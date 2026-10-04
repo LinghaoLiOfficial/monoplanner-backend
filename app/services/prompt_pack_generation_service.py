@@ -1,3 +1,5 @@
+"""Persist and version prompt packs generated from the current project state."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -15,8 +17,6 @@ from app.models.business_requirement_story import BusinessRequirementStory
 from app.models.change_set import ChangeSet
 from app.models.context_pack import ContextPack
 from app.models.generation_run import GenerationRun
-from app.prompts.orchestration import build_prompt_pack_prompt
-from app.prompts.templates.prompt_pack.output_schema import PromptPackOutput
 from app.services.llm_orchestration_runtime import generate_orchestration_json
 from app.services.orchestration_context import (
     change_set_snapshot,
@@ -24,8 +24,8 @@ from app.services.orchestration_context import (
     project_config_snapshot,
     story_snapshot,
 )
-from app.services.orchestration_validators import validate_prompt_pack_payload
 from app.services.project_service import ProjectService
+from app.services.prompt_pack_core import generate_prompt_pack_content
 
 RUN_TYPE = "generate_prompt_pack"
 
@@ -115,23 +115,20 @@ class PromptPackGenerationService:
             if change_set.source_story_id
             else None
         )
-        prompt = build_prompt_pack_prompt(
+        content = generate_prompt_pack_content(
             project_config=project_config_snapshot(project),
             selected_story=story_snapshot(story),
             change_set=change_set_snapshot(change_set),
             change_sets=[change_set_snapshot(item) for item in change_sets],
             old_versions=old_versions,
             new_versions=new_versions,
-            project_blueprint={},
+            generate_json=lambda system, user, **kwargs: generate_orchestration_json(
+                system,
+                user,
+                llm_client_factory=self.llm_client_factory,
+                **kwargs,
+            ),
         )
-        parsed = generate_orchestration_json(
-            prompt.system,
-            prompt.user,
-            response_model=PromptPackOutput,
-            llm_client_factory=self.llm_client_factory,
-            task_key="prompt_pack",
-        )
-        content = validate_prompt_pack_payload(parsed)
         pack = ContextPack(
             project_id=project.id,
             blueprint_id=None,

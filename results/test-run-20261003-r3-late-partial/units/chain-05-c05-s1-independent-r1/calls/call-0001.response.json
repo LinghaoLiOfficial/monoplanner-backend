@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-10-03T22:53:35.792732+08:00",
+  "http_status": 200,
+  "raw": {
+    "id": "gen-1791039194-a6xpgkJ1Gaw741i6Tyxy",
+    "object": "chat.completion",
+    "created": 1791039194,
+    "model": "openai/gpt-5-mini",
+    "provider": "OpenAI",
+    "system_fingerprint": null,
+    "service_tier": "default",
+    "choices": [
+      {
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "stop",
+        "native_finish_reason": "completed",
+        "message": {
+          "role": "assistant",
+          "content": "{\"needed\":true,\"prompt\":\"目的\\n- 在 PUT（更新）接口中严格区分三种语义：字段缺省（omit）= 不修改；null = 清空为数据库 NULL；\\\"\\\"（空字符串）= 保存空字符串。前端的“清空”操作必须提交 null。创建（POST）逻辑不变。\\n\\n前端实现要点（概要）\\n1) 界面：保持现有文本输入框（description）并新增一个明确的“清空”操作（按钮或菜单项）。该“清空”操作的语义是提交 null；手工删除输入框内容并提交应被视为空字符串（\\\"\\\"）。\\n2) 状态跟踪：为 description 字段维护一个“是否被修改（dirty）”或对比初始值的机制，用以区分“未改动（缺省）”与“改为某值（包括空字符串或 null）”。\\n3) 构建 PUT 请求体（application/json）：只有在用户显式修改 description（dirty=true）或执行“清空”操作时，才把 description 属性写入请求体；否则不要在请求体中包含 description 字段（即 omit）。当写入时：\\n   - 如果用户点了“清空”按钮：set description: null\\n   - 如果用户把输入框清空（手动删除字符）并提交：set description: \\\"\\\" (空字符串)\\n   - 如果用户修改为其他字符串：set description: \\\"新字符串\\\"\\n4) 严格禁止任何自动把缺省（未被修改/未包含于请求）转成 null 的行为；也禁止把空字符串折叠/映射为 null。\\n\\n界面细节和事件流建议\\n- 初始渲染：把后端返回的原始 description 值（可能为 null、字符串或 undefined）用于显示/占位，但同时记录一个 initialDescription 变量用于后续比较。\\n- 用户交互：\\n  - 文本输入 onChange/setValue 时设置 dirty=true；保存当前输入值（可能为 \\\"\\\"）。\\n  - “清空”按钮：将内部表示设置为 special value CLEAR_NULL（或直接设置 value=null 且 dirty=true），并在 UI 上显示为空；标记为已修改。\\n  - 如果用户没有触发 onChange（即没有修改）且没有点击“清空”，则 dirty=false。\\n\\n构建请求体示例（伪实现逻辑）\\n- let body = {};\\n- // 处理其它可更新字段（按既有规则）\\n- if (descriptionDirty) {\\n    if (descriptionWasClearedByButton) body.description = null; // explicit null\\n    else body.description = descriptionValue; // could be \\\"\\\" 或 非空字符串\\n  }\\n- // 只有在需要时才把 description 属性添加到 body；否则不添加\\n\\n前端验证规则\\n- 在用户输入描述文本时，客户端必须校验非 null 字符串长度上限为 255 字符（服务器验证仍应保留）。\\n- 对于清空按钮（null）不做长度校验。\\n- 如果长度 > 255，则阻止提交并展示错误信息。\\n- 对于 PUT，如果 description 未被修改（dirty=false），也不要触发长度校验或错误提示。\\n\\n关于创建（POST）操作\\n- 不改变现有创建规则。即前端对 POST 的行为保持原样（继续按既有约定发送 description 字段或缺省），不要把 PUT 的 omission 规则强加到 POST 上。\\n\\n前端与后端契约注意事项（只限本实施）\\n- PUT 时：缺省（字段不在请求体中）表示不修改；若后端尚未明确接受此约定，请与后端确认并遵循该约定，但前端实现不得把缺省自动改为 null。\\n- 明确避免自动将空字符串或 undefined 转换为 null。\\n\\n验收检查清单（前端侧）\\n- 新增“清空”按钮并且点击后提交 PUT 时请求体包含 description: null。\\n- 用户手动删除输入并提交时请求体包含 description: \\\"\\\"。\\n- 当用户未修改 description 时，PUT 请求体不包含 description 字段。\\n- 非 null 字符串输入长度超过 255 时阻止提交并显示错误提示。\\n- POST 行为在界面上和交互上保持不变。\\n\\n测试用例建议（前端自动化/手动）\\n1) 初始值为 \\\"abc\\\"，未改动，提交 PUT -> 请求体不含 description。\\n2) 初始值为 \\\"abc\\\"，点击清空按钮，提交 PUT -> 请求体包含 description: null。\\n3) 初始值为 \\\"abc\\\"，手动删除全部字符（变成空输入），提交 PUT -> 请求体包含 description: \\\"\\\"。\\n4) 初始值为 null（或未设置），未改动，提交 PUT -> 请求体不含 description。\\n5) 输入长度 256 字符 -> 阻止提交并显示长度错误。\\n\\n实现语言/库提示（可选实现细节）\\n- React：使用 controlled input + useState 保存 value 与 dirty 标志；清空按钮设置 value='' 或 null 标记，并把 dirty=true 与 a separate clearedByButton flag。\\n- 构建 JSON body 时：不要使用 Object.assign/all-properties-objects 然后 JSON.stringify 全部键；而是按需把 description 键加入到 body 对象。\\n\\n不要做的事（明确禁止）\\n- 不要在 PUT 自动发送 description: null 以表示未修改。\\n- 不要把空字符串自动映射为 null。\\n- 不要更改 POST（创建）现有行为。\\n\\n交付要求\\n- 提交实现时请包含：前端变更代码片段（描述输入、清空按钮、dirty 逻辑和请求体构建处）、以及上面列出的验收测试结果截图或日志。\"}",
+          "refusal": null,
+          "reasoning": "**Implementing validation and clear actions**\n\nI’m considering using a \"dirty\" flag or comparing values to check for changes. But if the user clears the field, I need to ensure it’s handled correctly. The requirement states that a \"Clear\" button should set the description to a specific null value and mark it as dirty. I also need to prevent empty strings from converting to null when building the payload. Lastly, I should enforce a max length of 255 characters for non-null strings to avoid errors.**Clarifying create rules and request structures**\n\nI need to ensure that the create rules remain unchanged, so I won't alter the POST behavior. For the PUT request, I should include examples of request bodies, like having no change, setting the description to null, setting it to an empty string, or updating it to a new string. I also need to ensure that JSON encoding with JSON.stringify will handle null properties correctly. Additionally, I should represent this in FormData while keeping instructions concise and in Chinese without heavy formatting.**Creating concise instructions**\n\nI'm planning to craft instructions that cover several sections: an overview, UI changes, state tracking, payload construction rules, validation behaviors, examples, and tests/acceptance checks. I won’t assume anything about the backend, so I’ll stick strictly to the requirements and avoid any unresolved contracts or history. I need to produce valid JSON with the instructions as a plain string, ensuring newline characters are properly escaped, and keeping everything concise in Chinese without heavy formatting.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Implementing validation and clear actions**\n\nI’m considering using a \"dirty\" flag or comparing values to check for changes. But if the user clears the field, I need to ensure it’s handled correctly. The requirement states that a \"Clear\" button should set the description to a specific null value and mark it as dirty. I also need to prevent empty strings from converting to null when building the payload. Lastly, I should enforce a max length of 255 characters for non-null strings to avoid errors.**Clarifying create rules and request structures**\n\nI need to ensure that the create rules remain unchanged, so I won't alter the POST behavior. For the PUT request, I should include examples of request bodies, like having no change, setting the description to null, setting it to an empty string, or updating it to a new string. I also need to ensure that JSON encoding with JSON.stringify will handle null properties correctly. Additionally, I should represent this in FormData while keeping instructions concise and in Chinese without heavy formatting.**Creating concise instructions**\n\nI'm planning to craft instructions that cover several sections: an overview, UI changes, state tracking, payload construction rules, validation behaviors, examples, and tests/acceptance checks. I won’t assume anything about the backend, so I’ll stick strictly to the requirements and avoid any unresolved contracts or history. I need to produce valid JSON with the instructions as a plain string, ensuring newline characters are properly escaped, and keeping everything concise in Chinese without heavy formatting.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABqwRbm5H1VCiM3LdEUWeWcAPM8BMFCvAGzm_uYu38JmLPHSdK_D9ePdHnANHP14uSLJFWtMTiCa-z8xNJKZX0jJ6xqI_a1JbCmewOxQOlh_8lYNBLaA3MlwF9P1GtuU0lOp65RIlGGp1czr7Dq11ZJs0vc58Q_Qa2JSIr8P-3Ag_R5T7TFpummYvUR6nczp0jowGkswYOq4IAUMvjSsyMC9rL3GcB5DWazOtMdNcHDFevGkzfYcEjytVsfm48WVqb3S6Q-5B-6TkQu3DNx3fAJnMKNxjnsHcqkvt1X2FU2BJEWHxnwZNkubICfOdICCdAdLMRH2KETTM6g4FvdvZ7IgzT3lPTeiLAY0bbuiUtXxnLrqL1JCw7XIJJ1KGvYTHd1vPRSqZN1fzIgzay25MCodWhVcVizLXMwvUTECIJMdXbj2ljvR8ks84BusipipA50lwStIFzki8aHN2t-Ti3JiYsizCbDk9NBojN7Xil0kOQjcoB60plL8YsnJ3WFfqhGVLPbFG14jftxlyc_zGyUT-oGXGr4MlsScSVndDDbatSdcFMz9WZxvZrkmE7Qb-u1ZtT7hGfIXq5M3KMDXiHx44aqIqAcPnbNA_AaAcH2BDYtlUWhNaIv4lCaPb8BG_WXoAPzBtxJ57wrpi7-nOOn1H4J3NowWiXKBU5Yj0sY_DQVBI4qSwO2HFDJjqNCWOTdnrJJuVvUzLt6xjqBW0v9iX2cZNZh6GiBr2UtyrOc3m9M12av-kpXBCQS1do5XK3uVnYZ3AmMVtrvIpGn8HVEHqq7p5HGAWIKQ3jGy5zRrRysSL0cFoxMi6Fc0nPUrDgxeiNYI2OMn7djUn1GMD3Va61yQWXLNcjXYAzMqyCOuxfQdVoZnZ4doK2sn21U2sp5AaPJynaynT8BUc8izi24WqDgb6LMY7dcm92JacVM68_lZVDDHkmX22ZTrrvNbJOSfUs27Y8x1kzqVqNVDy0TcY45pyF2NUOIhTVTDV9EkE0U-IshwLdfAabzEHGIOW-9RnLSIbmrsPXtB1SvPyBsZN2omOxmqT5buKqKfvmUMTOgF2bwQz3Iv_oDziXJ54tGQxD2kNGjFBQyeXk1zuwfA_ttqVkh3XtQoCe-UZizx-uUIKiPh8v_T55jULMEeW_rEXMG4qyrgNBLx7e8CTGxqmGZ5xoA60gFnzbS4ed33oiatjqd60qlR5aQ30DMNqoAPzXXdYFn4avkjVzbLPibDZXwN0D7SVH8vvEezEeNFuOsFE4xs0eDPRTtF8dgyW3rbtXcT2GkJ9wnKeP-bqEC2VAZ2tdx751LZSjkhqNlhpgauR3K1DAjkoaYLg57rMlv3iznfrP10AjrNwCRtSDxR6WBQs_kx9Aa7OZaCv-iGOriIFONMmi-3zBTw4LTGLu-P2Dde60ICrlnkM9s7xcgeB0aF3L1zhRf6MpI0dIB839UYjcndYPo-me6__YLVlX0Wpv7SBxVc7Tuf2N4VatyKKyj53TxvwXqStgiwYDrLCKxJ8luh4RFV7ZveYCs3FdHjacUsfWplQHWIOnAnGXanMCriQ2gDw4NxUkrigWWIz4A1AejY1n9VUQFte71ecYbMv-BnRjPrihQWxgdnTnmh5lR3L1gupv2OcvZsUfRWOLANxFQ66dMN1NZphkdVdUX3Seurng04RgliBfbCYDHP8RpwKutfiTJkaXQT06A5mmX61Ei6Xim2oiOLwYsxk2mOGwNNqjnAAXPfGlINyq3I9Gg71Ked6CniRUEjCwH9H0YPF5nfIkw45CzJdGdLRwtUNu8neoN9lbeIjwzKpXKRfWD1vAMQpE1FYLx1senW0JyljrLn-Nl6jEUel2IGPedgfh-OVZ55Q-sP9aW7N4q-l1utgk4AqHMLxKXBIYB02rNf62hCboT9xeSGu8hFunD4xSU5tXjZ-R5EtsGuCjCLe6aeUTCdnf3I_c64xjIltuYol_CJOzb9M8yC2gQtDz2JyHv7ftxTPusczZoCU468d3-2Q1aNY5ytXOKXaVlzQ_aylN4CBwCgi2PCpmtiOa4sSuwzjPz84g2N17C2-1b1hM3gIX4JSkCcCv3cm91Bi-nTcIAj8yx-7UBF3dMOCrrrsd8LQXoo9xdGIkOy1X6iKXE-2dyk5OQznQRPt-zytyy8bYRZ9vOI_1UZhdcAcM1YxT32CG8bYm5v4g4unyqp1-vrJSuhgltGjF4r2i98bWzM1NVivX1uMKPNcp9dGNQZQdHafPIAxH_UBZhp0nQ_-Po43rT5wDbAMaTgwAOVnHwVTbvLsn4L3orClGPUOa5WJ5c7j6kw_IhwIqmxQB6MOFGPpe1AG7RNOHkvDynY6Q1mYMfPICt_k49zg7WNEhov_L8TjfOnCf7jNg863F0Xt10pi4VperxGTn-dixQaq9dEXeRVPL_XuEA-pmGFos4nfXUZIi0hTb_SsqgU77rAEr0vRstJhoWCIVS0l98gWiW4K98jJrUCMvukP6mttXRUyuQv3Y_l3msc3pTFH6Xk6dkbSUsiDxixj_jTxQb4_q3k-v39IEJAH5hYrPGGvtEh_jy5hEUoaW-rUhiP-B-Am5yU6gBV53dN88QTLi1IAKUcTRpy_lLJ7LtweJaMAwuo-6rBsHSQnHvpqpqsuTmiEB_YgnL0sf5NcQOcFAICIbnlOf_TqsbSjEOtCvEzDhHX8W6pe6NZ1cSpl8-6_oC59dgDRqdUU0H8yT5hAn9BoZaqvnDFkD5zBhu4iFLGfS_X-jHEaQU4j4bHhQuq0aSThCIsntMv_TJNj0wQTs-Y6fazPcH9D3kmDAySQHk3y5TW8JID1xI9MEDE8rFvUPkxwrFJqhBzjS9VRQLVT76gorrBK2LOpyMIZI4m87kW9lwOHvwEGzS2-N4xd0_BN-5LNPu6XGET7fc8T1dONQahRNh7rfouWNq1AcFU5naSem26C5-LyYf0fEMsSX2JD5f-eS8Ux07ZB6zb2gyqS4ynW_5k4OvjXw03fWCwljFIKq359gURAJOTRfQeIetAx1r8hWbkRdyf_2hufr-8fm6qln1BG4JeELtq3wb5jB0QeIx6P2aNHcsl07K5Zl18MTdursCzgUdL5bi6Hr1fDfKArQ1s7fLdSVkEjx2hJrDku45_sbmTcatiF-R9qOVRhI8keKQw7-5ahPqbbLRuydVHRDVIdnQisJ-UM3dlrjsY6N1dqfiAyHLBwN3337SeS5AiduTNgML5ONItCZJw6Dx_q-jd9rtxFEHl7lpItl8o1H1Lvph8Uei2tIsBQ_SFOWsHi83-TjA4pUi2G1XJCMy4jB5qd-6i9ilRlvwXlRYZBv7PPAZBGDAWpw6aFBQelAMUZtmtr9MMmopDmoWnURvHxnQqf13vcPZSoMrIN6cW8RwxNhVn8e0ZJnhyN05ES2BjKnlaXMJJb0K3xDtS38SsRxEWJ3iyb6wEbnusZ-j9YiEstbK8IETjNdmp6Y2qshXRzk-RT6F3vzM1RtzUl_1Fx_VhG7e49EDTOXjOU7xS63yj-y6bjZeSqi0VajXVsrggCRoraVNZaIU_5NkVU6F9MmLtqxdS6MK-LjGgwLp5XoavWppWB2wnA8pHQcGSQDZXVMuC0QBgqrpJeLqKIWyUUKN7hlNgljJzEBa9gi7MS0ymdGbTwPW6cpuARQUTY3kRcTpSwDupag7p8IWJaITzq9ZaYef5fVHxBfJxetobOTSzlzlm5iE2THq1Y5fcdH_k9yAbby_H12krkzU05-K4M4CEBKGMSqDDYqWDmCf-EBl2AgyPS9dHrv3OvyyIPUl5kVuQXhrXvEhyVwMQBAqnNffK_v_iTEeNWR-oEzX9WM1TJv1098zEwYUyngpHK5EhGbeig3hnmsJD0MDTqSylORKFw4yZOfcG7mD3RoblALvl-dUuJEdMIaHUDz5veJ3e0G-ac8Ougwf89hWhtNygBQHSbYXrLiz5EXHVRSc8jQDyyMbbbSWZnH4E-Dbh-3SmrB13Fqf6OnDPUtHnER8VCD5ufuznkn9FhFl70GwTa3mrQOeN8jp6xQIYGgNwy0xhh23RcGsA0uKlptjpnmBUNLCdf7vLLxgEN1kFpssD3uPC7ty4xkTtI3c9I_K7ettosgkSoyKbQexWgjbhiyaVwmMS7Za4oJWRa1g3ZmbnCEAMlmy0sjCFr0jxxwR9QOVydcb9_96BGfEi3_vfdvPfHm29G_VRiGc6q9BOgus-b9vfgMOqPTcWQTEsaxAifl2Ts9d8HqOxF3GEuHmjZ4tBnjrffA6621fUCP_fGLazsx3PzDfVJnLl5ML0lYl1Q5ps6GET9mzINwvS163kdNoyoV_U8OpELA8wb3Ltt75DlTnU-StGFEit6raPwAzXCryy1d0NvoDDg4Nrodkkrw-YKjo_M3AaAwBoU3eY5sCb_elATRHJW953jX95Fc9dzyh0EyafuAqqsjfU7wQT4h_MhtY8frnCgJ8KJAEQYHPdhBRgyWEPl2rzIp_rscGa8COkaocbZgOX2rKSSJCtBTv6jboxiTiAcooy_xREtC_yEhDuEnwRDkrwVFVxa8qKIJdklYMfCUyEW-p5dMp0yI72qxj9nRJ0CJa8HXzHGwKaVNyFhMGL5OLqEp8F0Gst4ksg5zSOrK6U9ok4Fi2giAcEMmvXdSUh-U6zleDYFoWFDzsBzJlv_RWHRmQGx-qh81OjqGd6hywnmFWYEezDO8r0xxg2VVFjNZ0aDq5D2UXBWFHO41rLoTZhRs1cGfb_iJLGGd5CowEw4nRepvUz02fe7snkg-n1NgSRGp83HChfKOEYUJFO1CG_77QwHWHmFTaT14XBqF-rGVgHab5r63Hmvcz1ek7VIssagHLX5u9xEE0EcYybDMM7FSad72vrmDAdPj-0hphB0L9AquCWFnOSvyIH0bK3Glu8Xu6XG5sJMzy4bV300xAEqdFwrYV37GN1pcCP3OYnwTpWMxv_PJU9_xjOMMU2lMeXkVhFrW-_F9-i6esLj7B-Pwo49Yr2t9ywK6oRdlKJOclvItyzTQBvoPiijUqB8SgTdf6V6lP-rhPPes8B1Eplj6ER3vUdcR1VKkX0tOE5RVwpWfjfLJ5v_v6MjAIAhh6fYylb7zqz9EyZMF269DKrnHA4La97lWTYWQphiIFmR36LlWqIC1VXNAG3-SE7TKmRYLa4KQQ_2qW9ywFJyhwjFkKdWlpyPX1LTFECEZmboOhtWMyJ6Jb-L4uCpfH8USh9G8p-9hJKKhAI0EBZVhR4b3EMZjZIkkUErnz6h1f-GBrv7AgBvbBIk5rPoRTvAspvhfRmlArRYOq4haW3Yyl03O1wlf7DeZDQrUQ5rISk8M5NU0Sc_y2c7uA5ruHbO5rVFr6nuYvdsce-gSdq1Skjt5wH_HPVwOES4p7YeSXXdVWCoqiNNqU-zqftc9KrY5LdqmW_R39J6kwX_HGynuO6AMEsrBvN8xfRZ6BMhHjqqPH1wNt8JiynYkRSg3AXLnPmya7ypP34TROnJtlQcHjRmOXIVQUxFWYiuKuxTBEJqEl6PL_pcEWu7tulc5xSxCZ35h13XSd9eoyg3NnHoo7evinKYg7k5-fZ_ib8MdZRy0Aw_qWJwjTtAbPsPQwsO-aEZ0uPGXZNRILrK78xjJlxYi1kxaQFJT7IdKwvEKTEXa4bCPwtroWVtt8q0hi3o6N6vckvNk9Ep2VSw3aonoGH_Pohpt11AD2xrDuRifexivbr2TyFQyA2FufDBBJMzZdbkyc6GESEQ7vwdwd7QLxh64_lJeEq84jkdAGDEaovq7yvHcYYESdwbGgo8zJi3WEwz1STJplwcdSt1FfRsWaUi6otcjhQrfuu2w1YbScmzQk9es5bUE27phMX1JcYQOEmn2SfhsRrObOz0kdxwCRzwieZIu_36n_OnJL3o-zxjBDXfS007W4GqRCd1eg5lqvPMWCJt9LEm4oPltS2vZ2G1Qu3WI9vG8SwQ50zIg_bMFuYyEMZbU6f3z_lsYwAU_jg4xZhMu6D3x5ihCALNPUxG28dx9XLubP0gH_36eaP1ByajrjADFtJNUgA6Kjrzqyi3I7cmfbeZI61YIzWf_IjN8MlL5C3vAeJKg8LN6Lt28HGFa2WIAxEYoceXiKXjZGoWnxwtu5z4CkyHvLLdCcUCLJjx3Jsy37_-N4UyM0R80fg9h3EYp-LL32HS7BUIAV93z6n0ruDZxKGqBNfXvE9kdQ-kfGRtCc5LhwDjlKReWMq5qkentSSOc1b9uMGHKJFjwmtZPCTGeDrIYaLX8jBiFkUBsFqEsMivz-wFSHhMiWDTnYxUVRax1J3eYjSDJWe2eOcJvTRxvF48s2p8JFctQ6yxhX_QDztNV4i9bcEsL6BL5RWmFSgDV-NXWqzTKIn-0Q1ImuUljctRJVn7oZyJaKKsb0AOGZFvwgccqQb9V1OjeGG255cSDwp6Ubgyq9F9R33rKe4jd6Ru_0-ypyecQP2ysjxU3MEYPkNYBmEnk3FlFoIB2GK0fdT-t7t806Q6B_iHvKesWv8tW2PzE5zP9nOB_FyfmGa6BZ65X7T_ZhBvZTEg_YSb73xoJL-SFrNDkmLcJ0OybYwMycK5dCX0y0wmc9b9vDCfqBAFc0wpluGLBhATIvl_VlOlXYDrplNphj4fRUDeNPNwdidbj6O9dfW_1fL4EuDt9-zX8EEsBLV75Zratbf0CyOUOIr6lr2hUh9r-QrlHlcrOgSLa5XJ_E8IPD_C_RGloRxa1im1JVmZUtWpngnrm5N6fEir_sQFAB98U4RUlLPnE9GurifSb4mbC_89z9SeI_-x6oPU3rIbhtVppKhFv7pWFSGNxRR46steQFG1Tf-MpH3jGjJGyJFIMg7T6jbXmaSGrgh3KUam8ChRmljtTAd5D52D8Czspwbz_wP6D5e529x-wg8dAYCjvYGEOQEExUAOlfBPa9lRa7Fd14hUKq8DZjHFn3XmJV-IOnphMIWf-57XaitFqJ6BTnbaNBIHMOzDUVsVHBLk175VQx1FcoeqTAOnLMpYwB1fOCRNH6CHs5e1AxGDNPn2B11v9zAcu4cNwGgQYGIOmtQAeU9pgEp3r1dcRhNXPMaNlWWFEG9_a5z9ZuWE5ROPC8VL5XSQvKBlkmzcTzln1hbYGVWbOQfrHs_tn6NRfV81lWIP7rDv11sFvyMVgm6zFQT0C4EG1L4yI7whjhy9tDPpB1TUJlSdmTm3Qgw8ge8IdE77ysCtGAYdU-9Vrn5UnFleGsaXxiWpyBkolJ5N2E6BA4IKyBgjeBTlCznSo7FpK7ASaOxgYdS71J5Ybw1yPuwzoh_UeYsJ3kr5Um1XdJH_ol9g42KI-gKG1Q81QOJ68EnrCkGYK0qT-B8kMEjuJ_EDOTTRb8jCHo4KQcbVCi8z-SS62-Vs83qzb7n19vllSglXtpLC703ItTJRvFNFyZ45tke-fO-TZC1yEqQRW3Xc1dyhpqon_R1t6J7LgqzHIm-xVOHaJcB5mGpssy8i-M-l1pmcR8j-eFnssrNxBoALyu_mwXhQYe9tYHwKfaDsXaCR7mzEd9g44p3_k66RebpBt7rHLtYEXBjQ9VSECUF1NbR-60A8X81tZ9h3Tiot0vwSRBtJ3M34pLPfItZJ9uOCr_hBf03btI98YIhPpOnXNi6_vkSEQCVbDXaMSS8c4ck8ZKL11SQOLLgPMihz3ktrOmHyupTJZ8tiHSUhBMcmQXxygeV3QxIvDdIbtjFxd4h-kSXHhTogaddOGR7BB4WDzzyTv8WPxCrFxoM5qp35_0hC8TueUhI0G0qB2j5pOYN0lgl3odOQM0B6zv1DL9JzXzb1dskFUxcVDDVA4VJbArWLyoxDKRBRgUBbdJVTUaWJb7ncIyJbjNRJUTcmV9l2NhhkPNdNqoX73S-Q_YU65CYTWkrDGdOvQYa6pIrkwv1l4VMbg1tuALCjzhIkUBjum3cr5AHeyuaYVkw2iQz1oODlizUjGhStUUQfJwyrGW6UGeB9S8jkJzkHgiobZ8zsjtFnVO1DqfIciolVB7dXNgCfuLqFrqDAdbhTcxq4gx3zm6nbJgvjCI-M_K4b4_ZgDDqaZrxxsMS4_YP8lXgCslRIlS781WN_IxNKF6wYL_rk6pr9ku7Y2ACOIHJm9rUO6-Wn9DburdSPCjTQICqyRVQuHGP_JLmq2XOryiZGYNFXcyhV_7pGa57tT79EmlJ6aSe71lf6mOtAN-gnaKL8ik-xkWv7MX3n5qjTP1Es_OuErb3HUsCKJOW7bWT963aW-XlZdMShC02rm9npdync_y616Vx28oo3kqjs4SJAJu0aHIUqQsMzo97ujHN3HET_AaCnXRi27M6w7tf2d20Hc8HqmUyuY=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC01LW1pbmktMjAyNS0wOC0wN3xvcGVuYWkifQ",
+              "format": "openai-responses-v1",
+              "id": "rs_0d184ec8b8746427016ac116db8a5c87d185828f44c9a74f06",
+              "index": 1
+            }
+          ]
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 210,
+      "completion_tokens": 2352,
+      "total_tokens": 2562,
+      "cost": 0.0047565,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0047565,
+        "upstream_inference_prompt_cost": 5.25e-05,
+        "upstream_inference_completions_cost": 0.004704
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 960,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "prompt_tokens": 210,
+    "completion_tokens": 2352,
+    "total_tokens": 2562,
+    "cost": 0.0047565,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0047565,
+      "upstream_inference_prompt_cost": 5.25e-05,
+      "upstream_inference_completions_cost": 0.004704
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 960,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

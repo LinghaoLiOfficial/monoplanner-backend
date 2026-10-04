@@ -1,3 +1,5 @@
+"""Generate layer-scoped change plans from selected requirement stories and assets."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

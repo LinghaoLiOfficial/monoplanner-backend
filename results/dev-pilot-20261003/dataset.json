@@ -1,0 +1,3787 @@
+{
+  "schema_version": "requirement-labels-v1",
+  "dataset_id": "monoplanner-new-data-v1",
+  "source_document": "Monoplanner_New_Data_ZH.md",
+  "source_sha256": "10733be498330e8d023cb25542fd3f925310fb76206bc85fe8833fee17d8f6ba",
+  "chains": [
+    {
+      "chain_id": "chain-01",
+      "topic": "item_validation",
+      "split": "dev",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c01-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+          "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+          "labels": [
+            {
+              "fact_id": "request-title-trim",
+              "target": "request.title.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-length-unit",
+              "target": "request.title.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-min-length",
+              "target": "request.title.min_length",
+              "value": 3,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-max-length",
+              "target": "request.title.max_length",
+              "value": 80,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "create-title-required",
+              "target": "create.title.required",
+              "value": true,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-required",
+              "target": "update.title.required",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-nullable",
+              "target": "request.title.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-invalid-status",
+              "target": "request.title.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-omission",
+              "target": "update.title.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c01-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+          "preserved_constraints": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+          "labels": [
+            {
+              "fact_id": "request-title-trim",
+              "target": "request.title.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-length-unit",
+              "target": "request.title.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-min-length",
+              "target": "request.title.min_length",
+              "value": 3,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-max-length",
+              "target": "request.title.max_length",
+              "value": 120,
+              "sources": [
+                "requirement:c01-s2"
+              ]
+            },
+            {
+              "fact_id": "create-title-required",
+              "target": "create.title.required",
+              "value": true,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-required",
+              "target": "update.title.required",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-nullable",
+              "target": "request.title.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-invalid-status",
+              "target": "request.title.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-omission",
+              "target": "update.title.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-description-max-length",
+              "target": "request.description.max_length",
+              "value": 500,
+              "sources": [
+                "requirement:c01-s2"
+              ]
+            },
+            {
+              "fact_id": "request-description-trim",
+              "target": "request.description.trim",
+              "value": false,
+              "sources": [
+                "requirement:c01-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c01-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+          "preserved_constraints": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。",
+          "labels": [
+            {
+              "fact_id": "request-title-trim",
+              "target": "request.title.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-length-unit",
+              "target": "request.title.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-min-length",
+              "target": "request.title.min_length",
+              "value": 3,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-max-length",
+              "target": "request.title.max_length",
+              "value": 80,
+              "sources": [
+                "requirement:c01-s3"
+              ]
+            },
+            {
+              "fact_id": "create-title-required",
+              "target": "create.title.required",
+              "value": true,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-required",
+              "target": "update.title.required",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-nullable",
+              "target": "request.title.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-invalid-status",
+              "target": "request.title.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "update-title-omission",
+              "target": "update.title.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c01-s1"
+              ]
+            },
+            {
+              "fact_id": "request-description-max-length",
+              "target": "request.description.max_length",
+              "value": 500,
+              "sources": [
+                "requirement:c01-s2"
+              ]
+            },
+            {
+              "fact_id": "request-description-trim",
+              "target": "request.description.trim",
+              "value": false,
+              "sources": [
+                "requirement:c01-s2"
+              ]
+            },
+            {
+              "fact_id": "read-existing-overlength-title-allowed",
+              "target": "read.existing_overlength_title.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c01-s3"
+              ]
+            },
+            {
+              "fact_id": "update-omitted-title-revalidate",
+              "target": "update.omitted_title.revalidate",
+              "value": false,
+              "sources": [
+                "requirement:c01-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-02",
+      "topic": "pagination",
+      "split": "dev",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c02-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+          "preserved_constraints": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+          "labels": [
+            {
+              "fact_id": "request-skip-type",
+              "target": "request.skip.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-skip-minimum",
+              "target": "request.skip.minimum",
+              "value": 0,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-skip-default",
+              "target": "request.skip.default",
+              "value": 0,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-limit-type",
+              "target": "request.limit.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-limit-minimum",
+              "target": "request.limit.minimum",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-limit-maximum",
+              "target": "request.limit.maximum",
+              "value": 50,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-limit-default",
+              "target": "request.limit.default",
+              "value": 20,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-invalid-status",
+              "target": "request.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-empty-page-data",
+              "target": "response.empty_page.data",
+              "value": [],
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c02-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+          "preserved_constraints": "响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。",
+          "labels": [
+            {
+              "fact_id": "request-invalid-status",
+              "target": "request.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-empty-page-data",
+              "target": "response.empty_page.data",
+              "value": [],
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-skip-accepted",
+              "target": "request.skip.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-limit-accepted",
+              "target": "request.limit.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-type",
+              "target": "request.page.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-minimum",
+              "target": "request.page.minimum",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-default",
+              "target": "request.page.default",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-type",
+              "target": "request.page_size.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-minimum",
+              "target": "request.page_size.minimum",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-maximum",
+              "target": "request.page_size.maximum",
+              "value": 50,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-default",
+              "target": "request.page_size.default",
+              "value": 20,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "pagination-offset",
+              "target": "pagination.offset",
+              "value": "(page-1)*page_size",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c02-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+          "preserved_constraints": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+          "labels": [
+            {
+              "fact_id": "request-invalid-status",
+              "target": "request.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "response-empty-page-data",
+              "target": "response.empty_page.data",
+              "value": [],
+              "sources": [
+                "requirement:c02-s1"
+              ]
+            },
+            {
+              "fact_id": "request-skip-accepted",
+              "target": "request.skip.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-limit-accepted",
+              "target": "request.limit.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-type",
+              "target": "request.page.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-minimum",
+              "target": "request.page.minimum",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-default",
+              "target": "request.page.default",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-type",
+              "target": "request.page_size.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-minimum",
+              "target": "request.page_size.minimum",
+              "value": 1,
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-maximum",
+              "target": "request.page_size.maximum",
+              "value": 100,
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            },
+            {
+              "fact_id": "request-page-size-default",
+              "target": "request.page_size.default",
+              "value": 25,
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            },
+            {
+              "fact_id": "pagination-offset",
+              "target": "pagination.offset",
+              "value": "(page-1)*page_size",
+              "sources": [
+                "requirement:c02-s2"
+              ]
+            },
+            {
+              "fact_id": "response-page-type",
+              "target": "response.page.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            },
+            {
+              "fact_id": "response-page-value",
+              "target": "response.page.value",
+              "value": "effective_page",
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            },
+            {
+              "fact_id": "response-page-size-type",
+              "target": "response.page_size.type",
+              "value": "integer",
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            },
+            {
+              "fact_id": "response-page-size-value",
+              "target": "response.page_size.value",
+              "value": "effective_page_size",
+              "sources": [
+                "requirement:c02-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-03",
+      "topic": "permissions",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c03-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：普通用户对他人已存在条目执行 GET、PUT、DELETE 时统一返回 404，`detail=\"Item not found\"`；不存在也返回相同响应。",
+          "preserved_constraints": "所有者和超级用户原权限不变；列表仍只包含当前用户可见数据。前端按 404 处理，不显示他人资源信息。",
+          "labels": [
+            {
+              "fact_id": "ordinary-user-other-item-get-status",
+              "target": "ordinary_user.other_item.GET.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-put-status",
+              "target": "ordinary_user.other_item.PUT.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-delete-status",
+              "target": "ordinary_user.other_item.DELETE.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-error-detail",
+              "target": "ordinary_user.other_item.error.detail",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-read-allowed",
+              "target": "superuser.other_item.read_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-update-allowed",
+              "target": "superuser.other_item.update_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-delete-allowed",
+              "target": "superuser.other_item.delete_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c03-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：超级用户仍可读取他人条目，但 PUT、DELETE 他人条目返回 403，`detail=\"Read-only access\"`；前端他人条目只读。",
+          "preserved_constraints": "超级用户对本人条目可写；普通用户他人资源 404；不存在资源仍 404；创建 owner_id 仍为当前用户。",
+          "labels": [
+            {
+              "fact_id": "ordinary-user-other-item-get-status",
+              "target": "ordinary_user.other_item.GET.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-put-status",
+              "target": "ordinary_user.other_item.PUT.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-delete-status",
+              "target": "ordinary_user.other_item.DELETE.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-error-detail",
+              "target": "ordinary_user.other_item.error.detail",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-read-allowed",
+              "target": "superuser.other_item.read_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-update-allowed",
+              "target": "superuser.other_item.update_allowed",
+              "value": false,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-delete-allowed",
+              "target": "superuser.other_item.delete_allowed",
+              "value": false,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-put-status",
+              "target": "superuser.other_item.PUT.status",
+              "value": 403,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-delete-status",
+              "target": "superuser.other_item.DELETE.status",
+              "value": 403,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-write-error-detail",
+              "target": "superuser.other_item.write_error.detail",
+              "value": "Read-only access",
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "superuser-own-item-write-allowed",
+              "target": "superuser.own_item.write_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-superuser-other-item-read-only",
+              "target": "frontend.superuser.other_item.read_only",
+              "value": true,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c03-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：仅恢复超级用户修改、删除他人条目的权限；移除针对该角色的只读错误与界面限制。",
+          "preserved_constraints": "普通用户他人资源仍 404，不得回退为源码中的 403；超级用户读全量不变。",
+          "labels": [
+            {
+              "fact_id": "ordinary-user-other-item-get-status",
+              "target": "ordinary_user.other_item.GET.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-put-status",
+              "target": "ordinary_user.other_item.PUT.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-delete-status",
+              "target": "ordinary_user.other_item.DELETE.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "ordinary-user-other-item-error-detail",
+              "target": "ordinary_user.other_item.error.detail",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-read-allowed",
+              "target": "superuser.other_item.read_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s1"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-update-allowed",
+              "target": "superuser.other_item.update_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s3"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-delete-allowed",
+              "target": "superuser.other_item.delete_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s3"
+              ]
+            },
+            {
+              "fact_id": "superuser-own-item-write-allowed",
+              "target": "superuser.own_item.write_allowed",
+              "value": true,
+              "sources": [
+                "requirement:c03-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-superuser-other-item-read-only",
+              "target": "frontend.superuser.other_item.read_only",
+              "value": false,
+              "sources": [
+                "requirement:c03-s3"
+              ]
+            },
+            {
+              "fact_id": "superuser-other-item-read-only-error-active",
+              "target": "superuser.other_item.read_only_error.active",
+              "value": false,
+              "sources": [
+                "requirement:c03-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-04",
+      "topic": "field_rename",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c04-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：创建/更新请求新增 name 作为 title 的别名。单独提供任一个时按原 title 约束校验；两者同时出现返回 422。创建至少提供一个，更新可都省略；显式 null 返回 422。响应同时返回 title 与 name，值完全相同。前端迁移为提交和显示 name。",
+          "preserved_constraints": "非空字符串 1—255，不新增修剪；数据库仍存 title；列表、详情、创建和更新响应均应用别名规则。",
+          "labels": [
+            {
+              "fact_id": "request-name-accepted",
+              "target": "request.name.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-accepted",
+              "target": "request.title.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-both-names-status",
+              "target": "request.both_names.status",
+              "value": 422,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "create-name-or-title-required",
+              "target": "create.name_or_title.required",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "update-name-or-title-required",
+              "target": "update.name_or_title.required",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-nullable",
+              "target": "request.name.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-min-length",
+              "target": "request.name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-max-length",
+              "target": "request.name.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-trim",
+              "target": "request.name.trim",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-name-present",
+              "target": "response.name.present",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-title-present",
+              "target": "response.title.present",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-name-equals",
+              "target": "response.name.equals",
+              "value": "title",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "database-title-renamed",
+              "target": "database.title.renamed",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-submit-field",
+              "target": "frontend.submit_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-display-field",
+              "target": "frontend.display_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c04-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：停止接受请求 title，出现该键即 422，即使与 name 同时出现。创建 name 必填、更新可省略；响应继续同时提供 title/name。",
+          "preserved_constraints": "name 的类型、长度及 null 限制不变；禁止静默忽略旧键。",
+          "labels": [
+            {
+              "fact_id": "request-name-accepted",
+              "target": "request.name.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-accepted",
+              "target": "request.title.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "request-both-names-status",
+              "target": "request.both_names.status",
+              "value": 422,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-nullable",
+              "target": "request.name.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-min-length",
+              "target": "request.name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-max-length",
+              "target": "request.name.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-trim",
+              "target": "request.name.trim",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-name-present",
+              "target": "response.name.present",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-title-present",
+              "target": "response.title.present",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-name-equals",
+              "target": "response.name.equals",
+              "value": "title",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "database-title-renamed",
+              "target": "database.title.renamed",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-submit-field",
+              "target": "frontend.submit_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-display-field",
+              "target": "frontend.display_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-present-status",
+              "target": "request.title.present_status",
+              "value": 422,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "create-name-required",
+              "target": "create.name.required",
+              "value": true,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "update-name-required",
+              "target": "update.name.required",
+              "value": false,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c04-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：从所有条目公开响应中移除 title，只输出 name；前端移除读取 title 的回退逻辑。",
+          "preserved_constraints": "请求 title 仍 422；数据库字段不改名；description/id/owner_id/created_at 不变。",
+          "labels": [
+            {
+              "fact_id": "request-name-accepted",
+              "target": "request.name.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-accepted",
+              "target": "request.title.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "request-both-names-status",
+              "target": "request.both_names.status",
+              "value": 422,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-nullable",
+              "target": "request.name.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-min-length",
+              "target": "request.name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-max-length",
+              "target": "request.name.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-name-trim",
+              "target": "request.name.trim",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-name-present",
+              "target": "response.name.present",
+              "value": true,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "response-title-present",
+              "target": "response.title.present",
+              "value": false,
+              "sources": [
+                "requirement:c04-s3"
+              ]
+            },
+            {
+              "fact_id": "database-title-renamed",
+              "target": "database.title.renamed",
+              "value": false,
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-submit-field",
+              "target": "frontend.submit_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-display-field",
+              "target": "frontend.display_field",
+              "value": "name",
+              "sources": [
+                "requirement:c04-s1"
+              ]
+            },
+            {
+              "fact_id": "request-title-present-status",
+              "target": "request.title.present_status",
+              "value": 422,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "create-name-required",
+              "target": "create.name.required",
+              "value": true,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "update-name-required",
+              "target": "update.name.required",
+              "value": false,
+              "sources": [
+                "requirement:c04-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-fallback-enabled",
+              "target": "frontend.title_fallback.enabled",
+              "value": false,
+              "sources": [
+                "requirement:c04-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-05",
+      "topic": "null_and_clear",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c05-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：PUT 条目时 description 缺省表示不修改，null 表示清空为数据库 NULL，空字符串表示保存空字符串；前端“清空”操作必须提交 null。",
+          "preserved_constraints": "description 字符串上限 255；不得把缺省自动转成 null，也不得把空字符串折叠为 null；创建规则不变。",
+          "labels": [
+            {
+              "fact_id": "update-description-omission",
+              "target": "update.description.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-null",
+              "target": "update.description.null",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-empty-string",
+              "target": "update.description.empty_string",
+              "value": "store_empty_string",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "request-description-max-length",
+              "target": "request.description.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-clear-payload",
+              "target": "frontend.clear.payload",
+              "value": {
+                "description": null
+              },
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c05-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：仅更新请求中，description 空字符串改为与 null 一样清空为 NULL；响应为 null。空格字符串保持原样。",
+          "preserved_constraints": "缺省仍不修改；创建时空字符串仍为空字符串；前端必须区分创建与编辑的归一化。",
+          "labels": [
+            {
+              "fact_id": "update-description-omission",
+              "target": "update.description.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-null",
+              "target": "update.description.null",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-empty-string",
+              "target": "update.description.empty_string",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c05-s2"
+              ]
+            },
+            {
+              "fact_id": "request-description-max-length",
+              "target": "request.description.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-clear-payload",
+              "target": "frontend.clear.payload",
+              "value": {
+                "description": null
+              },
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-whitespace-only",
+              "target": "update.description.whitespace_only",
+              "value": "preserve",
+              "sources": [
+                "requirement:c05-s2"
+              ]
+            },
+            {
+              "fact_id": "create-description-empty-string",
+              "target": "create.description.empty_string",
+              "value": "store_empty_string",
+              "sources": [
+                "requirement:c05-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c05-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：更新新增可省略布尔 clear_description，缺省 false。true 且 description 缺省时清空；true 与任何 description 值同时出现均 422。description=null 改为 422；空字符串恢复为保存空字符串。",
+          "preserved_constraints": "false 或缺省且 description 缺省时不修改；仅更新请求接受此控制字段，响应不回传；前端清空改为提交 `{\"clear_description\":true}`。",
+          "labels": [
+            {
+              "fact_id": "update-description-omission",
+              "target": "update.description.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "update-description-null",
+              "target": "update.description.null",
+              "value": "reject_422",
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-description-empty-string",
+              "target": "update.description.empty_string",
+              "value": "store_empty_string",
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "request-description-max-length",
+              "target": "request.description.max_length",
+              "value": 255,
+              "sources": [
+                "requirement:c05-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-clear-payload",
+              "target": "frontend.clear.payload",
+              "value": {
+                "clear_description": true
+              },
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-description-whitespace-only",
+              "target": "update.description.whitespace_only",
+              "value": "preserve",
+              "sources": [
+                "requirement:c05-s2"
+              ]
+            },
+            {
+              "fact_id": "create-description-empty-string",
+              "target": "create.description.empty_string",
+              "value": "store_empty_string",
+              "sources": [
+                "requirement:c05-s2"
+              ]
+            },
+            {
+              "fact_id": "update-clear-description-type",
+              "target": "update.clear_description.type",
+              "value": "boolean",
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-clear-description-required",
+              "target": "update.clear_description.required",
+              "value": false,
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-clear-description-default",
+              "target": "update.clear_description.default",
+              "value": false,
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-clear-true-description-omitted",
+              "target": "update.clear_true_description_omitted",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "update-clear-true-description-present-status",
+              "target": "update.clear_true_description_present.status",
+              "value": 422,
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            },
+            {
+              "fact_id": "response-clear-description-present",
+              "target": "response.clear_description.present",
+              "value": false,
+              "sources": [
+                "requirement:c05-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-06",
+      "topic": "error_contract",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c06-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：仅条目 GET/PUT/DELETE 的资源不存在和权限不足错误改为 `{\"error\":{\"code\":\"ITEM_NOT_FOUND\",\"message\":\"Item not found\"}}` 与 `{\"error\":{\"code\":\"ITEM_FORBIDDEN\",\"message\":\"Not enough permissions\"}}`，分别为 404、403；不再含顶层 detail。",
+          "preserved_constraints": "认证错误和 422 校验错误保持原有结构；前端按状态码与 error.code 分支，不能把所有错误都强制按新结构解析。",
+          "labels": [
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-status",
+              "target": "forbidden_item.status",
+              "value": 403,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-code",
+              "target": "missing_item.error.code",
+              "value": "ITEM_NOT_FOUND",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-code",
+              "target": "forbidden_item.error.code",
+              "value": "ITEM_FORBIDDEN",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-message",
+              "target": "missing_item.error.message",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-message",
+              "target": "forbidden_item.error.message",
+              "value": "Not enough permissions",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "error-top-level-detail-present",
+              "target": "error.top_level_detail.present",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "authentication-error-changed",
+              "target": "authentication_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "validation-error-changed",
+              "target": "validation_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c06-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：上述两种错误的 error 内新增必填非空字符串 request_id，由后端生成并关联服务端日志，前端可展示用于反馈。",
+          "preserved_constraints": "code、message、状态码不变；成功响应及其他错误不新增该字段；request_id 不包含凭据或用户输入内容。",
+          "labels": [
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-status",
+              "target": "forbidden_item.status",
+              "value": 403,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-code",
+              "target": "missing_item.error.code",
+              "value": "ITEM_NOT_FOUND",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-code",
+              "target": "forbidden_item.error.code",
+              "value": "ITEM_FORBIDDEN",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-message",
+              "target": "missing_item.error.message",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-message",
+              "target": "forbidden_item.error.message",
+              "value": "Not enough permissions",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "error-top-level-detail-present",
+              "target": "error.top_level_detail.present",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "authentication-error-changed",
+              "target": "authentication_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "validation-error-changed",
+              "target": "validation_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-required",
+              "target": "error.request_id.required",
+              "value": true,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-type",
+              "target": "error.request_id.type",
+              "value": "string",
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-min-length",
+              "target": "error.request_id.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-generator",
+              "target": "error.request_id.generator",
+              "value": "backend",
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-logged",
+              "target": "error.request_id.logged",
+              "value": true,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-includes-credentials",
+              "target": "error.request_id.includes_credentials",
+              "value": false,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-includes-user-input",
+              "target": "error.request_id.includes_user_input",
+              "value": false,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c06-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：仅将上述两种 error.message 字段改名为 error.detail，删除旧 message；request_id 保留。",
+          "preserved_constraints": "错误仍在 error 对象内，不能误写为顶层 detail；前端仍以 code 判断，不匹配自然语言内容。",
+          "labels": [
+            {
+              "fact_id": "missing-item-status",
+              "target": "missing_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-status",
+              "target": "forbidden_item.status",
+              "value": 403,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-code",
+              "target": "missing_item.error.code",
+              "value": "ITEM_NOT_FOUND",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-code",
+              "target": "forbidden_item.error.code",
+              "value": "ITEM_FORBIDDEN",
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "error-top-level-detail-present",
+              "target": "error.top_level_detail.present",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "authentication-error-changed",
+              "target": "authentication_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "validation-error-changed",
+              "target": "validation_error.changed",
+              "value": false,
+              "sources": [
+                "requirement:c06-s1"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-required",
+              "target": "error.request_id.required",
+              "value": true,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-type",
+              "target": "error.request_id.type",
+              "value": "string",
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-min-length",
+              "target": "error.request_id.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-generator",
+              "target": "error.request_id.generator",
+              "value": "backend",
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-logged",
+              "target": "error.request_id.logged",
+              "value": true,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-includes-credentials",
+              "target": "error.request_id.includes_credentials",
+              "value": false,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "error-request-id-includes-user-input",
+              "target": "error.request_id.includes_user_input",
+              "value": false,
+              "sources": [
+                "requirement:c06-s2"
+              ]
+            },
+            {
+              "fact_id": "missing-item-error-detail",
+              "target": "missing_item.error.detail",
+              "value": "Item not found",
+              "sources": [
+                "requirement:c06-s3"
+              ]
+            },
+            {
+              "fact_id": "forbidden-item-error-detail",
+              "target": "forbidden_item.error.detail",
+              "value": "Not enough permissions",
+              "sources": [
+                "requirement:c06-s3"
+              ]
+            },
+            {
+              "fact_id": "error-message-present",
+              "target": "error.message.present",
+              "value": false,
+              "sources": [
+                "requirement:c06-s3"
+              ]
+            },
+            {
+              "fact_id": "frontend-error-dispatch-field",
+              "target": "frontend.error_dispatch_field",
+              "value": "error.code",
+              "sources": [
+                "requirement:c06-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-07",
+      "topic": "filter_sort",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c07-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：条目列表新增可选字符串 q，剥除首尾 U+0020 后最长 100 码点；空值或缺省不筛选；否则对 title 执行区分大小写的字面子串匹配，`%`、`_` 不作通配符。",
+          "preserved_constraints": "先权限约束、再筛选、再分页；count 是筛选后分页前总数；skip/limit 沿用基线。改变 q 后前端重置 skip=0。",
+          "labels": [
+            {
+              "fact_id": "request-q-required",
+              "target": "request.q.required",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-type",
+              "target": "request.q.type",
+              "value": "string",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-trim",
+              "target": "request.q.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-max-length",
+              "target": "request.q.max_length",
+              "value": 100,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-length-unit",
+              "target": "request.q.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-empty",
+              "target": "request.q.empty",
+              "value": "no_filter",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-title-match",
+              "target": "filter.title.match",
+              "value": "literal_case_sensitive_substring",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-percent-wildcard",
+              "target": "filter.percent_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-underscore-wildcard",
+              "target": "filter.underscore_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-q-changed-skip",
+              "target": "frontend.q_changed.skip",
+              "value": 0,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c07-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：新增 sort 枚举 `created_at_desc`、`title_asc`，缺省前者，其他值 422。时间降序空值最后，title 按 Unicode 码点升序；主排序相同时按 UUID 标准小写字符串升序。",
+          "preserved_constraints": "筛选规则不变；后端排序后分页；前端不得只对当前页自行重排。",
+          "labels": [
+            {
+              "fact_id": "request-q-required",
+              "target": "request.q.required",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-type",
+              "target": "request.q.type",
+              "value": "string",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-trim",
+              "target": "request.q.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-max-length",
+              "target": "request.q.max_length",
+              "value": 100,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-length-unit",
+              "target": "request.q.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-empty",
+              "target": "request.q.empty",
+              "value": "no_filter",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-title-match",
+              "target": "filter.title.match",
+              "value": "literal_case_sensitive_substring",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-percent-wildcard",
+              "target": "filter.percent_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-underscore-wildcard",
+              "target": "filter.underscore_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-q-changed-skip",
+              "target": "frontend.q_changed.skip",
+              "value": 0,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-sort-allowed-values",
+              "target": "request.sort.allowed_values",
+              "value": [
+                "created_at_desc",
+                "title_asc"
+              ],
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "request-sort-default",
+              "target": "request.sort.default",
+              "value": "created_at_desc",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "request-sort-invalid-status",
+              "target": "request.sort.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-created-at-desc-nulls",
+              "target": "sort.created_at_desc.nulls",
+              "value": "last",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-title-asc-collation",
+              "target": "sort.title_asc.collation",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-tie-breaker",
+              "target": "sort.tie_breaker",
+              "value": "uuid_lowercase_string_ascending",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-applied-before-pagination",
+              "target": "sort.applied_before_pagination",
+              "value": true,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-current-page-only-sort-allowed",
+              "target": "frontend.current_page_only_sort.allowed",
+              "value": false,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c07-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：sort 新增 `title_desc`，title 主键降序、UUID 次键仍升序；默认排序改为 title_asc。",
+          "preserved_constraints": "created_at_desc 仍受支持，不能作为废弃值拒绝；q、count 和分页语义保持。",
+          "labels": [
+            {
+              "fact_id": "request-q-required",
+              "target": "request.q.required",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-type",
+              "target": "request.q.type",
+              "value": "string",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-trim",
+              "target": "request.q.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-max-length",
+              "target": "request.q.max_length",
+              "value": 100,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-length-unit",
+              "target": "request.q.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-q-empty",
+              "target": "request.q.empty",
+              "value": "no_filter",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-title-match",
+              "target": "filter.title.match",
+              "value": "literal_case_sensitive_substring",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-percent-wildcard",
+              "target": "filter.percent_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "filter-underscore-wildcard",
+              "target": "filter.underscore_wildcard",
+              "value": false,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "response-count-scope",
+              "target": "response.count.scope",
+              "value": "authorized_filtered_before_pagination",
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-q-changed-skip",
+              "target": "frontend.q_changed.skip",
+              "value": 0,
+              "sources": [
+                "requirement:c07-s1"
+              ]
+            },
+            {
+              "fact_id": "request-sort-allowed-values",
+              "target": "request.sort.allowed_values",
+              "value": [
+                "created_at_desc",
+                "title_asc",
+                "title_desc"
+              ],
+              "sources": [
+                "requirement:c07-s3"
+              ]
+            },
+            {
+              "fact_id": "request-sort-default",
+              "target": "request.sort.default",
+              "value": "title_asc",
+              "sources": [
+                "requirement:c07-s3"
+              ]
+            },
+            {
+              "fact_id": "request-sort-invalid-status",
+              "target": "request.sort.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-created-at-desc-nulls",
+              "target": "sort.created_at_desc.nulls",
+              "value": "last",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-title-asc-collation",
+              "target": "sort.title_asc.collation",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-tie-breaker",
+              "target": "sort.tie_breaker",
+              "value": "uuid_lowercase_string_ascending",
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-applied-before-pagination",
+              "target": "sort.applied_before_pagination",
+              "value": true,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-current-page-only-sort-allowed",
+              "target": "frontend.current_page_only_sort.allowed",
+              "value": false,
+              "sources": [
+                "requirement:c07-s2"
+              ]
+            },
+            {
+              "fact_id": "sort-title-desc-direction",
+              "target": "sort.title_desc.direction",
+              "value": "descending",
+              "sources": [
+                "requirement:c07-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-08",
+      "topic": "delete_restore",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c08-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：DELETE 改为软删除，设置 deleted_at 为 UTC RFC 3339 时间；新建及迁移既有条目的 deleted_at 为 null。列表排除已删除条目且 count 同步排除；GET/PUT 已删除条目返回 404。公开条目响应增加可空 deleted_at。",
+          "preserved_constraints": "原删除权限保留；无权限操作已有资源仍 403；已授权重复删除已删除条目返回 404。首次删除保持原成功消息。",
+          "labels": [
+            {
+              "fact_id": "delete-mode",
+              "target": "delete.mode",
+              "value": "soft_delete",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-deleted-at-format",
+              "target": "delete.deleted_at.format",
+              "value": "UTC_RFC3339",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "create-deleted-at-default",
+              "target": "create.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "migration-deleted-at-default",
+              "target": "migration.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-deleted-items-included",
+              "target": "list.deleted_items.included",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-count-includes-deleted",
+              "target": "list.count.includes_deleted",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "read-deleted-item-status",
+              "target": "read.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "update-deleted-item-status",
+              "target": "update.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "response-deleted-at-nullable",
+              "target": "response.deleted_at.nullable",
+              "value": true,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-authorized-already-deleted-status",
+              "target": "delete.authorized_already_deleted.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-success-message",
+              "target": "delete.success.message",
+              "value": "Item deleted successfully",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c08-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：新增 POST `/api/v1/items/{id}/restore`，无请求体；所有者或超级用户可恢复，成功 200 返回 ItemPublic 且 deleted_at=null；未删除时 409 `detail=\"Item is not deleted\"`，不存在 404，他人资源无权 403。前端记录本会话成功删除的 id 并提供撤销。",
+          "preserved_constraints": "恢复后的条目重新参与列表和 count；不新增回收站列表接口；页面刷新后不要求保留撤销入口。",
+          "labels": [
+            {
+              "fact_id": "delete-mode",
+              "target": "delete.mode",
+              "value": "soft_delete",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-deleted-at-format",
+              "target": "delete.deleted_at.format",
+              "value": "UTC_RFC3339",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "create-deleted-at-default",
+              "target": "create.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "migration-deleted-at-default",
+              "target": "migration.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-deleted-items-included",
+              "target": "list.deleted_items.included",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-count-includes-deleted",
+              "target": "list.count.includes_deleted",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "read-deleted-item-status",
+              "target": "read.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "update-deleted-item-status",
+              "target": "update.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "response-deleted-at-nullable",
+              "target": "response.deleted_at.nullable",
+              "value": true,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-authorized-already-deleted-status",
+              "target": "delete.authorized_already_deleted.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-success-message",
+              "target": "delete.success.message",
+              "value": "Item deleted successfully",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "restore-method",
+              "target": "restore.method",
+              "value": "POST",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-path",
+              "target": "restore.path",
+              "value": "/api/v1/items/{id}/restore",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-request-body-required",
+              "target": "restore.request_body.required",
+              "value": false,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-owner-allowed",
+              "target": "restore.owner.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-superuser-allowed",
+              "target": "restore.superuser.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-success-status",
+              "target": "restore.success.status",
+              "value": 200,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-success-deleted-at",
+              "target": "restore.success.deleted_at",
+              "value": null,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-not-deleted-status",
+              "target": "restore.not_deleted.status",
+              "value": 409,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-not-deleted-detail",
+              "target": "restore.not_deleted.detail",
+              "value": "Item is not deleted",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-missing-status",
+              "target": "restore.missing.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-forbidden-status",
+              "target": "restore.forbidden.status",
+              "value": 403,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-undo-source",
+              "target": "frontend.undo.source",
+              "value": "session_deleted_ids",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "trash-list-endpoint-added",
+              "target": "trash_list_endpoint.added",
+              "value": false,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c08-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：恢复增加严格 7×24 小时窗口，由服务器 UTC 时间判定；`now-deleted_at < 604800秒` 可恢复，等于或大于边界时 410 `detail=\"Restore window expired\"`。",
+          "preserved_constraints": "不自动物理清理；未删除 409、不存在 404、无权 403 保留。先存在性和授权，后状态及时间检查；前端以服务端判定为准。",
+          "labels": [
+            {
+              "fact_id": "delete-mode",
+              "target": "delete.mode",
+              "value": "soft_delete",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-deleted-at-format",
+              "target": "delete.deleted_at.format",
+              "value": "UTC_RFC3339",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "create-deleted-at-default",
+              "target": "create.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "migration-deleted-at-default",
+              "target": "migration.deleted_at.default",
+              "value": null,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-deleted-items-included",
+              "target": "list.deleted_items.included",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "list-count-includes-deleted",
+              "target": "list.count.includes_deleted",
+              "value": false,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "read-deleted-item-status",
+              "target": "read.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "update-deleted-item-status",
+              "target": "update.deleted_item.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "response-deleted-at-nullable",
+              "target": "response.deleted_at.nullable",
+              "value": true,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-authorized-already-deleted-status",
+              "target": "delete.authorized_already_deleted.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "delete-success-message",
+              "target": "delete.success.message",
+              "value": "Item deleted successfully",
+              "sources": [
+                "requirement:c08-s1"
+              ]
+            },
+            {
+              "fact_id": "restore-method",
+              "target": "restore.method",
+              "value": "POST",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-path",
+              "target": "restore.path",
+              "value": "/api/v1/items/{id}/restore",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-request-body-required",
+              "target": "restore.request_body.required",
+              "value": false,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-owner-allowed",
+              "target": "restore.owner.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-superuser-allowed",
+              "target": "restore.superuser.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-success-status",
+              "target": "restore.success.status",
+              "value": 200,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-success-deleted-at",
+              "target": "restore.success.deleted_at",
+              "value": null,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-not-deleted-status",
+              "target": "restore.not_deleted.status",
+              "value": 409,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-not-deleted-detail",
+              "target": "restore.not_deleted.detail",
+              "value": "Item is not deleted",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-missing-status",
+              "target": "restore.missing.status",
+              "value": 404,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-forbidden-status",
+              "target": "restore.forbidden.status",
+              "value": 403,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "frontend-undo-source",
+              "target": "frontend.undo.source",
+              "value": "session_deleted_ids",
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "trash-list-endpoint-added",
+              "target": "trash_list_endpoint.added",
+              "value": false,
+              "sources": [
+                "requirement:c08-s2"
+              ]
+            },
+            {
+              "fact_id": "restore-window-seconds",
+              "target": "restore.window.seconds",
+              "value": 604800,
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "restore-window-comparison",
+              "target": "restore.window.comparison",
+              "value": "elapsed_seconds < 604800",
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "restore-clock",
+              "target": "restore.clock",
+              "value": "server_utc",
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "restore-expired-status",
+              "target": "restore.expired.status",
+              "value": 410,
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "restore-expired-detail",
+              "target": "restore.expired.detail",
+              "value": "Restore window expired",
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "automatic-physical-cleanup-enabled",
+              "target": "automatic_physical_cleanup.enabled",
+              "value": false,
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            },
+            {
+              "fact_id": "restore-check-order",
+              "target": "restore.check_order",
+              "value": [
+                "existence",
+                "authorization",
+                "deleted_state",
+                "time_window"
+              ],
+              "sources": [
+                "requirement:c08-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-09",
+      "topic": "user_profile",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c09-s1",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：PATCH `/api/v1/users/me` 的 full_name 非 null 时剥除首尾 U+0020，处理后长度必须为 1—80；缺省不修改，null 清空。显式提交不合规值 422。",
+          "preserved_constraints": "email 更新、占用冲突 409 不变；其他用户管理端点不调整写入规则。已有长姓名可读取，更新省略 full_name 不重校验旧值。",
+          "labels": [
+            {
+              "fact_id": "self-update-full-name-trim",
+              "target": "self_update.full_name.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-min-length",
+              "target": "self_update.full_name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-max-length",
+              "target": "self_update.full_name.max_length",
+              "value": 80,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-omission",
+              "target": "self_update.full_name.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-null",
+              "target": "self_update.full_name.null",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-invalid-status",
+              "target": "self_update.full_name.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-accepted",
+              "target": "self_update.email.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-duplicate-status",
+              "target": "self_update.email.duplicate_status",
+              "value": 409,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "read-existing-long-name-allowed",
+              "target": "read.existing_long_name.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c09-s2",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：用户持久化与 UserPublic 新增 timezone 枚举 `UTC`、`Asia/Shanghai`、`Asia/Singapore`；既有用户回填 UTC，新用户默认 UTC。本人 PATCH 可修改，缺省不修改，null 或非枚举值 422。前端设置页提供三种选项。",
+          "preserved_constraints": "full_name 第一步规则保留；所有输出 UserPublic 的接口返回 timezone；除本人 PATCH 外，其余写接口不开放 timezone 自定义写入。",
+          "labels": [
+            {
+              "fact_id": "self-update-full-name-trim",
+              "target": "self_update.full_name.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-min-length",
+              "target": "self_update.full_name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-max-length",
+              "target": "self_update.full_name.max_length",
+              "value": 80,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-omission",
+              "target": "self_update.full_name.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-null",
+              "target": "self_update.full_name.null",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-invalid-status",
+              "target": "self_update.full_name.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-accepted",
+              "target": "self_update.email.accepted",
+              "value": true,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-duplicate-status",
+              "target": "self_update.email.duplicate_status",
+              "value": 409,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "read-existing-long-name-allowed",
+              "target": "read.existing_long_name.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-allowed-values",
+              "target": "self_update.timezone.allowed_values",
+              "value": [
+                "Asia/Shanghai",
+                "Asia/Singapore",
+                "UTC"
+              ],
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "database-timezone-default",
+              "target": "database.timezone.default",
+              "value": "UTC",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "migration-timezone-value",
+              "target": "migration.timezone.value",
+              "value": "UTC",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-omission",
+              "target": "self_update.timezone.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-nullable",
+              "target": "self_update.timezone.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-invalid-status",
+              "target": "self_update.timezone.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "response-userpublic-timezone-present",
+              "target": "response.UserPublic.timezone.present",
+              "value": true,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "other-write-interfaces-timezone-customization",
+              "target": "other_write_interfaces.timezone_customization",
+              "value": false,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c09-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：本人 PATCH 禁止出现 email 键，出现即 422（包括 null 或与原值相同）；前端本人资料页邮箱改为只读。",
+          "preserved_constraints": "返回资料仍含 email，管理员更新邮箱接口不变；本人更新姓名和时区规则保留。删除本人 PATCH 的“邮箱重复 409”有效分支，不能误删管理员端点的 409。",
+          "labels": [
+            {
+              "fact_id": "self-update-full-name-trim",
+              "target": "self_update.full_name.trim",
+              "value": "U+0020",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-min-length",
+              "target": "self_update.full_name.min_length",
+              "value": 1,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-max-length",
+              "target": "self_update.full_name.max_length",
+              "value": 80,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-omission",
+              "target": "self_update.full_name.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-null",
+              "target": "self_update.full_name.null",
+              "value": "clear_to_null",
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-full-name-invalid-status",
+              "target": "self_update.full_name.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-accepted",
+              "target": "self_update.email.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            },
+            {
+              "fact_id": "read-existing-long-name-allowed",
+              "target": "read.existing_long_name.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c09-s1"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-allowed-values",
+              "target": "self_update.timezone.allowed_values",
+              "value": [
+                "Asia/Shanghai",
+                "Asia/Singapore",
+                "UTC"
+              ],
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "database-timezone-default",
+              "target": "database.timezone.default",
+              "value": "UTC",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "migration-timezone-value",
+              "target": "migration.timezone.value",
+              "value": "UTC",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-omission",
+              "target": "self_update.timezone.omission",
+              "value": "unchanged",
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-nullable",
+              "target": "self_update.timezone.nullable",
+              "value": false,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-timezone-invalid-status",
+              "target": "self_update.timezone.invalid_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "response-userpublic-timezone-present",
+              "target": "response.UserPublic.timezone.present",
+              "value": true,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "other-write-interfaces-timezone-customization",
+              "target": "other_write_interfaces.timezone_customization",
+              "value": false,
+              "sources": [
+                "requirement:c09-s2"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-present-status",
+              "target": "self_update.email.present_status",
+              "value": 422,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            },
+            {
+              "fact_id": "frontend-self-profile-email-read-only",
+              "target": "frontend.self_profile.email.read_only",
+              "value": true,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            },
+            {
+              "fact_id": "response-email-present",
+              "target": "response.email.present",
+              "value": true,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            },
+            {
+              "fact_id": "admin-update-email-allowed",
+              "target": "admin_update.email.allowed",
+              "value": true,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            },
+            {
+              "fact_id": "self-update-email-duplicate-branch-active",
+              "target": "self_update.email.duplicate_branch.active",
+              "value": false,
+              "sources": [
+                "requirement:c09-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-10",
+      "topic": "scope_clarification",
+      "split": "test",
+      "requirement_origin": "designed_scenario",
+      "steps": [
+        {
+          "step_id": "c10-s1",
+          "required_sides": [
+            "frontend"
+          ],
+          "raw_requirement": "仅前端：新增条目标题展示规范，列表视觉展示超过 30 个 Unicode 码点时显示前 30 个加 `…`；完整标题可通过可访问名称或展开控件读取，编辑框始终使用完整值。受影响层为 frontend_pages、ui_design。",
+          "preserved_constraints": "这不是输入长度限制；请求、响应、存储、校验和后端不变。30 码点不截断，31 码点截断；不能把省略号提交到 API。",
+          "labels": [
+            {
+              "fact_id": "frontend-title-truncate-threshold",
+              "target": "frontend.title.truncate_threshold",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-length-unit",
+              "target": "frontend.title.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-truncate-prefix-length",
+              "target": "frontend.title.truncate_prefix_length",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-truncate-suffix",
+              "target": "frontend.title.truncate_suffix",
+              "value": "…",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-full-value-accessible",
+              "target": "frontend.title.full_value.accessible",
+              "value": true,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-editor-title-value",
+              "target": "frontend.editor.title.value",
+              "value": "full_title",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "api-contract-changed",
+              "target": "api.contract_changed",
+              "value": false,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c10-s2",
+          "required_sides": [
+            "backend"
+          ],
+          "raw_requirement": "仅后端：条目创建、更新、删除成功提交后，新增结构化服务端日志事件，字段限定为 action（create/update/delete）、actor_id、item_id、occurred_at；三个 ID/时间相关值均用字符串，时间为 UTC RFC 3339。日志不得包含 title、description 或令牌。受影响层为 backend_services、backend_tools。",
+          "preserved_constraints": "日志不是 API 响应；失败请求不记录成功事件，不要求新增审计查询接口。第一步前端展示规范继续有效，但本步无前端实施任务。",
+          "labels": [
+            {
+              "fact_id": "backend-success-log-actions",
+              "target": "backend.success_log.actions",
+              "value": [
+                "create",
+                "delete",
+                "update"
+              ],
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-fields",
+              "target": "backend.success_log.fields",
+              "value": [
+                "action",
+                "actor_id",
+                "item_id",
+                "occurred_at"
+              ],
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-timing",
+              "target": "backend.success_log.timing",
+              "value": "after_successful_commit",
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-actor-id-type",
+              "target": "backend.success_log.actor_id.type",
+              "value": "string",
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-item-id-type",
+              "target": "backend.success_log.item_id.type",
+              "value": "string",
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-occurred-at-format",
+              "target": "backend.success_log.occurred_at.format",
+              "value": "UTC_RFC3339",
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-contains-title",
+              "target": "backend.success_log.contains_title",
+              "value": false,
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-contains-description",
+              "target": "backend.success_log.contains_description",
+              "value": false,
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-success-log-contains-token",
+              "target": "backend.success_log.contains_token",
+              "value": false,
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "backend-failed-request-success-event",
+              "target": "backend.failed_request.success_event",
+              "value": false,
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            },
+            {
+              "fact_id": "api-audit-query-added",
+              "target": "api.audit_query.added",
+              "value": false,
+              "sources": [
+                "requirement:c10-s2"
+              ]
+            }
+          ]
+        },
+        {
+          "step_id": "c10-s3",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "raw_requirement": "前后端：条目创建与更新响应新增 display_title，按第一步规则计算（完整标题≤30码点原样返回，否则前30加省略号）；前端创建/更新后立即反馈使用该字段，title 继续保存完整值。受影响层为 api_contract、frontend_pages、backend_services。",
+          "preserved_constraints": "列表与详情响应不新增字段，仍按第一步在前端展示；请求禁止包含 display_title，出现即 422；第二步服务端日志保留。",
+          "labels": [
+            {
+              "fact_id": "frontend-title-truncate-threshold",
+              "target": "frontend.title.truncate_threshold",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-length-unit",
+              "target": "frontend.title.length_unit",
+              "value": "unicode_code_point",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-truncate-prefix-length",
+              "target": "frontend.title.truncate_prefix_length",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-truncate-suffix",
+              "target": "frontend.title.truncate_suffix",
+              "value": "…",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-title-full-value-accessible",
+              "target": "frontend.title.full_value.accessible",
+              "value": true,
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "frontend-editor-title-value",
+              "target": "frontend.editor.title.value",
+              "value": "full_title",
+              "sources": [
+                "requirement:c10-s1"
+              ]
+            },
+            {
+              "fact_id": "api-contract-changed",
+              "target": "api.contract_changed",
+              "value": true,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-response-display-title-present",
+              "target": "create_update.response.display_title.present",
+              "value": true,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-response-display-title-threshold",
+              "target": "create_update.response.display_title.threshold",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-response-display-title-prefix-length",
+              "target": "create_update.response.display_title.prefix_length",
+              "value": 30,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-response-display-title-suffix",
+              "target": "create_update.response.display_title.suffix",
+              "value": "…",
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-response-title-value",
+              "target": "create_update.response.title.value",
+              "value": "full_title",
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-request-display-title-accepted",
+              "target": "create_update.request.display_title.accepted",
+              "value": false,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "create-update-request-display-title-present-status",
+              "target": "create_update.request.display_title.present_status",
+              "value": 422,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "list-detail-response-display-title-present",
+              "target": "list_detail.response.display_title.present",
+              "value": false,
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            },
+            {
+              "fact_id": "frontend-create-update-feedback-source",
+              "target": "frontend.create_update_feedback.source",
+              "value": "display_title",
+              "sources": [
+                "requirement:c10-s3"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

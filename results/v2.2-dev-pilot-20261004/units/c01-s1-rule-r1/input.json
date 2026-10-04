@@ -1,0 +1,373 @@
+{
+  "step_id": "c01-s1",
+  "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+  "preserved_constraints": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "change_facts": [
+    {
+      "fact_id": "request-title-trim",
+      "statement": "request.title.trim = \"U+0020\"",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "U+0020",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-length-unit",
+      "statement": "request.title.length_unit = \"unicode_code_point\"",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "unicode_code_point",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-min-length",
+      "statement": "request.title.min_length = 3",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 3,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-max-length",
+      "statement": "request.title.max_length = 80",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 80,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "create-title-required",
+      "statement": "create.title.required = true",
+      "operation": "create",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": true,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-required",
+      "statement": "update.title.required = false",
+      "operation": "update",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-nullable",
+      "statement": "request.title.nullable = false",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-invalid-status",
+      "statement": "request.title.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-omission",
+      "statement": "update.title.omission = \"unchanged\"",
+      "operation": "update",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "unchanged",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    }
+  ],
+  "active_contract_facts": [
+    {
+      "fact_id": "request-title-trim",
+      "statement": "request.title.trim = \"U+0020\"",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "U+0020",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-length-unit",
+      "statement": "request.title.length_unit = \"unicode_code_point\"",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "unicode_code_point",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-min-length",
+      "statement": "request.title.min_length = 3",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 3,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-max-length",
+      "statement": "request.title.max_length = 80",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 80,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "create-title-required",
+      "statement": "create.title.required = true",
+      "operation": "create",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": true,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-required",
+      "statement": "update.title.required = false",
+      "operation": "update",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-nullable",
+      "statement": "request.title.nullable = false",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": false,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "request-title-invalid-status",
+      "statement": "request.title.invalid_status = 422",
+      "operation": "request",
+      "state": "after-c01-s1",
+      "category": "field_type",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": 422,
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    },
+    {
+      "fact_id": "update-title-omission",
+      "statement": "update.title.omission = \"unchanged\"",
+      "operation": "update",
+      "state": "after-c01-s1",
+      "category": "history",
+      "required_sides": [
+        "frontend",
+        "backend"
+      ],
+      "coverage": "must_be_explicit",
+      "change_type": "added",
+      "source_kind": "current_requirement",
+      "previous_value": null,
+      "target_value": "unchanged",
+      "supersedes": [],
+      "sources": [
+        "requirement:c01-s1"
+      ]
+    }
+  ]
+}

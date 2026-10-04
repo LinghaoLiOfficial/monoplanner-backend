@@ -1,0 +1,10 @@
+{
+  "frontend": {
+    "needed": true,
+    "prompt": "需求：前后端：新增 POST `/api/v1/items/{id}/restore`，无请求体；所有者或超级用户可恢复，成功 200 返回 ItemPublic 且 deleted_at=null；未删除时 409 `detail=\"Item is not deleted\"`，不存在 404，他人资源无权 403。前端记录本会话成功删除的 id 并提供撤销。\n\n持续有效约束与验收条件：恢复后的条目重新参与列表和 count；不新增回收站列表接口；页面刷新后不要求保留撤销入口。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  },
+  "backend": {
+    "needed": true,
+    "prompt": "需求：前后端：新增 POST `/api/v1/items/{id}/restore`，无请求体；所有者或超级用户可恢复，成功 200 返回 ItemPublic 且 deleted_at=null；未删除时 409 `detail=\"Item is not deleted\"`，不存在 404，他人资源无权 403。前端记录本会话成功删除的 id 并提供撤销。\n\n持续有效约束与验收条件：恢复后的条目重新参与列表和 count；不新增回收站列表接口；页面刷新后不要求保留撤销入口。\n\n生成要求：只输出实施指令；不得使用未提供的历史信息；不要猜测未决契约。"
+  }
+}

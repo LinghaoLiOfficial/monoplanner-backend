@@ -1,0 +1,1753 @@
+{
+  "schema_version": "requirement-review-packets-v2",
+  "packets": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "29f3f14e9a418554f86750af239c9944ee542d1d0e5625ce90f7021818549d0f",
+      "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+      "facts": [
+        {
+          "fact_id": "request-skip-accepted",
+          "statement": "request.skip.accepted = false",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "statement": "request.limit.accepted = false",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "statement": "request.page.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "statement": "request.page.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "statement": "request.page.default = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "statement": "request.page_size.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "statement": "request.page_size.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "statement": "request.page_size.maximum = 50",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 50,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "statement": "request.page_size.default = 20",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 20,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "statement": "pagination.offset = \"(page-1)*page_size\"",
+          "operation": "pagination",
+          "state": "after-c02-s2",
+          "category": "pagination",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "(page-1)*page_size",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "实现说明（前端）：\n\n必须包含的契约事实（逐字复制）：\n[FACT:request-skip-accepted] (frontend,backend; must_be_explicit) request.skip.accepted = false\n[FACT:request-limit-accepted] (frontend,backend; must_be_explicit) request.limit.accepted = false\n[FACT:request-page-type] (frontend,backend; must_be_explicit) request.page.type = \"integer\"\n[FACT:request-page-minimum] (frontend,backend; must_be_explicit) request.page.minimum = 1\n[FACT:request-page-default] (frontend,backend; must_be_explicit) request.page.default = 1\n[FACT:request-page-size-type] (frontend,backend; must_be_explicit) request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] (frontend,backend; must_be_explicit) request.page_size.minimum = 1\n[FACT:request-page-size-maximum] (frontend,backend; must_be_explicit) request.page_size.maximum = 50\n[FACT:request-page-size-default] (frontend,backend; must_be_explicit) request.page_size.default = 20\n[FACT:pagination-offset] (frontend,backend; must_be_explicit) pagination.offset = \"(page-1)*page_size\"\n\n前端必须实现的行为（严格按契约，不添加未明示的功能）：\n- 请求参数\n  - 使用 page 和 page_size 两个查询参数（整数）。\n  - page 的语义、范围和缺省值：page 是整数且 page >= 1，缺省 page = 1。\n  - page_size 的语义、范围和缺省值：page_size 是整数且 1 <= page_size <= 50，缺省 page_size = 20。\n  - 永远不要在请求中包含 skip 或 limit；若任何请求包含 skip 或 limit，应视为违约，后端将返回 422（前端不得通过其它协议同时提交 skip/limit）。\n- 客户端验证\n  - 在向后端发出请求前，明确在应用层验证 page 与 page_size 的类型与边界（整数、page>=1、1<=page_size<=50）。不要仅依赖浏览器控件或表单原生约束作为唯一校验，须在应用逻辑中做明确验证并阻止非法请求。默认值当参数缺失时由前端补上（page=1, page_size=20）。\n- UI 行为\n  - 分页 UI 的页码从 1 开始；向后端发出的 page 对应 UI 显示页码，不做 0 基转换。\n  - 当后端返回空页（data 为空数组）并同时返回真实的 count 时，在 UI 显示无结果和正确的总数（不要将空页误认为错误）。\n  - 保持当前的权限与排序行为不变；分页仅改变数据窗口，不影响授权过滤与排序逻辑。\n- 错误处理\n  - 若后端返回 422（例如因为请求携带 skip 或 limit 或参数越界），在 UI 中以明确验证错误或请求被拒绝的方式提示用户。\n\n注：分页内部偏移由后端按 (page-1)*page_size 计算，前端不需要计算或发送 offset，除非另有后端约定。\n",
+      "backend_prompt": "实现说明（后端）：\n\n必须包含的契约事实（逐字复制）：\n[FACT:request-skip-accepted] (frontend,backend; must_be_explicit) request.skip.accepted = false\n[FACT:request-limit-accepted] (frontend,backend; must_be_explicit) request.limit.accepted = false\n[FACT:request-page-type] (frontend,backend; must_be_explicit) request.page.type = \"integer\"\n[FACT:request-page-minimum] (frontend,backend; must_be_explicit) request.page.minimum = 1\n[FACT:request-page-default] (frontend,backend; must_be_explicit) request.page.default = 1\n[FACT:request-page-size-type] (frontend,backend; must_be_explicit) request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] (frontend,backend; must_be_explicit) request.page_size.minimum = 1\n[FACT:request-page-size-maximum] (frontend,backend; must_be_explicit) request.page_size.maximum = 50\n[FACT:request-page-size-default] (frontend,backend; must_be_explicit) request.page_size.default = 20\n[FACT:pagination-offset] (frontend,backend; must_be_explicit) pagination.offset = \"(page-1)*page_size\"\n\n后端必须实现的行为（严格按契约，不添加未明示的功能）：\n- 请求接收与拒绝\n  - 明确拒绝包含 skip 或 limit 的请求：任何请求中若检测到 skip 或 limit 参数，返回 HTTP 422 状态码，并结束处理（不同时接受 page/page_size 与 skip/limit 两种协议）。\n- 参数解析与默认值\n  - 接受 page 与 page_size 两个查询参数，类型为整数。\n  - 若 page 缺失，则取缺省值 page = 1；若 page_size 缺失，则取缺省值 page_size = 20。\n- 参数验证\n  - 在应用层明确验证：page 必须为整数且 page >= 1；page_size 必须为整数且 1 <= page_size <= 50。\n  - 对于不满足上述类型或边界的请求，返回 HTTP 422（与拒绝 skip/limit 使用相同的状态码）。\n- 分页与查询\n  - 使用偏移量 offset = (page-1) * page_size（按契约精确计算）来对数据源进行分页读取。\n  - 在执行分页前，应先应用授权过滤和排序；response.count 必须表示授权并经过过滤后的总记录数（即 authorized_filtered_before_pagination）。\n  - 若 page 导致超出末页（无结果），返回的 data 应当是空数组，并同时返回真实的 count（非截断或伪造的值）。\n- 响应格式\n  - 保持响应主体为 { data: [...], count: <number> }（data 为数组，count 为经授权过滤后的记录总数）。权限和排序逻辑不得被分页变更。\n- 实现注意\n  - 在后端验证中明确处理缺省、类型、空值与边界；不要仅依赖框架自动绑定/原生参数转换，除非该框架的转换语义在计数、null、默认值和边界上与契约完全一致。若不完全一致，请在应用逻辑层做明确检查并返回 422。\n"
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "9ca94b83fe49bff1716cdae9e2b2c8ce31d36c73655dfc0e44fdd6fa1022e147",
+      "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "statement": "request.title.trim = \"U+0020\"",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "U+0020",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "statement": "request.title.length_unit = \"unicode_code_point\"",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "unicode_code_point",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "statement": "request.title.min_length = 3",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 3,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 80",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 80,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "statement": "create.title.required = true",
+          "operation": "create",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": true,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "statement": "update.title.required = false",
+          "operation": "update",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "statement": "request.title.nullable = false",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "statement": "request.title.invalid_status = 422",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 422,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "statement": "update.title.omission = \"unchanged\"",
+          "operation": "update",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "unchanged",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:request-title-max-length] request.title.max_length = 80\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"\nDerivable inherited context:",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:request-title-max-length] request.title.max_length = 80\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"\nDerivable inherited context:"
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "f36a77eb87a8c4dbd1087fa8549d8755948e96309df6a267e52f6669d2762f9c",
+      "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+      "facts": [
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 80",
+          "operation": "request",
+          "state": "after-c01-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "rolled_back",
+          "source_kind": "current_requirement",
+          "previous_value": 120,
+          "target_value": 80,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "statement": "read.existing_overlength_title.allowed = true",
+          "operation": "read",
+          "state": "after-c01-s3",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": true,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "statement": "update.omitted_title.revalidate = false",
+          "operation": "update",
+          "state": "after-c01-s3",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "必须在前端实现与后端完全一致的请求构造与预校验逻辑，保证局部更新语义一致、避免多余的弃用/修剪。严格遵循以下明确契约事实（原文逐字复制）：\n\n[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 80\n[FACT:read-existing-overlength-title-allowed] (frontend,backend; must_be_explicit) read.existing_overlength_title.allowed = true\n[FACT:update-omitted-title-revalidate] (frontend,backend; must_be_explicit) update.omitted_title.revalidate = false\n\n实现要点（前端职责）：\n- 验证语义（前端做为友好提示，但最终以后端为准）：当用户显式填写 title 时，前端应\n  - 先对输入执行 trim 操作，修剪字符仅为 U+0020（空格），与下列契约保持一致；\n  - 使用“Unicode code point”为长度单位计数（不能用字节、也不能用 UTF-16 code units）；例如在 JS 中可用 Array.from(str).length 或 [...str].length 来按 code point 计数；在其他语言请使用等价的 code-point 计数函数。\n  - 强制最小长度 3（含边界）；最大长度 80（含边界）。超过或低于时，阻止提交并在 UI 显示与后端一致的错误用语和状态含义（后端返回 422 表示无效）。\n- 对于 description 字段，最大长度应为 500，trim 行为为 false（不自动修剪），计数语义同上（按契约要求处理）。\n- 创建（create）操作：title 必须存在且遵循上述校验（create.title.required = true）。\n- 更新（update）操作：title 可省略（update.title.required = false）。如果用户未在更新请求中显式提供 title 字段，应确保 PATCH/PUT 请求体中不包含 title 字段（或以后端约定的“省略”语义发送），以避免对已有值重新校验或覆盖；省略时不得将 title 发送为 null 或空字符串来表示“保留”，因为契约要求 request.title.nullable = false 且 update.omission = \"unchanged\"。\n- 已存在超长 title 的读取：允许展示和读取后端返回的任何 title（即使长度 > 80），前端不得在读取阶段阻止或改变该值（read.existing_overlength_title.allowed = true）。\n- 当用户在编辑界面仅修改 description（示例测试用例：资源当前已有 100 字的 title，用户仅更新 description）时，前端必须只发送 description 字段，不发送 title 字段，从而验证“局部更新不重校验已有超限 title”。\n- 错误与状态：当前端执行本地校验发现显式提交的 title 超过 80 code points 时，应提示错误并阻止提交；但若前端未拦截、请求到达后端且后端返回 422，前端需展示后端返回的 422 错误信息（契约中的 request.title.invalid_status = 422）。\n- 不要依赖浏览器原生 maxlength 等平台控件作为唯一防线，除非你能完全证明该控件的计数、空值、默认与边界语义与契约中“unicode_code_point / trim U+0020 / nullable false / 包含边界值”完全一致；否则请用显式的应用层校验（按 code point 计数并只修剪 U+0020）以保证与后端一致。\n- 兼容性与回退策略：在 UI 文案或 API contract 版本处声明此次回退（title 上限从 120 回退到 80），并在本次发布中递增资源/契约版本号以满足“回退后的资产版本继续递增”的要求。\n\n必须包含的测试用例（前端自动化或手工验收）：\n1) 读取：已有资源 title 长度 100 code points 的资产，GET 返回该 title（不应被裁剪或拒绝）。\n2) 局部更新成功：对上条资产仅 PATCH description（不包含 title 字段），后端应接受且 title 保持原样（100 code points）。\n3) 显式超限更新失败：在更新请求中包含 title 字段且长度为 100 code points，应在前端校验后阻止提交或允许提交并正确处理后端 422 响应。前端展示与后端一致的 422 错误。\n4) Create 边界：提交 title 长度为 80（应通过）和 81（应失败）以验证边界。\n5) Min 长度：提交 title 长度为 2（应失败）以验证下限不被撤销。\n\n实现提示：在提交前统一使用一个共享的验证函数库（严格按 code-point 计数并只 trim U+0020），该库既可用于表单即时校验，也用于打包请求前的最终校验；但记住后端为最终法则，前端的校验仅用于更佳 UX。",
+      "backend_prompt": "必须在后端实现并强制执行契约，确保与前端行为一致并成为权威判定。严格遵循以下明确契约事实（原文逐字复制）：\n\n[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 80\n[FACT:read-existing-overlength-title-allowed] (frontend,backend; must_be_explicit) read.existing_overlength_title.allowed = true\n[FACT:update-omitted-title-revalidate] (frontend,backend; must_be_explicit) update.omitted_title.revalidate = false\n\n实现要点（后端职责）：\n- 验证逻辑（后端为权威）：\n  - 当请求包含 title 字段时，先对其执行 trim 操作，修剪字符仅为 U+0020（空格）；请求体中 title 字段如为 null，应视为无效（request.title.nullable = false），返回 422。\n  - 使用 Unicode code point 作为长度单位进行计数（契约明确 request.title.length_unit = \"unicode_code_point\"）；注意不要使用基于字节或 UTF-16 code unit 的计数函数（例如 Java String.length() 在某些环境中返回 code units），应使用语言/平台中能保证按 code point 计数的函数或库。\n  - 对 title 应用最小长度 3（request.title.min_length = 3）和最大长度 80（request.title.max_length = 80）。若验证失败，返回 HTTP 422（request.title.invalid_status = 422），并在响应中明确字段级错误信息。\n- 更新操作（PATCH/PUT）行为：\n  - 若更新请求中不包含 title 字段，必须按照契约不中止或重校验现存 title（update.omission = \"unchanged\" 且 update.omitted_title.revalidate = false）：后端应忽略对 title 的任何再次验证并保留数据库中原有值（即不会将已有超限 title 视为错误也不会进行截断）。\n  - 若更新请求显式包含 title 字段，则对该新值执行完整校验（trim U+0020、按 code point 计数、min/max 检查）。若显式提交的 title 超过 80 code points，应返回 422（并保持原数据不变）。\n- 读取行为：当读取资源时，允许返回数据库中存储的任何 title 字符串，即使长度超过 80（read.existing_overlength_title.allowed = true）。不得在读取时自动裁剪或拒绝这些值。\n- 创建行为：create.title.required = true——创建请求必须携带 title 字段且通过上述校验，创建失败时应返回 422。\n- description 字段：在请求中对 description 的最大长度限制为 500（request.description.max_length = 500），并且不自动 trim（request.description.trim = false）。对 description 的计数也应与前端一致（按契约要求处理）。\n- 错误语义：所有字段级无效输入应返回 422，并包含可供前端显示的字段级错误说明（与契约中的 invalid_status 对应）。\n- 局部更新测试用例（必须通过）：\n  1) 资源已有 title 长度 100 code points，执行 GET，应返回该 title（不裁剪）。\n  2) 对该资源仅 PATCH description（请求体中不含 title 字段），应成功并且 title 在数据库中保持原样（不触发 revalidate）。\n  3) 对该资源做 PATCH 且显式提交 title 为 100 code points，应返回 422 并且不修改数据库中的原 title。\n  4) Create：尝试创建 title 为 80（通过）和 81（失败，返回 422）以验证界限。\n  5) Min 长度：提交 title 长度为 2（失败，返回 422）以验证下限不被撤销。\n\n实施注意事项：\n- 必须使用明确的、按 code point 计数的验证实现；不要仅依赖数据库列长度或 ORM/框架层面的 length 限制，除非你能保证这些限制在所有运行时中的计数语义与“Unicode code point + trim U+0020 + nullable false + 含边界”完全一致。\n- 在数据库层面可以记录并允许已有超长 title（以满足读取需求），但写入（创建/显式更新）必须由后台验证逻辑拒绝超限值。\n- 在版本管理或 API 文档中记录此次回退（从 120 回退到 80）并把资源/契约版本号递增以满足“回退后的资产版本继续递增”的约束。\n\n务必保证前端与后端在以下点完全一致：trim 字符集（仅 U+0020）、长度计数单位（unicode_code_point）、最小/最大边界（3/80）、省略字段语义（省略时不重校验且不覆盖）。"
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "afeaa062f42f4511adc6b41bbfe75d2aee58ee8ad38c9d28bc72a76ffb211180",
+      "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+      "facts": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "statement": "request.page_size.maximum = 100",
+          "operation": "request",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 50,
+          "target_value": 100,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "statement": "request.page_size.default = 25",
+          "operation": "request",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 20,
+          "target_value": 25,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "statement": "response.page.type = \"integer\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "statement": "response.page.value = \"effective_page\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "effective_page",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "statement": "response.page_size.type = \"integer\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "statement": "response.page_size.value = \"effective_page_size\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "effective_page_size",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "[FACT:request-page-size-maximum] (frontend,backend; must_be_explicit) request.page_size.maximum = 100\n[FACT:request-page-size-default] (frontend,backend; must_be_explicit) request.page_size.default = 25\n[FACT:response-page-type] (frontend,backend; must_be_explicit) response.page.type = \"integer\"\n[FACT:response-page-value] (frontend,backend; must_be_explicit) response.page.value = \"effective_page\"\n[FACT:response-page-size-type] (frontend,backend; must_be_explicit) response.page_size.type = \"integer\"\n[FACT:response-page-size-value] (frontend,backend; must_be_explicit) response.page_size.value = \"effective_page_size\"\n\n目标（依据契约实现，不作额外假设）：\n- 请求参数：page 必须为整数，缺省值为 1；skip/limit 仍然禁止发送。page_size 必须为整数，最小 1，缺省值 25，上限 100（允许 100，101 等超过上限应被判为无效）。\n- 响应中新增并回显两个整数字段：page（类型 integer，值为 effective_page）和 page_size（类型 integer，值为 effective_page_size）。\n- 前端控件必须以后端回显的实际生效值同步（回显值覆盖当前控件状态以保持一致）。\n\n前端实现要点（逐项、与后端保持一致）：\n1) 控件初始化与出参同步\n   - 初次渲染时：页面上的分页控件初始显示值应采用后端回显的 effective_page 和 effective_page_size；若没有后端回显（首次请求前），page 初始显示 1，page_size 初始显示 25（契约缺省）。\n   - 每次收到列表响应后：立即将分页控件的页码设置为 response.page（integer）并将每页大小控件设置为 response.page_size（integer），以回显实际生效值并让用户看到真实状态。\n\n2) 出参格式与发送要求\n   - 不发送 skip 或 limit 参数（这些仍被禁止）。\n   - 发送的参数仅包含 page 和 page_size，均为整数类型；若某参数在 UI 中为空或非整数，先在应用层做显式校验并阻止发送。\n\n3) 前端输入校验（在客户端提前阻止明显违约的请求）\n   - page：若用户输入或控件值小于 1 或非整数，应在 UI 层显示验证错误并阻止请求（契约要求 page.minimum = 1，默认 1）。\n   - page_size：在 UI 层禁止发送小于 1 或大于 100 的值；初始/默认显示 25。注意：客户端校验仅为友好提示，最终必须以后端返回结果为准并用回显值更新控件。\n   - 不要依赖浏览器/框架的边界语义作为唯一的保障；请在应用逻辑中显式检查整数、边界与缺省处理，因契约对计数、默认与边界的语义必须严格满足。\n\n4) 错误处理与用户提示\n   - 若后端返回验证失败（HTTP 422），在 UI 显示明确错误信息（例如：page_size 超出允许范围），并不要将控件更新为失败的提交值；以后端回显值为准。\n\n5) 验收用例（前端需能通过这些行为验证后端一致性）\n   - 不传 page 时：后端应在响应回显 page=1，前端收到后将控件显示为 1。\n   - 发送 page_size=100：后端应成功并在响应回显 page_size=100，前端将控件显示为 100。\n   - 发送 page_size=101：后端应返回 422（无效），前端应显示错误并保持控件值为后端回显或上次有效值。\n\n严格遵守上面契约字段与回显行为；实现中的任何前端优化必须以后端回显为最终真值并保证不发送 skip/limit 参数。",
+      "backend_prompt": "[FACT:request-page-size-maximum] (frontend,backend; must_be_explicit) request.page_size.maximum = 100\n[FACT:request-page-size-default] (frontend,backend; must_be_explicit) request.page_size.default = 25\n[FACT:response-page-type] (frontend,backend; must_be_explicit) response.page.type = \"integer\"\n[FACT:response-page-value] (frontend,backend; must_be_explicit) response.page.value = \"effective_page\"\n[FACT:response-page-size-type] (frontend,backend; must_be_explicit) response.page_size.type = \"integer\"\n[FACT:response-page-size-value] (frontend,backend; must_be_explicit) response.page_size.value = \"effective_page_size\"\n\n目标（依据契约实现，不作额外假设）：\n- 接收并校验请求参数：page（integer，minimum 1，default 1），page_size（integer，minimum 1，default 25，maximum 100）。禁止接受 skip 或 limit 参数；若收到应视为无效并拒绝（按现有契约，skip/limit accepted = false）。\n- 对无效请求返回统一的无效状态码 422（request.invalid_status = 422）。\n- 响应必须包含回显字段：page（integer，值为 effective_page）和 page_size（integer，值为 effective_page_size），用于前端同步控件状态。\n- 分页偏移量计算应使用公式 offset = (page - 1) * page_size（pagination.offset）。\n\n后端实现要点（逐项、与前端保持一致）：\n1) 参数解析与默认值\n   - 如果请求中不包含 page，则将其视为 1（缺省处理）。\n   - 如果请求中不包含 page_size，则将其视为 25（缺省处理）。\n   - 强制将接收到的 page 与 page_size 解析为整数（非整数视为无效）。\n\n2) 应用级校验（显式、在应用逻辑中执行）\n   - page：必须为整数且 >= 1；否则返回 422 并包含可读错误信息。\n   - page_size：必须为整数且 1 <= page_size <= 100；当 page_size == 100 时视为合法并继续；当 page_size == 101（或 >100）时视为无效并返回 422。\n   - 若请求包含 skip 或 limit 字段，则视为无效并返回 422（skip/limit 禁止）。\n   - 注意：请在应用层实现这些校验（不要仅依赖外部框架边界默认行为），以确保计数、默认值与边界语义与契约完全一致。\n\n3) 分页与响应构造\n   - 计算 offset = (page - 1) * page_size，并据此执行数据检索/截取。\n   - 结果响应必须包含整数字段 response.page = effective_page 和 response.page_size = effective_page_size，反映实际用于检索的数据（包括在缺省或被约束的情形下）。字段类型必须为 integer。\n   - 若检索结果为空，应保持响应中的 data = []（契约中 empty page data 为 []，前端将依此渲染空页）。\n\n4) 错误状态\n   - 对于任何违反上述校验的请求（含 page_size 超出最大值或 page < 1 或发送了 skip/limit 或参数非整数），返回 HTTP 422（request.invalid_status = 422），并在响应体中提供可供前端显示的错误信息。\n\n5) 验收用例（后端必须通过）\n   - 请求不含 page：在响应中回显 page=1，page_size 若不含回显则为 25。\n   - 请求 page_size=100：校验通过并在响应中回显 page_size=100。\n   - 请求 page_size=101：校验失败，返回 422；不在响应中回显 101 为有效值。\n\n严格按上述校验与回显实现，确保前端回显同步策略能以响应中的 response.page 与 response.page_size 为唯一可信来源。"
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "50e13135a57a1e380a55a9008a927b2826e91d51a0bbe06b7e4c71784241b188",
+      "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+      "facts": [
+        {
+          "fact_id": "request-skip-type",
+          "statement": "request.skip.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "statement": "request.skip.minimum = 0",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 0,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "statement": "request.skip.default = 0",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 0,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "statement": "request.limit.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "statement": "request.limit.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "statement": "request.limit.maximum = 50",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 50,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "statement": "request.limit.default = 20",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 20,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "statement": "request.invalid_status = 422",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 422,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "statement": "response.count.scope = \"authorized_filtered_before_pagination\"",
+          "operation": "response",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "authorized_filtered_before_pagination",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "statement": "response.empty_page.data = []",
+          "operation": "response",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": [],
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-type] request.skip.type = \"integer\"\n[FACT:request-skip-minimum] request.skip.minimum = 0\n[FACT:request-skip-default] request.skip.default = 0\n[FACT:request-limit-type] request.limit.type = \"integer\"\n[FACT:request-limit-minimum] request.limit.minimum = 1\n[FACT:request-limit-maximum] request.limit.maximum = 50\n[FACT:request-limit-default] request.limit.default = 20\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\nDerivable inherited context:",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-type] request.skip.type = \"integer\"\n[FACT:request-skip-minimum] request.skip.minimum = 0\n[FACT:request-skip-default] request.skip.default = 0\n[FACT:request-limit-type] request.limit.type = \"integer\"\n[FACT:request-limit-minimum] request.limit.minimum = 1\n[FACT:request-limit-maximum] request.limit.maximum = 50\n[FACT:request-limit-default] request.limit.default = 20\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\nDerivable inherited context:"
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "e1d39fcf1ed75333954e59c303180cf38f9c37bd492e29d74615d73e42671893",
+      "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+      "facts": [
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 120",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 80,
+          "target_value": 120,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "statement": "request.description.max_length = 500",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 500,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "statement": "request.description.trim = false",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-max-length] request.title.max_length = 120\n[FACT:request-description-max-length] request.description.max_length = 500\n[FACT:request-description-trim] request.description.trim = false\nDerivable inherited context:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-max-length] request.title.max_length = 120\n[FACT:request-description-max-length] request.description.max_length = 500\n[FACT:request-description-trim] request.description.trim = false\nDerivable inherited context:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\""
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "de98bd4af08f45e67ca9a59d1705f8a6edf247f43aa001487cd895082d8fd4fa",
+      "raw_requirement": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+      "facts": [
+        {
+          "fact_id": "request-skip-type",
+          "statement": "request.skip.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "statement": "request.skip.minimum = 0",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 0,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-skip-default",
+          "statement": "request.skip.default = 0",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 0,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-type",
+          "statement": "request.limit.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "statement": "request.limit.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "statement": "request.limit.maximum = 50",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 50,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-limit-default",
+          "statement": "request.limit.default = 20",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 20,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "statement": "request.invalid_status = 422",
+          "operation": "request",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 422,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-count-scope",
+          "statement": "response.count.scope = \"authorized_filtered_before_pagination\"",
+          "operation": "response",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "authorized_filtered_before_pagination",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "statement": "response.empty_page.data = []",
+          "operation": "response",
+          "state": "after-c02-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": [],
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "[FACT:request-skip-type] (frontend,backend; must_be_explicit) request.skip.type = \"integer\"\n[FACT:request-skip-minimum] (frontend,backend; must_be_explicit) request.skip.minimum = 0\n[FACT:request-skip-default] (frontend,backend; must_be_explicit) request.skip.default = 0\n[FACT:request-limit-type] (frontend,backend; must_be_explicit) request.limit.type = \"integer\"\n[FACT:request-limit-minimum] (frontend,backend; must_be_explicit) request.limit.minimum = 1\n[FACT:request-limit-maximum] (frontend,backend; must_be_explicit) request.limit.maximum = 50\n[FACT:request-limit-default] (frontend,backend; must_be_explicit) request.limit.default = 20\n[FACT:request-invalid-status] (frontend,backend; must_be_explicit) request.invalid_status = 422\n[FACT:response-count-scope] (frontend,backend; must_be_explicit) response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] (frontend,backend; must_be_explicit) response.empty_page.data = []\n\nImplementation instructions for the frontend (exact, minimal):\n- Request pattern: send GET /api/v1/items?skip={skip}&limit={limit} for every page action.\n- Defaults: if the UI does not supply values, use skip = 0 and limit = 20.\n- Client-side validation (must ensure values sent conform to contract):\n  - Ensure skip is an integer (no decimals) >= 0.\n  - Ensure limit is an integer between 1 and 50 inclusive.\n  - Do not send requests with invalid values; instead surface a validation error to the user.\n- Pagination calculation: compute skip as (pageIndex * limit) or otherwise set skip explicitly; always send both skip and limit as integers.\n- HTTP error handling: if the server returns status 422, treat it as a parameter invalidation error and show a validation/usage message to the user (do not assume partial results).\n- Response handling:\n  - Expect a JSON response containing at least fields data (array) and count (integer).\n  - Treat response.count as the total number of matching items inside the caller's authorization scope before pagination (do not interpret it as the length of the returned page).\n  - If response.data === [] render empty-state for the page.\n- Do not rely on server-side lenient parsing: send strictly valid integer values so the request is accepted.\n\nKeep these behaviors synchronized with backend validation and response semantics.",
+      "backend_prompt": "[FACT:request-skip-type] (frontend,backend; must_be_explicit) request.skip.type = \"integer\"\n[FACT:request-skip-minimum] (frontend,backend; must_be_explicit) request.skip.minimum = 0\n[FACT:request-skip-default] (frontend,backend; must_be_explicit) request.skip.default = 0\n[FACT:request-limit-type] (frontend,backend; must_be_explicit) request.limit.type = \"integer\"\n[FACT:request-limit-minimum] (frontend,backend; must_be_explicit) request.limit.minimum = 1\n[FACT:request-limit-maximum] (frontend,backend; must_be_explicit) request.limit.maximum = 50\n[FACT:request-limit-default] (frontend,backend; must_be_explicit) request.limit.default = 20\n[FACT:request-invalid-status] (frontend,backend; must_be_explicit) request.invalid_status = 422\n[FACT:response-count-scope] (frontend,backend; must_be_explicit) response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] (frontend,backend; must_be_explicit) response.empty_page.data = []\n\nImplementation instructions for the backend (exact, minimal):\n- Endpoint: GET /api/v1/items\n- Query parameter extraction and defaults:\n  - If skip is omitted, treat as 0.\n  - If limit is omitted, treat as 20.\n- Validation rules (application-level, explicit parsing):\n  - Parse both skip and limit from the raw query string and reject if they are not strictly integers (reject float representations, non-numeric, empty, or other formats).\n  - Enforce skip >= 0.\n  - Enforce 1 <= limit <= 50.\n  - On any validation failure, respond with HTTP status 422 and an explanatory body; do not coerce or clamp automatically in place of returning 422.\n- Authorization and count semantics:\n  - Apply authorization and filter logic first to determine the full set of items visible to the caller.\n  - Compute response.count as the total number of items in that authorized+filtered set BEFORE applying pagination (this is the value returned in the response.count field).\n- Pagination and data:\n  - After computing count, apply offset = skip and limit = limit to fetch the page of items.\n  - Return JSON with at least: { \"data\": [ ...items... ], \"count\": <count> }.\n  - If the page contains no items, return data as an empty array ([]). The count value must still reflect the pre-pagination total.\n- Parsing/validation notes:\n  - Use explicit integer parse + range checks in application code so behavior exactly matches the contract; do not rely on framework primitives whose semantics of defaulting, null handling, counting, or boundary inclusivity differ from the stated rules.\n\nKeep these behaviors synchronized with the frontend expectations."
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "818d57f36aa91ca369c86fc5e76f019c68dfec4c46d34f4217c674cba182a9b5",
+      "raw_requirement": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+      "facts": [
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 120",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 80,
+          "target_value": 120,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "statement": "request.description.max_length = 500",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 500,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        },
+        {
+          "fact_id": "request-description-trim",
+          "statement": "request.description.trim = false",
+          "operation": "request",
+          "state": "after-c01-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 120\n[FACT:request-description-max-length] (frontend,backend; must_be_explicit) request.description.max_length = 500\n[FACT:request-description-trim] (frontend,backend; must_be_explicit) request.description.trim = false\n\nTask (frontend): Implement client-side validation changes to match the authoritative contract facts above and preserve all existing semantics not mentioned as changed.\n\nMandatory requirements (do not alter):\n- Keep title trimming, required, and null rules unchanged.\n- Keep description default and null semantics unchanged.\n- Title success/failure boundaries: 120 code points => success, 121 => failure.\n- Description success/failure boundaries for non-empty values: 500 code points => success, 501 => failure.\n\nWhat to implement exactly:\n1) Title validation\n  - Trim only U+0020 (SPACE) from both ends of the submitted title before applying length checks. Do not trim other whitespace characters.\n  - Count length using Unicode code points (request.title.length_unit = \"unicode_code_point\"). Do not rely on platform string-length semantics that count UTF-16 code units or bytes.\n    - In JavaScript, for example, use Array.from(title).length or iterate with for...of to count code points; do not use title.length for this purpose.\n  - Enforce min length = 3 and max length = 120 (after the U+0020 trim). These min/max rules and required/null semantics remain as before.\n  - Maintain existing create/update required behavior: create.title.required = true, update.title.required = false, update omission = \"unchanged\".\n  - If client-side validation fails for title, present the same UI error behavior already in use for invalid titles (do not change the UX contract). The server returns 422 for invalid title submissions; ensure the client surfaces that status consistently.\n\n2) Description validation\n  - Do NOT trim description values (request.description.trim = false). Keep current behavior for leading/trailing characters.\n  - Apply the length limit only for non-empty description values: max length = 500 Unicode code points. If a non-empty description is provided, count code points and reject if > 500.\n  - For counting, use a Unicode code-point-aware method similar to title counting (e.g., Array.from(desc).length in JS) because the contract requires code-point semantics for length checks.\n  - Preserve description default and null semantics exactly as currently implemented (do not change nullable/default handling).\n\n3) Tests to include in frontend test suite\n  - Title: a string of exactly 120 Unicode code points (after U+0020 trim) should pass client validation and allow submission.\n  - Title: a string of 121 Unicode code points (after U+0020 trim) should be blocked by client validation.\n  - Description: a non-empty string of exactly 500 Unicode code points should pass client validation.\n  - Description: a non-empty string of 501 Unicode code points should be blocked by client validation.\n  - Preserve existing tests that assert title trimming by U+0020, required behavior on create/update, and nullability behavior.\n\nNotes (allowed implementation guidance only):\n- Because many common platform primitives do not count Unicode code points (e.g., JS .length counts UTF-16 code units), implement explicit code-point counting rather than relying on .length unless you can prove the primitive's semantics exactly match Unicode code points.\n- Do not alter any validation semantics not stated above (trimming, required/null, default handling).",
+      "backend_prompt": "[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 120\n[FACT:request-description-max-length] (frontend,backend; must_be_explicit) request.description.max_length = 500\n[FACT:request-description-trim] (frontend,backend; must_be_explicit) request.description.trim = false\n\nTask (backend): Implement server-side validation and any necessary data-handling changes to match the authoritative contract facts above and preserve all existing semantics not mentioned as changed.\n\nMandatory requirements (do not alter):\n- Keep title trimming, required, and null rules unchanged.\n- Keep description default and null semantics unchanged.\n- Title success/failure boundaries: 120 code points => success, 121 => failure.\n- Description success/failure boundaries for non-empty values: 500 code points => success, 501 => failure.\n\nWhat to implement exactly:\n1) Title validation (server-side)\n  - Before applying length checks, trim only U+0020 (SPACE) from both ends of the incoming title value. Do not trim other whitespace characters.\n  - Count title length using Unicode code points (request.title.length_unit = \"unicode_code_point\"). Ensure server-side counting matches the frontend's code-point counting logic.\n    - If your language/runtime provides a function that returns the number of Unicode code points exactly (for example, Java's String.codePointCount), you may use it only if you are certain it matches the required semantics. If not certain, implement an explicit code-point count.\n  - Enforce min_length = 3 and max_length = 120 after the U+0020 trim. Keep nullable=false and required behavior unchanged (create required = true, update required = false, update omission = \"unchanged\").\n  - On validation failure for title, return the existing invalid status code (request.title.invalid_status = 422) and the same error payload shape as currently used for title validation errors.\n\n2) Description validation (server-side)\n  - Do NOT trim description values (request.description.trim = false). Store and validate description exactly as received with respect to trimming.\n  - If a non-empty description value is present, count Unicode code points and enforce max_length = 500. If the description is empty or absent, preserve existing default/null semantics (do not change behavior).\n  - On description validation failure, return the same status code and error payload structure used by the service for invalid request fields (keep unchanged except enforce the new boundary).\n\n3) Storage/schema notes\n  - Ensure persistent storage can hold up to 120 Unicode code points for title and up to 500 Unicode code points for description. Do not assume code-point == byte/column-length mapping; verify the DB column type and collation/character set accommodate the required number of code points without truncation.\n  - If DB varchar/column length is defined in bytes or code units in your environment, adjust schema or use application-level checks before persisting to guarantee no truncation will occur that would violate the contract.\n\n4) Tests to add/update on backend\n  - Title: request with title that, after trimming U+0020, is exactly 120 Unicode code points => server accepts and returns success.\n  - Title: request with title that, after trimming U+0020, is 121 Unicode code points => server returns 422 and the established field error.\n  - Description: request with a non-empty description of exactly 500 Unicode code points => server accepts.\n  - Description: request with a non-empty description of 501 Unicode code points => server returns validation error (same status/payload semantics as other field errors).\n  - Include round-trip tests that confirm frontend and backend code-point counting are equivalent (e.g., same inputs accepted/rejected by both).\n\nNotes (allowed implementation guidance only):\n- Only use a platform primitive for code-point counting if you have confirmed its semantics exactly equal Unicode code-point counting. If there's any mismatch (e.g., primitives that return UTF-16 code units), implement explicit code-point counting or use a proven library.\n- Do not alter error status codes, field nullability, default handling, or update omission semantics beyond enforcing the new maximums specified above."
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "1308cc3cde9f68b168a2b8d8577aa3a029e8954f412c28bb0976835eb2616d05",
+      "raw_requirement": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+      "facts": [
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 80",
+          "operation": "request",
+          "state": "after-c01-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "rolled_back",
+          "source_kind": "current_requirement",
+          "previous_value": 120,
+          "target_value": 80,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "statement": "read.existing_overlength_title.allowed = true",
+          "operation": "read",
+          "state": "after-c01-s3",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": true,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "statement": "update.omitted_title.revalidate = false",
+          "operation": "update",
+          "state": "after-c01-s3",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-max-length] request.title.max_length = 80\n[FACT:read-existing-overlength-title-allowed] read.existing_overlength_title.allowed = true\n[FACT:update-omitted-title-revalidate] update.omitted_title.revalidate = false\nDerivable inherited context:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"\n[FACT:request-description-max-length] request.description.max_length = 500\n[FACT:request-description-trim] request.description.trim = false",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-title-max-length] request.title.max_length = 80\n[FACT:read-existing-overlength-title-allowed] read.existing_overlength_title.allowed = true\n[FACT:update-omitted-title-revalidate] update.omitted_title.revalidate = false\nDerivable inherited context:\n[FACT:request-title-trim] request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] request.title.min_length = 3\n[FACT:create-title-required] create.title.required = true\n[FACT:update-title-required] update.title.required = false\n[FACT:request-title-nullable] request.title.nullable = false\n[FACT:request-title-invalid-status] request.title.invalid_status = 422\n[FACT:update-title-omission] update.title.omission = \"unchanged\"\n[FACT:request-description-max-length] request.description.max_length = 500\n[FACT:request-description-trim] request.description.trim = false"
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "e558aa6aac98b732eef554d2e6af2063fc47d187642790140dcdefa9895db240",
+      "raw_requirement": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+      "facts": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "statement": "request.page_size.maximum = 100",
+          "operation": "request",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 50,
+          "target_value": 100,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "statement": "request.page_size.default = 25",
+          "operation": "request",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "modified",
+          "source_kind": "current_requirement",
+          "previous_value": 20,
+          "target_value": 25,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-type",
+          "statement": "response.page.type = \"integer\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-value",
+          "statement": "response.page.value = \"effective_page\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "effective_page",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "statement": "response.page_size.type = \"integer\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "statement": "response.page_size.value = \"effective_page_size\"",
+          "operation": "response",
+          "state": "after-c02-s3",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "effective_page_size",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s3"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-page-size-maximum] request.page_size.maximum = 100\n[FACT:request-page-size-default] request.page_size.default = 25\n[FACT:response-page-type] response.page.type = \"integer\"\n[FACT:response-page-value] response.page.value = \"effective_page\"\n[FACT:response-page-size-type] response.page_size.type = \"integer\"\n[FACT:response-page-size-value] response.page_size.value = \"effective_page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-page-size-maximum] request.page_size.maximum = 100\n[FACT:request-page-size-default] request.page_size.default = 25\n[FACT:response-page-type] response.page.type = \"integer\"\n[FACT:response-page-value] response.page.value = \"effective_page\"\n[FACT:response-page-size-type] response.page_size.type = \"integer\"\n[FACT:response-page-size-value] response.page_size.value = \"effective_page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\""
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "a504a0702e8b1d156cca4650723c7e27826994cd45f7058c9e0dac629dfa46e1",
+      "raw_requirement": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+      "facts": [
+        {
+          "fact_id": "request-skip-accepted",
+          "statement": "request.skip.accepted = false",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "statement": "request.limit.accepted = false",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-type",
+          "statement": "request.page.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "statement": "request.page.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-default",
+          "statement": "request.page.default = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "statement": "request.page_size.type = \"integer\"",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "integer",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "statement": "request.page_size.minimum = 1",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 1,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "statement": "request.page_size.maximum = 50",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 50,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "statement": "request.page_size.default = 20",
+          "operation": "request",
+          "state": "after-c02-s2",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 20,
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        },
+        {
+          "fact_id": "pagination-offset",
+          "statement": "pagination.offset = \"(page-1)*page_size\"",
+          "operation": "pagination",
+          "state": "after-c02-s2",
+          "category": "pagination",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "(page-1)*page_size",
+          "supersedes": [],
+          "sources": [
+            "requirement:c02-s2"
+          ]
+        }
+      ],
+      "frontend_prompt": "Implement frontend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:request-page-size-maximum] request.page_size.maximum = 50\n[FACT:request-page-size-default] request.page_size.default = 20\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []",
+      "backend_prompt": "Implement backend responsibilities. Preserve all unchanged constraints.\nExplicit contract checklist:\n[FACT:request-skip-accepted] request.skip.accepted = false\n[FACT:request-limit-accepted] request.limit.accepted = false\n[FACT:request-page-type] request.page.type = \"integer\"\n[FACT:request-page-minimum] request.page.minimum = 1\n[FACT:request-page-default] request.page.default = 1\n[FACT:request-page-size-type] request.page_size.type = \"integer\"\n[FACT:request-page-size-minimum] request.page_size.minimum = 1\n[FACT:request-page-size-maximum] request.page_size.maximum = 50\n[FACT:request-page-size-default] request.page_size.default = 20\n[FACT:pagination-offset] pagination.offset = \"(page-1)*page_size\"\nDerivable inherited context:\n[FACT:request-invalid-status] request.invalid_status = 422\n[FACT:response-count-scope] response.count.scope = \"authorized_filtered_before_pagination\"\n[FACT:response-empty-page-data] response.empty_page.data = []"
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "8eb142221095b7d508a6d2f6a51c31224fd5d172cfe4d7daea9898c5efe81867",
+      "raw_requirement": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+      "facts": [
+        {
+          "fact_id": "request-title-trim",
+          "statement": "request.title.trim = \"U+0020\"",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "U+0020",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "statement": "request.title.length_unit = \"unicode_code_point\"",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "unicode_code_point",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "statement": "request.title.min_length = 3",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 3,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "statement": "request.title.max_length = 80",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 80,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "create-title-required",
+          "statement": "create.title.required = true",
+          "operation": "create",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": true,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-required",
+          "statement": "update.title.required = false",
+          "operation": "update",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "statement": "request.title.nullable = false",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": false,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "statement": "request.title.invalid_status = 422",
+          "operation": "request",
+          "state": "after-c01-s1",
+          "category": "field_type",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": 422,
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        },
+        {
+          "fact_id": "update-title-omission",
+          "statement": "update.title.omission = \"unchanged\"",
+          "operation": "update",
+          "state": "after-c01-s1",
+          "category": "history",
+          "required_sides": [
+            "frontend",
+            "backend"
+          ],
+          "coverage": "must_be_explicit",
+          "change_type": "added",
+          "source_kind": "current_requirement",
+          "previous_value": null,
+          "target_value": "unchanged",
+          "supersedes": [],
+          "sources": [
+            "requirement:c01-s1"
+          ]
+        }
+      ],
+      "frontend_prompt": "[FACT:request-title-trim] (frontend,backend; must_be_explicit) request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] (frontend,backend; must_be_explicit) request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] (frontend,backend; must_be_explicit) request.title.min_length = 3\n[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 80\n[FACT:create-title-required] (frontend,backend; must_be_explicit) create.title.required = true\n[FACT:update-title-required] (frontend,backend; must_be_explicit) update.title.required = false\n[FACT:request-title-nullable] (frontend,backend; must_be_explicit) request.title.nullable = false\n[FACT:request-title-invalid-status] (frontend,backend; must_be_explicit) request.title.invalid_status = 422\n[FACT:update-title-omission] (frontend,backend; must_be_explicit) update.title.omission = \"unchanged\"\n\nImplement exactly the contract facts above in the frontend validation and payload construction. Required behavior (implement exactly):\n- Trim only ASCII space U+0020 from both ends of the user-entered title before validation and before sending it to the server. Do NOT use generic .trim() that removes other Unicode whitespace. Example JS trimming: title = title.replace(/^\\u0020+|\\u0020+$/g, \"\");\n- Measure length in Unicode code points. In JavaScript, use Array.from(title).length or [...title].length to count code points exactly.\n- Enforce inclusive length limits: minimum 3 and maximum 80 code points after the U+0020-only trim. If length < 3 or > 80, treat as validation failure and prevent submission.\n- Treat a title composed entirely of U+0020 as invalid (it will trim to empty and fail min-length).\n- Create requests: title is required. The UI must require the input to be present and valid before allowing submission.\n- Update requests (PUT): title is optional. If the user did not modify the title input (i.e., omission), do not include the title field in the JSON payload so the server leaves the stored value unchanged. If the user provides a string value, apply the trim+validation rules and include the processed string in the payload.\n- Explicit null is disallowed: do not send title: null. If an explicit null is sent, the server will respond with 422 per contract; frontend should avoid generating null for title and instead require a valid string when user intends to change it.\n- On validation failure, show a clear field-level error and do not send the request. The server uses status 422 for invalid title; the frontend should expect and surface server 422 validation responses as well.\n\nMinimal JS examples (use only as precise reference; adapt to codebase):\n- Trim U+0020 only: title = title.replace(/^\\u0020+|\\u0020+$/g, \"\");\n- Count code points: const length = Array.from(title).length;\n- Validation check: if (length < 3 || length > 80) -> show error and block submit.\n\nDo not rely on HTML attributes (e.g., minlength) or platform primitives unless they are proven to count Unicode code points and trim only U+0020; prefer explicit application logic above to guarantee exact semantics required by the contract.",
+      "backend_prompt": "[FACT:request-title-trim] (frontend,backend; must_be_explicit) request.title.trim = \"U+0020\"\n[FACT:request-title-length-unit] (frontend,backend; must_be_explicit) request.title.length_unit = \"unicode_code_point\"\n[FACT:request-title-min-length] (frontend,backend; must_be_explicit) request.title.min_length = 3\n[FACT:request-title-max-length] (frontend,backend; must_be_explicit) request.title.max_length = 80\n[FACT:create-title-required] (frontend,backend; must_be_explicit) create.title.required = true\n[FACT:update-title-required] (frontend,backend; must_be_explicit) update.title.required = false\n[FACT:request-title-nullable] (frontend,backend; must_be_explicit) request.title.nullable = false\n[FACT:request-title-invalid-status] (frontend,backend; must_be_explicit) request.title.invalid_status = 422\n[FACT:update-title-omission] (frontend,backend; must_be_explicit) update.title.omission = \"unchanged\"\n\nImplement exactly the contract facts above in server-side validation, persistence, and responses for POST /api/v1/items/ and PUT /api/v1/items/{id}.\nBehavior (implement exactly):\n- Distinguish three cases for the incoming JSON request body field \"title\":\n  1) Field omitted: for create requests omission is a failure because create.title.required = true (return 422). For update requests omission means \"unchanged\" — do not modify stored title.\n  2) Field present with value null: request.title.nullable = false — this is invalid. Return HTTP 422.\n  3) Field present with a string: process as below.\n- Processing of a present string value:\n  - Trim only U+0020 from both ends before any length check or storage. Do NOT perform other Unicode whitespace trimming or normalization as part of this step.\n    - Example implementations:\n      - Node.js: processed = raw.replace(/^\\u0020+|\\u0020+$/g, \"\"); count code points with Array.from(processed).length.\n      - Python: processed = raw.strip(' ')\n      - Java: processed = raw.replaceAll(\"^[\\\\u0020]+|[\\\\u0020]+$\", \"\"); use processed.codePointCount(0, processed.length()) for counting.\n  - Count length in Unicode code points. Enforce inclusive bounds: min 3, max 80. If processed length < 3 or > 80, return HTTP 422.\n  - A string that is all U+0020 will trim to empty and therefore fail the min-length check — return 422.\n- On validation success for create or update with a provided string, store the processed (U+0020-trimmed) value in the database and return that stored processed value in the response body.\n- For update requests where title is omitted, the stored title must remain unchanged.\n- Error handling: for any validation failure of title (including missing on create, explicit null, or length violations), respond with HTTP 422 per request.title.invalid_status = 422. Include a field-level indication that title is invalid (format of error body may follow existing API conventions; do not change status code requirement).\n- Persistence note: ensure storage layer does not re-trim or alter the processed value; store and return the processed string exactly as validated.\n\nDo not rely on a datastore or framework primitive that implicitly changes counting semantics (e.g., byte length vs Unicode code points) or that automatically trims other whitespace; perform the U+0020-only trim and the Unicode code point count explicitly in application code before persisting.\n\nTest cases to include (must pass/fail exactly as implied by the contract):\n- After trimming U+0020 only, a 2-code-point value -> fail (422). A 3-code-point value -> success.\n- After trimming U+0020 only, a 80-code-point value -> success. An 81-code-point value -> fail (422).\n- A title consisting only of U+0020 -> fail (422).\n- Update request that omits title -> stored title remains unchanged.\n- Update request that sets title: null -> fail (422)."
+    }
+  ]
+}

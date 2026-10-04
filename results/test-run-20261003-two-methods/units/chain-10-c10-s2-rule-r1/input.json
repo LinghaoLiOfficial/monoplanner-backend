@@ -1,0 +1,9 @@
+{
+  "chain_id": "chain-10",
+  "step_id": "c10-s2",
+  "required_sides": [
+    "backend"
+  ],
+  "raw_requirement": "仅后端：条目创建、更新、删除成功提交后，新增结构化服务端日志事件，字段限定为 action（create/update/delete）、actor_id、item_id、occurred_at；三个 ID/时间相关值均用字符串，时间为 UTC RFC 3339。日志不得包含 title、description 或令牌。受影响层为 backend_services、backend_tools。",
+  "preserved_constraints": "日志不是 API 响应；失败请求不记录成功事件，不要求新增审计查询接口。第一步前端展示规范继续有效，但本步无前端实施任务。"
+}

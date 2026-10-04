@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-06",
+  "step_id": "c06-s1",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：仅条目 GET/PUT/DELETE 的资源不存在和权限不足错误改为 `{\"error\":{\"code\":\"ITEM_NOT_FOUND\",\"message\":\"Item not found\"}}` 与 `{\"error\":{\"code\":\"ITEM_FORBIDDEN\",\"message\":\"Not enough permissions\"}}`，分别为 404、403；不再含顶层 detail。",
+  "preserved_constraints": "认证错误和 422 校验错误保持原有结构；前端按状态码与 error.code 分支，不能把所有错误都强制按新结构解析。"
+}

@@ -1,0 +1,571 @@
+{
+  "schema_version": "requirement-review-v1",
+  "reviewer": "",
+  "human_attestation": false,
+  "reviews": [
+    {
+      "blind_id": "packet-001",
+      "pack_sha256": "a7c4cace98f7d43030235df868d824e42129823c110464c7ec3e08df6708c936",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-002",
+      "pack_sha256": "9ca94b83fe49bff1716cdae9e2b2c8ce31d36c73655dfc0e44fdd6fa1022e147",
+      "assessments": [
+        {
+          "fact_id": "request-title-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-length-unit",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-min-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "create-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-required",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-nullable",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-title-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-title-omission",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-003",
+      "pack_sha256": "bf9108bcddad673f3ac47d527069499d8f388bd8514ce497eed33ef0f4945ee0",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-004",
+      "pack_sha256": "e1d39fcf1ed75333954e59c303180cf38f9c37bd492e29d74615d73e42671893",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-description-trim",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-005",
+      "pack_sha256": "2ea0460656d94a383e264f0846271451b6640f413f5712648deceabb0b59d33b",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-006",
+      "pack_sha256": "1308cc3cde9f68b168a2b8d8577aa3a029e8954f412c28bb0976835eb2616d05",
+      "assessments": [
+        {
+          "fact_id": "request-title-max-length",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "read-existing-overlength-title-allowed",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "update-omitted-title-revalidate",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-007",
+      "pack_sha256": "2c984efd26c12d4f9d11935d617537b495b28cea9736a074176cc0ffb343b40d",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-008",
+      "pack_sha256": "50e13135a57a1e380a55a9008a927b2826e91d51a0bbe06b7e4c71784241b188",
+      "assessments": [
+        {
+          "fact_id": "request-skip-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-skip-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-invalid-status",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-count-scope",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-empty-page-data",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-009",
+      "pack_sha256": "6ea2e08803ba86121c49944a2dabe81f7d2869c0f2fdec9ca9cd022467f4bbe3",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-010",
+      "pack_sha256": "a504a0702e8b1d156cca4650723c7e27826994cd45f7058c9e0dac629dfa46e1",
+      "assessments": [
+        {
+          "fact_id": "request-skip-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-limit-accepted",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-minimum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "pagination-offset",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-011",
+      "pack_sha256": "6d89f717b86692ee0f712868e5034e3f9f9d9642fc36ea1d5ed7b9e00788ebc4",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "blind_id": "packet-012",
+      "pack_sha256": "e558aa6aac98b732eef554d2e6af2063fc47d187642790140dcdefa9895db240",
+      "assessments": [
+        {
+          "fact_id": "request-page-size-maximum",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "request-page-size-default",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-type",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        },
+        {
+          "fact_id": "response-page-size-value",
+          "label": "",
+          "explanation": "",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

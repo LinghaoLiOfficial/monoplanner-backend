@@ -1,0 +1,263 @@
+{
+  "status": "candidate_unreviewed",
+  "source_document": "Monoplanner_Data_Specification_ZH_v2.md",
+  "source_sha256": "a92983e73c9a9fc627dccf47124609343c284a02fb9b282efd323fd90947f55b",
+  "source_commit": "1762adac607a1b29cfc4da129557780beea71616",
+  "chains": [
+    {
+      "chain_id": "chain-01",
+      "topic": "item_validation",
+      "split": "dev",
+      "steps": [
+        {
+          "step_id": "c01-s1",
+          "requirement_text": "前后端：创建及更新的 `title` 在提交或校验前剥除首尾 U+0020 空格，再按 Unicode 码点计长，允许 3—80；创建必须提供，更新可省略，显式 null 一律 422。后端存储并返回处理后的值。",
+          "boundary_text": "POST `/api/v1/items/`、PUT `/api/v1/items/{id}`、权限与 description 规则不变。长度 2/81 失败，3/80 成功；全空格失败；更新缺省不改变原值。",
+          "source_line": 578
+        },
+        {
+          "step_id": "c01-s2",
+          "requirement_text": "前后端：将 title 上限由 80 调整为 120，下限仍为 3；description 的非空值上限由 255 调整为 500，不修剪 description。",
+          "boundary_text": "title 的修剪、必填与 null 规则不变；description 缺省和 null 语义不变。title 长度 120 成功、121 失败；description 长度 500 成功、501 失败。",
+          "source_line": 579
+        },
+        {
+          "step_id": "c01-s3",
+          "requirement_text": "前后端：仅将 title 上限从 120 回退到 80；description 上限仍为 500。已有超 80 的 title 可读取；更新省略 title 时不重校验原值，显式提交超限 title 返回 422。",
+          "boundary_text": "不得撤销下限 3 或修剪规则。回退后的资产版本继续递增；用“已有 100 字 title，更新 description”检验局部更新语义。",
+          "source_line": 580
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-02",
+      "topic": "pagination",
+      "split": "dev",
+      "steps": [
+        {
+          "step_id": "c02-s1",
+          "requirement_text": "前后端：GET `/api/v1/items/` 的 skip 为整数且 ≥0，缺省 0；limit 为整数且 1—50，缺省 20；非法值 422。前端翻页按 skip/limit 发送。",
+          "boundary_text": "`data` 为当前页，`count` 为权限范围内全部匹配条目数，不随当前页条数改变。空页返回 `data=[]`。",
+          "source_line": 588
+        },
+        {
+          "step_id": "c02-s2",
+          "requirement_text": "前后端：替换为 page/page_size，均为整数；page ≥1，缺省 1；page_size 为 1—50，缺省 20；内部偏移为 `(page-1)*page_size`。请求只要包含 skip 或 limit 即返回 422，不接受双协议。",
+          "boundary_text": "响应仍为 data/count；权限与排序不变。page 超出末页得到空 data 和真实 count；前端页码从 1 开始。",
+          "source_line": 589
+        },
+        {
+          "step_id": "c02-s3",
+          "requirement_text": "前后端：page_size 默认值由 20 改为 25，上限由 50 改为 100。响应新增整数 page、page_size，回显实际生效值。",
+          "boundary_text": "page 缺省 1，旧 skip/limit 仍禁止；page_size=100 成功、101 失败。前端以回显值同步控件。",
+          "source_line": 590
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-03",
+      "topic": "permissions",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c03-s1",
+          "requirement_text": "前后端：普通用户对他人已存在条目执行 GET、PUT、DELETE 时统一返回 404，`detail=\"Item not found\"`；不存在也返回相同响应。",
+          "boundary_text": "所有者和超级用户原权限不变；列表仍只包含当前用户可见数据。前端按 404 处理，不显示他人资源信息。",
+          "source_line": 598
+        },
+        {
+          "step_id": "c03-s2",
+          "requirement_text": "前后端：超级用户仍可读取他人条目，但 PUT、DELETE 他人条目返回 403，`detail=\"Read-only access\"`；前端他人条目只读。",
+          "boundary_text": "超级用户对本人条目可写；普通用户他人资源 404；不存在资源仍 404；创建 owner_id 仍为当前用户。",
+          "source_line": 599
+        },
+        {
+          "step_id": "c03-s3",
+          "requirement_text": "前后端：仅恢复超级用户修改、删除他人条目的权限；移除针对该角色的只读错误与界面限制。",
+          "boundary_text": "普通用户他人资源仍 404，不得回退为源码中的 403；超级用户读全量不变。",
+          "source_line": 600
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-04",
+      "topic": "field_rename",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c04-s1",
+          "requirement_text": "前后端：创建/更新请求新增 name 作为 title 的别名。单独提供任一个时按原 title 约束校验；两者同时出现返回 422。创建至少提供一个，更新可都省略；显式 null 返回 422。响应同时返回 title 与 name，值完全相同。前端迁移为提交和显示 name。",
+          "boundary_text": "非空字符串 1—255，不新增修剪；数据库仍存 title；列表、详情、创建和更新响应均应用别名规则。",
+          "source_line": 608
+        },
+        {
+          "step_id": "c04-s2",
+          "requirement_text": "前后端：停止接受请求 title，出现该键即 422，即使与 name 同时出现。创建 name 必填、更新可省略；响应继续同时提供 title/name。",
+          "boundary_text": "name 的类型、长度及 null 限制不变；禁止静默忽略旧键。",
+          "source_line": 609
+        },
+        {
+          "step_id": "c04-s3",
+          "requirement_text": "前后端：从所有条目公开响应中移除 title，只输出 name；前端移除读取 title 的回退逻辑。",
+          "boundary_text": "请求 title 仍 422；数据库字段不改名；description/id/owner_id/created_at 不变。",
+          "source_line": 610
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-05",
+      "topic": "null_and_clear",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c05-s1",
+          "requirement_text": "前后端：PUT 条目时 description 缺省表示不修改，null 表示清空为数据库 NULL，空字符串表示保存空字符串；前端“清空”操作必须提交 null。",
+          "boundary_text": "description 字符串上限 255；不得把缺省自动转成 null，也不得把空字符串折叠为 null；创建规则不变。",
+          "source_line": 618
+        },
+        {
+          "step_id": "c05-s2",
+          "requirement_text": "前后端：仅更新请求中，description 空字符串改为与 null 一样清空为 NULL；响应为 null。空格字符串保持原样。",
+          "boundary_text": "缺省仍不修改；创建时空字符串仍为空字符串；前端必须区分创建与编辑的归一化。",
+          "source_line": 619
+        },
+        {
+          "step_id": "c05-s3",
+          "requirement_text": "前后端：更新新增可省略布尔 clear_description，缺省 false。true 且 description 缺省时清空；true 与任何 description 值同时出现均 422。description=null 改为 422；空字符串恢复为保存空字符串。",
+          "boundary_text": "false 或缺省且 description 缺省时不修改；仅更新请求接受此控制字段，响应不回传；前端清空改为提交 `{\"clear_description\":true}`。",
+          "source_line": 620
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-06",
+      "topic": "error_contract",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c06-s1",
+          "requirement_text": "前后端：仅条目 GET/PUT/DELETE 的资源不存在和权限不足错误改为 `{\"error\":{\"code\":\"ITEM_NOT_FOUND\",\"message\":\"Item not found\"}}` 与 `{\"error\":{\"code\":\"ITEM_FORBIDDEN\",\"message\":\"Not enough permissions\"}}`，分别为 404、403；不再含顶层 detail。",
+          "boundary_text": "认证错误和 422 校验错误保持原有结构；前端按状态码与 error.code 分支，不能把所有错误都强制按新结构解析。",
+          "source_line": 628
+        },
+        {
+          "step_id": "c06-s2",
+          "requirement_text": "前后端：上述两种错误的 error 内新增必填非空字符串 request_id，由后端生成并关联服务端日志，前端可展示用于反馈。",
+          "boundary_text": "code、message、状态码不变；成功响应及其他错误不新增该字段；request_id 不包含凭据或用户输入内容。",
+          "source_line": 629
+        },
+        {
+          "step_id": "c06-s3",
+          "requirement_text": "前后端：仅将上述两种 error.message 字段改名为 error.detail，删除旧 message；request_id 保留。",
+          "boundary_text": "错误仍在 error 对象内，不能误写为顶层 detail；前端仍以 code 判断，不匹配自然语言内容。",
+          "source_line": 630
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-07",
+      "topic": "filter_sort",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c07-s1",
+          "requirement_text": "前后端：条目列表新增可选字符串 q，剥除首尾 U+0020 后最长 100 码点；空值或缺省不筛选；否则对 title 执行区分大小写的字面子串匹配，`%`、`_` 不作通配符。",
+          "boundary_text": "先权限约束、再筛选、再分页；count 是筛选后分页前总数；skip/limit 沿用基线。改变 q 后前端重置 skip=0。",
+          "source_line": 638
+        },
+        {
+          "step_id": "c07-s2",
+          "requirement_text": "前后端：新增 sort 枚举 `created_at_desc`、`title_asc`，缺省前者，其他值 422。时间降序空值最后，title 按 Unicode 码点升序；主排序相同时按 UUID 标准小写字符串升序。",
+          "boundary_text": "筛选规则不变；后端排序后分页；前端不得只对当前页自行重排。",
+          "source_line": 639
+        },
+        {
+          "step_id": "c07-s3",
+          "requirement_text": "前后端：sort 新增 `title_desc`，title 主键降序、UUID 次键仍升序；默认排序改为 title_asc。",
+          "boundary_text": "created_at_desc 仍受支持，不能作为废弃值拒绝；q、count 和分页语义保持。",
+          "source_line": 640
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-08",
+      "topic": "delete_restore",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c08-s1",
+          "requirement_text": "前后端：DELETE 改为软删除，设置 deleted_at 为 UTC RFC 3339 时间；新建及迁移既有条目的 deleted_at 为 null。列表排除已删除条目且 count 同步排除；GET/PUT 已删除条目返回 404。公开条目响应增加可空 deleted_at。",
+          "boundary_text": "原删除权限保留；无权限操作已有资源仍 403；已授权重复删除已删除条目返回 404。首次删除保持原成功消息。",
+          "source_line": 648
+        },
+        {
+          "step_id": "c08-s2",
+          "requirement_text": "前后端：新增 POST `/api/v1/items/{id}/restore`，无请求体；所有者或超级用户可恢复，成功 200 返回 ItemPublic 且 deleted_at=null；未删除时 409 `detail=\"Item is not deleted\"`，不存在 404，他人资源无权 403。前端记录本会话成功删除的 id 并提供撤销。",
+          "boundary_text": "恢复后的条目重新参与列表和 count；不新增回收站列表接口；页面刷新后不要求保留撤销入口。",
+          "source_line": 649
+        },
+        {
+          "step_id": "c08-s3",
+          "requirement_text": "前后端：恢复增加严格 7×24 小时窗口，由服务器 UTC 时间判定；`now-deleted_at < 604800秒` 可恢复，等于或大于边界时 410 `detail=\"Restore window expired\"`。",
+          "boundary_text": "不自动物理清理；未删除 409、不存在 404、无权 403 保留。先存在性和授权，后状态及时间检查；前端以服务端判定为准。",
+          "source_line": 650
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-09",
+      "topic": "user_profile",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c09-s1",
+          "requirement_text": "前后端：PATCH `/api/v1/users/me` 的 full_name 非 null 时剥除首尾 U+0020，处理后长度必须为 1—80；缺省不修改，null 清空。显式提交不合规值 422。",
+          "boundary_text": "email 更新、占用冲突 409 不变；其他用户管理端点不调整写入规则。已有长姓名可读取，更新省略 full_name 不重校验旧值。",
+          "source_line": 658
+        },
+        {
+          "step_id": "c09-s2",
+          "requirement_text": "前后端：用户持久化与 UserPublic 新增 timezone 枚举 `UTC`、`Asia/Shanghai`、`Asia/Singapore`；既有用户回填 UTC，新用户默认 UTC。本人 PATCH 可修改，缺省不修改，null 或非枚举值 422。前端设置页提供三种选项。",
+          "boundary_text": "full_name 第一步规则保留；所有输出 UserPublic 的接口返回 timezone；除本人 PATCH 外，其余写接口不开放 timezone 自定义写入。",
+          "source_line": 659
+        },
+        {
+          "step_id": "c09-s3",
+          "requirement_text": "前后端：本人 PATCH 禁止出现 email 键，出现即 422（包括 null 或与原值相同）；前端本人资料页邮箱改为只读。",
+          "boundary_text": "返回资料仍含 email，管理员更新邮箱接口不变；本人更新姓名和时区规则保留。删除本人 PATCH 的“邮箱重复 409”有效分支，不能误删管理员端点的 409。",
+          "source_line": 660
+        }
+      ]
+    },
+    {
+      "chain_id": "chain-10",
+      "topic": "scope_clarification",
+      "split": "test",
+      "steps": [
+        {
+          "step_id": "c10-s1",
+          "requirement_text": "仅前端：新增条目标题展示规范，列表视觉展示超过 30 个 Unicode 码点时显示前 30 个加 `…`；完整标题可通过可访问名称或展开控件读取，编辑框始终使用完整值。受影响层为 frontend_pages、ui_design。",
+          "boundary_text": "这不是输入长度限制；请求、响应、存储、校验和后端不变。30 码点不截断，31 码点截断；不能把省略号提交到 API。",
+          "source_line": 668
+        },
+        {
+          "step_id": "c10-s2",
+          "requirement_text": "仅后端：条目创建、更新、删除成功提交后，新增结构化服务端日志事件，字段限定为 action（create/update/delete）、actor_id、item_id、occurred_at；三个 ID/时间相关值均用字符串，时间为 UTC RFC 3339。日志不得包含 title、description 或令牌。受影响层为 backend_services、backend_tools。",
+          "boundary_text": "日志不是 API 响应；失败请求不记录成功事件，不要求新增审计查询接口。第一步前端展示规范继续有效，但本步无前端实施任务。",
+          "source_line": 669
+        },
+        {
+          "step_id": "c10-s3",
+          "requirement_text": "前后端：条目创建与更新响应新增 display_title，按第一步规则计算（完整标题≤30码点原样返回，否则前30加省略号）；前端创建/更新后立即反馈使用该字段，title 继续保存完整值。受影响层为 api_contract、frontend_pages、backend_services。",
+          "boundary_text": "列表与详情响应不新增字段，仍按第一步在前端展示；请求禁止包含 display_title，出现即 422；第二步服务端日志保留。",
+          "source_line": 670
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "No independently reviewed atomic gold labels",
+    "No complete old/new asset snapshots or change sets",
+    "Not accepted by the generation or freeze CLI"
+  ]
+}

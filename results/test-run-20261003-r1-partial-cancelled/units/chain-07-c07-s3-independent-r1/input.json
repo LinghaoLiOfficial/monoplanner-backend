@@ -1,0 +1,10 @@
+{
+  "chain_id": "chain-07",
+  "step_id": "c07-s3",
+  "required_sides": [
+    "frontend",
+    "backend"
+  ],
+  "raw_requirement": "前后端：sort 新增 `title_desc`，title 主键降序、UUID 次键仍升序；默认排序改为 title_asc。",
+  "preserved_constraints": "created_at_desc 仍受支持，不能作为废弃值拒绝；q、count 和分页语义保持。"
+}

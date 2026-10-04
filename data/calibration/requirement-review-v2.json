@@ -1,0 +1,455 @@
+{
+  "schema_version": "review-calibration-v2",
+  "examples": [
+    {
+      "example_id": "consistent-1",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 1.",
+      "expected_label": "consistent",
+      "rationale": "Both required sides state the target fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "consistent-2",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 1.",
+      "expected_label": "consistent",
+      "rationale": "Both required sides state the target fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "consistent-3",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 1.",
+      "expected_label": "consistent",
+      "rationale": "Both required sides state the target fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "consistent-4",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 1.",
+      "expected_label": "consistent",
+      "rationale": "Both required sides state the target fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "consistent-5",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 1.",
+      "expected_label": "consistent",
+      "rationale": "Both required sides state the target fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "contradiction-1",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Accept page >= 0.",
+      "expected_label": "contradiction",
+      "rationale": "The two sides require mutually exclusive minimum values.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "contradiction-2",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Accept page >= 0.",
+      "expected_label": "contradiction",
+      "rationale": "The two sides require mutually exclusive minimum values.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "contradiction-3",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Accept page >= 0.",
+      "expected_label": "contradiction",
+      "rationale": "The two sides require mutually exclusive minimum values.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "contradiction-4",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Accept page >= 0.",
+      "expected_label": "contradiction",
+      "rationale": "The two sides require mutually exclusive minimum values.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "contradiction-5",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "[FACT:page-min] Accept page >= 0.",
+      "expected_label": "contradiction",
+      "rationale": "The two sides require mutually exclusive minimum values.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "omission-1",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "Implement pagination validation.",
+      "expected_label": "omission",
+      "rationale": "The backend omits a must-be-explicit fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "omission-2",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "Implement pagination validation.",
+      "expected_label": "omission",
+      "rationale": "The backend omits a must-be-explicit fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "omission-3",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "Implement pagination validation.",
+      "expected_label": "omission",
+      "rationale": "The backend omits a must-be-explicit fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "omission-4",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "Implement pagination validation.",
+      "expected_label": "omission",
+      "rationale": "The backend omits a must-be-explicit fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "omission-5",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 1.",
+      "backend_prompt": "Implement pagination validation.",
+      "expected_label": "omission",
+      "rationale": "The backend omits a must-be-explicit fact.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "common_error-1",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 0.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 0.",
+      "expected_label": "common_error",
+      "rationale": "Both sides agree with each other but violate the target value 1.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "common_error-2",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 0.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 0.",
+      "expected_label": "common_error",
+      "rationale": "Both sides agree with each other but violate the target value 1.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "common_error-3",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 0.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 0.",
+      "expected_label": "common_error",
+      "rationale": "Both sides agree with each other but violate the target value 1.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "common_error-4",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 0.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 0.",
+      "expected_label": "common_error",
+      "rationale": "Both sides agree with each other but violate the target value 1.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "common_error-5",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "must_be_explicit"
+      },
+      "frontend_prompt": "[FACT:page-min] Send page >= 0.",
+      "backend_prompt": "[FACT:page-min] Validate page >= 0.",
+      "expected_label": "common_error",
+      "rationale": "Both sides agree with each other but violate the target value 1.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "derivable-1",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable"
+      },
+      "frontend_prompt": "Implement the current page contract.",
+      "backend_prompt": "Preserve the current page contract.",
+      "expected_label": "derivable",
+      "rationale": "This inherited fact is context and need not be repeated explicitly.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "derivable-2",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable"
+      },
+      "frontend_prompt": "Implement the current page contract.",
+      "backend_prompt": "Preserve the current page contract.",
+      "expected_label": "derivable",
+      "rationale": "This inherited fact is context and need not be repeated explicitly.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "derivable-3",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable"
+      },
+      "frontend_prompt": "Implement the current page contract.",
+      "backend_prompt": "Preserve the current page contract.",
+      "expected_label": "derivable",
+      "rationale": "This inherited fact is context and need not be repeated explicitly.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "derivable-4",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable"
+      },
+      "frontend_prompt": "Implement the current page contract.",
+      "backend_prompt": "Preserve the current page contract.",
+      "expected_label": "derivable",
+      "rationale": "This inherited fact is context and need not be repeated explicitly.",
+      "status": "calibration_only_not_model_effectiveness"
+    },
+    {
+      "example_id": "derivable-5",
+      "fact": {
+        "fact_id": "page-min",
+        "statement": "page minimum is 1",
+        "target_value": 1,
+        "required_sides": [
+          "frontend",
+          "backend"
+        ],
+        "coverage": "derivable"
+      },
+      "frontend_prompt": "Implement the current page contract.",
+      "backend_prompt": "Preserve the current page contract.",
+      "expected_label": "derivable",
+      "rationale": "This inherited fact is context and need not be repeated explicitly.",
+      "status": "calibration_only_not_model_effectiveness"
+    }
+  ]
+}
